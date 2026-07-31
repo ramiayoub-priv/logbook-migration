@@ -58,7 +58,9 @@ DA40: `OH-STL` (Diamond DA40, appears Apr 2019).
 C185 floatplane: `OH-CDK` (Cessna 185 on floats, seaplane; Saimaa-lakes trip Jun–Jul 2019).
 
 ## Aircraft added in Book 3
-- `OH-CAM` (C172), `OH-CMV` (C152) — from IMG_6009.
+- `OH-CAM` (C172), `OH-CMV` (C152) — from IMG_6009. **`OH-CAM` is IFR-certified** (user-confirmed
+  2026-07-31) — it logs single-engine IFR time, e.g. 30/04/2024 EFTP→EFHV 1:01 = 0:36 VFR + 0:25 IFR.
+  Don't treat a C172 with an SE-IFR entry as a misread.
 - **`SR20` / `OH-ESR`** (Cirrus SR20) — type-rating training Apr–May 2022 (instructor Stude), flown
   **PIC from 18/05/2022**, routinely IFR on cross-countries.
 - **`OH-MIL`** — **Maule on floats, type written `M6(sea)`; always on floats** (user-confirmed
@@ -107,6 +109,12 @@ EFTP (Tampere-Pirkkala), EFRY (Räyskälä — C185 floatplane dep 29/04/2020); 
 15/04/2023 SR20 IFR one-way; someone else ferried the aircraft back, so no return leg is logged)**.
 Estonian: **EETN** (Tallinn — 31/12/2019 DA40 day-trip, first non-Nordic field).
 **Also in Book 3: EFVP (Vampula)** — user-confirmed; 08/09/2023 OH-PDP EFHV↔EFVP day-return (IMG_6019).
+**EFIK (Kiikala)** — 29/04/2024 SR20 dual round-trip with Stude (IMG_6021).
+**Book 3 float season 2024 adds: Lieso, Lietsaari** (Päijänne/Vääksy area, OH-GKT — all three names
+user-confirmed 2026-08-01).
+⚠ **From IMG_6022 the book writes the type as `C172sea` for float C172s.** That is the pilot's own
+informal seaplane marker, not a type — **store plain `C172`**; the seaplane flag comes from the
+registration (user-confirmed 2026-08-01).
 Plus lakes for seaplane ops (Tuusulanjärvi, Hiidenvesi, Räyskälä, Gumbostrand, Salonsaari,
 Keilaniemi, Vuosaari, Kelvenne, Kahvisaari).
 Finnish regs are `OH-xxx`. **Flag anything that breaks this pattern** (e.g. `OK-PDP` is almost

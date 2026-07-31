@@ -1,0 +1,179 @@
+[
+ {
+  "img": "IMG_6022 (pages 31-32)",
+  "paper": {
+   "d_total": "8:58",
+   "d_pic": "8:58",
+   "d_student": "0:00",
+   "d_instr": "1:07"
+  },
+  "flights": [
+   {
+    "date": "05/05/2024",
+    "type": "C172",
+    "reg": "OH-CAY",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "10:00",
+    "on": "11:07",
+    "total": "1:07",
+    "land": 4,
+    "instructor": "1:07"
+   },
+   {
+    "date": "05/05/2024",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFNU",
+    "off": "13:30",
+    "on": "14:00",
+    "total": "0:30",
+    "land": 1
+   },
+   {
+    "date": "05/05/2024",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFNU",
+    "arr": "EFHV",
+    "off": "18:14",
+    "on": "18:37",
+    "total": "0:23",
+    "land": 1
+   },
+   {
+    "date": "15/05/2024",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "19:32",
+    "on": "20:08",
+    "total": "0:36",
+    "land": 5
+   },
+   {
+    "date": "20/05/2024",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "19:19",
+    "on": "19:45",
+    "total": "0:26",
+    "land": 2
+   },
+   {
+    "date": "21/05/2024",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFNU",
+    "off": "17:05",
+    "on": "17:30",
+    "total": "0:25",
+    "land": 1
+   },
+   {
+    "date": "21/05/2024",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFNU",
+    "arr": "EFHV",
+    "off": "19:55",
+    "on": "20:22",
+    "total": "0:27",
+    "land": 1
+   },
+   {
+    "date": "26/05/2024",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFRY",
+    "off": "09:50",
+    "on": "10:15",
+    "total": "0:25",
+    "land": 1
+   },
+   {
+    "date": "26/05/2024",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFRY",
+    "arr": "EFNU",
+    "off": "11:09",
+    "on": "11:35",
+    "total": "0:26",
+    "land": 1
+   },
+   {
+    "date": "26/05/2024",
+    "type": "SR20",
+    "reg": "OH-ESR",
+    "dep": "EFNU",
+    "arr": "EFNU",
+    "off": "12:20",
+    "on": "13:05",
+    "total": "0:45",
+    "land": 1
+   },
+   {
+    "date": "26/05/2024",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFNU",
+    "arr": "EFHV",
+    "off": "13:40",
+    "on": "14:05",
+    "total": "0:25",
+    "land": 1
+   },
+   {
+    "date": "30/05/2024",
+    "type": "C172",
+    "reg": "OH-GKT",
+    "dep": "Lieso",
+    "arr": "Lieso",
+    "off": "16:05Z",
+    "on": "17:05Z",
+    "total": "1:00",
+    "land": 7
+   },
+   {
+    "date": "07/06/2024",
+    "type": "C172",
+    "reg": "OH-GKT",
+    "dep": "Lieso",
+    "arr": "Vääksy",
+    "off": "06:40Z",
+    "on": "07:15Z",
+    "total": "0:35",
+    "land": 1
+   },
+   {
+    "date": "07/06/2024",
+    "type": "C172",
+    "reg": "OH-GKT",
+    "dep": "Vääksy",
+    "arr": "Lietsaari",
+    "off": "07:53Z",
+    "on": "08:23Z",
+    "total": "0:30",
+    "land": 5
+   },
+   {
+    "date": "07/06/2024",
+    "type": "C172",
+    "reg": "OH-GKT",
+    "dep": "Lietsaari",
+    "arr": "Lieso",
+    "off": "08:39Z",
+    "on": "09:37Z",
+    "total": "0:58",
+    "land": 4
+   }
+  ]
+ }
+]

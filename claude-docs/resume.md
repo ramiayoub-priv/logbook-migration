@@ -135,14 +135,36 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
   (C152 — genuinely distinct from OH-CMV, user-confirmed). Book wrote C172 for the 09/02/24 OH-AWB
   row; user says C152, corrected. **Two night flights** (09/02/24 0:39 + 5 night ldg; 05/03/24 0:23) —
   on the second the book put its 3 landings in the DAY column by mistake; they are **night** landings.
-- **Last row in `logbook_3.csv`:** `05/03/2024 · C152 · OH-CMU · EFHV → EFHV ·
-  19:32Z–19:55Z · Total 0:23 · Night 0:23 · PIC 0:23 · 3 landings (all night)`
+- **Fifteenth spread done:** `IMG_6021` (pages 29–30), 15 flights **28/03/2024–04/05/2024**, verified &
+  appended 2026-07-31. All UTC (Z). Image **already upright**. **All 4 cross-checks exact, zero block
+  warnings** (Δtotal 9:41, Δpic 8:49, Δstudent 0:52, Δinstr nil). No night, no seaplane, no instructing.
+  **Two student rows** 29/04 SR20 OH-ESR EFNU→**EFIK (Kiikala, new)**→EFNU (0:28 + 0:24), pic_name=**Stude**
+  — his fourth SR20 dual. **⚠ OH-CAM (C172) logs 0:25 SE-IFR** on 30/04 EFTP→EFHV (1:01 = 0:36 VFR +
+  0:25 IFR) — **user confirms OH-CAM is IFR-certified**, not a misread. Two inferred block cells
+  (row 10 on-block 05:21; row 13 off/on 16:37→17:38), both pinned by the column totals. The pilot
+  carried his "TOTAL PREVIOUS PAGES" 1:52 low then struck/rewrote the bottom line back to 990:37 —
+  nets out, no action. Landings blank → ours sums 31.
+- **Sixteenth spread done:** `IMG_6022` (pages 31–32), 15 flights **05/05/2024–07/06/2024**, verified &
+  appended 2026-08-01. **⚠ THIS IMAGE IS SIDEWAYS — needs CCW `rotate(90)`** (6012–6021 were all
+  upright; orientation is genuinely per-image, always thumbnail first). **All 4 cross-checks exact,
+  zero block warnings** (Δtotal 8:58 all SE-VFR, Δpic 8:58, Δdual nil, Δinstr 1:07).
+  **🎉 CROSSES 1000 HOURS** — Cumulative_Total hits **1000:02** on row 14 (07/06/2024 Vääksy→Lietsaari).
+  **⚠ Third mixed-timezone spread — and the rule is BY AIRCRAFT:** user says *"all rows are local
+  except OH-GKT and OH-ESR"*, **with one confirmed exception** — row 10 (26/05 SR20 OH-ESR EFNU local)
+  is stored **local**, because as UTC it lands 15:20–16:05 local and breaks the 26/05 chain (row 11
+  already flew him home to EFHV at 14:05). Net: **rows 1–11 no `Z`, rows 12–15 (OH-GKT) `Z`**.
+  **Row 12 date = 30/05/2024** (book's day digit reads "34"; user-confirmed). **`C172sea` is not a
+  type** — it's the pilot's own informal seaplane marker; **store plain `C172`** (user). Float season
+  2024 opens on OH-GKT in the Päijänne area — new places **Lieso, Lietsaari** (Vääksy already known).
+  One instructing row 05/05 OH-CAY EFHV local 1:07. Landings blank → ours sums 36.
+- **Last row in `logbook_3.csv`:** `07/06/2024 · C172 · OH-GKT · Lietsaari → Lieso ·
+  08:39Z–09:37Z · Total 0:58 · PIC 0:58 · 4 landings` (seaplane)
 - **Cumulative totals at that row (our continuous series, seeded from Book 2):**
-  - Cumulative_Total **982:21** · Cumulative_PIC **819:40** · Cumulative_Student **162:41**
-  - Cumulative_Instrument **84:46** · Cumulative_SEP_Sea **274:14**
-  - Cumulative_Landings **2577** (= day+night; runs ahead of book's day-only count — see drift.md)
-  - Cumulative_Instructor **99:49**
-- **`logbook_3.csv` has 209 data rows** (+ header + seed row = 211 lines).
+  - Cumulative_Total **1001:00** · Cumulative_PIC **837:27** · Cumulative_Student **163:33**
+  - Cumulative_Instrument **85:55** · Cumulative_SEP_Sea **277:17**
+  - Cumulative_Landings **2644** (= day+night; runs ahead of book's day-only count — see drift.md)
+  - Cumulative_Instructor **100:56**
+- **`logbook_3.csv` has 239 data rows** (+ header + seed row = 241 lines).
 
 ### Book-3 conventions (locked 2026-07-31 with user)
 - **Same 26-col schema.** EASA→our-schema mapping: **Dual (Oppilas) → Student_Time**;
@@ -159,15 +181,18 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
 - **Tooling:** `logbook_tools.py <batch.json> --csv logbook_3.csv [--append]` (new `--csv` flag targets
   Book 3; defaults to Book 2). Block-vs-total diffs ≤5 min now warn instead of blocking append.
 
-## Next action — Book 3, IMG_6021 (pages 29–30)
-Process **`IMG_6021`** next (continues from 05/03/2024). **Check orientation first** — image
-orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, but **6012–6020 have all
-been already upright** in the original (no rotation) — still check, don't assume.
+## Next action — Book 3, IMG_6023 (pages 33–34)
+Process **`IMG_6023`** next (continues from 07/06/2024). **Check orientation first** — image
+orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, 6012–6021 were all
+already upright, and **6022 was sideways again (CCW `rotate(90)`)**. Never assume — thumbnail first.
 Quickest check: `Image.open(p).resize((1024,768))` and eyeball
 which way is up; then crop the two pages at high res (the original is ~2048×1536). Transcribe all rows,
 cross-check via the book's "TOTAL THIS PAGE" using `--csv logbook_3.csv`, and surface flags.
-**Time zones can be mixed within one spread** (proved on IMG_6014) — when rows appear to overlap in
-time, suspect a local-vs-UTC mix and ask the user *which rows*, not just whether.
+**Time zones can be mixed within one spread** (proved on IMG_6014, IMG_6018, IMG_6022) — when rows
+appear to overlap or run out of order, suspect a local-vs-UTC mix and ask the user *which rows*, not
+just whether. **On IMG_6022 the answer was a per-aircraft rule** ("all local except OH-GKT and OH-ESR")
+**that still needed a per-row exception** — always walk each day's flight chain for ordering conflicts
+before applying such a rule wholesale.
 **Hybrid-batch pace works well:** transcribe 2–3 spreads/pass, tool-reconcile each, present ONE digest
 that greenlights clean pages and surfaces only flagged rows (student/instructing/night/odd-time/landing
 anomalies) for user sign-off before append. Watch for: SR20 OH-ESR (now a PIC type, flown IFR on
@@ -191,25 +216,28 @@ Then continue IMG_6021…6037 at that pace (each spread is
   on IMG_6019 the pilot wrote "\* 15:04 ←" and that was the only legible source.
 - **Registrations: read the last letter carefully.** `OH-CMU` ≠ `OH-CMV` (both C152, both real).
   `OH-CGX`'s X often looks like a T — there is no OH-CGT.
+- **A C172 logging single-engine IFR is not a misread — `OH-CAM` is IFR-certified** (user, IMG_6021).
+- **`C172sea` in the type column is not a type** — it is the pilot's own informal seaplane marker
+  (from IMG_6022 on). Store plain **`C172`**; the SEP_Sea flag comes from the registration.
+- **Impossible day digits happen.** IMG_6022 row 12 read "34/05/24" → user says **30/05/2024**. Bracket
+  the row by its neighbours' dates and offer the candidates rather than guessing silently.
 - **A night flight's landings may still be written in the DAY column** (IMG_6020 row 15). If the clock
   times make daylight impossible, they're night landings — say so.
-- **Paper-vs-ours drift, refreshed at end of page 28 (05/03/2024 boundary; EASA "TOTAL" bottom-of-page):**
-  book Total **980:56** vs ours **982:21** (**+1:25**, steady since the IMG_6013 running-Total slip — our
-  value correct); book PIC **818:35** vs ours **819:40** (**+1:05** — ⚠ *flipped from −1:25 on IMG_6019*,
-  where the pilot struck his own PIC total 810:09 and carried 807:39, a hand −2:30 correction he doesn't
-  recall the reason for; our per-page Δpic reconciled exactly on both surrounding pages, so ours was kept);
-  book SE-IFR **80:44** vs our Instrument **84:46** (**+4:02**, steady); book Dual **162:21** vs our
-  Student **162:41** (**+0:20**, steady); book Flight-Instructor **101:09** vs ours **99:49** (**−1:20**,
-  steady). Four of five steady across IMG_6019/6020; only PIC moved, by exactly the book's own adjustment.
-  Landings: ours **2577** (day+night) runs ahead of the book's day-only cumulative (see drift.md).
+- **Paper-vs-ours drift, refreshed at end of page 32 (07/06/2024 boundary; EASA "TOTAL" bottom-of-page):**
+  book Total **999:35** vs ours **1001:00** (**+1:25**); book PIC **836:22** vs ours **837:27** (**+1:05**);
+  book SE-IFR **81:53** vs our Instrument **85:55** (**+4:02**); book Dual **163:13** vs our Student
+  **163:33** (**+0:20**); book Flight-Instructor **102:16** vs ours **100:56** (**−1:20**).
+  **All five steady across IMG_6021/6022 — no new divergence.** (The +1:25 dates from the IMG_6013
+  running-Total slip, our value correct; the +1:05 flipped from −1:25 on IMG_6019 where the pilot struck
+  his own PIC total 810:09 → 807:39, a hand −2:30 correction he doesn't recall the reason for.)
+  Landings: ours **2644** (day+night) runs ahead of the book's day-only cumulative (see drift.md).
 - **The book's per-row running-Total column is now unreliable — three separate slips** (p.14 **−1:00**,
   p.21 **−1:52** which the pilot caught and fixed at the page total, p.23 **−0:36**). Its printed
   "TOTAL THIS PAGE" and bottom-line totals are still trustworthy. **Cross-check only on those.**
   **Always cross-check on offset-independent per-page Δ ("TOTAL THIS PAGE"), never absolute totals — and
   note the book's Total column is itself 1:00 low from p.14 on.**
-- **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. **master is pushed &
-  fully up-to-date through IMG_6015 (`d851be5`) as of 2026-07-31 — working tree clean, nothing pending.**
-  (IMG_6016 committed locally on top; push when asked.)
+- **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. **master pushed through
+  IMG_6020 (`1fa9eec`) on 2026-08-01; IMG_6021 (`fcbccb3`) and IMG_6022 committed locally on top.**
   Images/HEIC/zip are gitignored (not pushed). Git identity is now set repo-locally
   (`Rami Ayoub <rami.ayoub@gmail.com>`) — it was missing and blocked a commit.
   Push only when asked.

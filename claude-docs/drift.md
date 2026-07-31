@@ -305,6 +305,54 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
     *flipped from −1:25 by the pilot's −2:30 hand correction on p.26*), Instrument 84:46 (**+4:02**),
     Student 162:41 (**+0:20**), Instructor 99:49 (**−1:20**). Four of five steady; only PIC moved, and
     by exactly the book's own adjustment.
+- **IMG_6021 (pages 29–30, 28/03/2024–04/05/2024) — appended 2026-07-31.** 15 flights, **all UTC (`Z`)**,
+  image **already upright**. **All 4 cross-checks exact, zero block warnings** (Δtotal 9:41 = SE-VFR 8:32
+  + SE-IFR 1:09, Δpic 8:49, Δdual 0:52, Δinstr **nil**). No night, no seaplane, no instructing.
+  - **Two student rows:** 29/04/2024 SR20 **OH-ESR** EFNU→**EFIK**→EFNU (0:28 + 0:24), Dual column,
+    pic_name = **Stude** — his fourth SR20 dual. New airport **EFIK (Kiikala)**.
+  - **⚠ `OH-CAM` (C172) logs 0:25 single-engine IFR** on 30/04 EFTP→EFHV: total 1:01 = 0:36 VFR + 0:25
+    IFR. **User confirms OH-CAM is IFR-certified** — this is not a misread. Recorded in `reference.md`.
+  - **Two inferred block cells,** both pinned by arithmetic and by the page column totals: row 10
+    on-block **05:21** (last digit unreadable, 0:17 logged) and row 13 off/on **16:37 → 17:38** (both
+    cells overwritten/blotted; 1:01 is the only pair consistent with the running total *and* the
+    0:36+0:25 column split). User-confirmed.
+  - **Book bookkeeping detour (nets out, no action):** the pilot carried "TOTAL PREVIOUS PAGES" **1:52
+    low** (979:04 instead of p.28's 980:56), so his per-row running-Total column on this page is 1:52
+    low throughout; he then struck the bottom line 988:45 and wrote **990:37**, which lands exactly on
+    980:56 + 9:41. He likewise struck and rewrote the PIC bottom line as **827:24**. The 1:52 is the
+    same IMG_6017 (p.21) SE-IFR slip he had already corrected once — he undid and redid it here.
+  - Landings page-total cell blank → no paper check; ours sums **31**.
+- **IMG_6022 (pages 31–32, 05/05/2024–07/06/2024) — appended 2026-08-01.** 15 flights.
+  **⚠ ORIENTATION: this image is sideways and needs CCW `rotate(90)`** — 6012–6021 were all upright,
+  so orientation is genuinely per-image. Always thumbnail first. **All 4 cross-checks exact, zero block
+  warnings** (Δtotal 8:58 = all SE-VFR, Δpic 8:58, Δdual nil, Δinstr **1:07**).
+  - **🎉 Crosses 1000 hours** — Cumulative_Total reaches **1000:02** on row 14 (07/06/2024
+    Vääksy→Lietsaari, OH-GKT). Milestone; the user asked for it to be noted.
+  - **⚠ Third mixed-timezone spread, and the rule is BY AIRCRAFT this time.** User: *"all rows are
+    local except OH-GKT and OH-ESR."* Applied — **with one user-confirmed exception**: row 10
+    (26/05 SR20 **OH-ESR** EFNU local 12:20–13:05) is stored **local**, not `Z`. As UTC it becomes
+    15:20–16:05 local and breaks the day's chain — row 11 (OH-PDP EFNU→EFHV 13:40–14:05 local) already
+    flew him home, so he could not depart EFNU at 15:20. Local makes 26/05 read cleanly:
+    EFHV→EFRY→EFNU, SR20 local at Nummela, EFNU→EFHV. So: **rows 1–11 local (no `Z`), rows 12–15
+    (OH-GKT) `Z`.** *Lesson: a per-aircraft timezone rule can still have per-row exceptions — check
+    each day's chain for ordering conflicts before applying it wholesale.*
+  - **Row 12 date corrected:** the book's day digit reads "34" (impossible); user confirms **30/05/2024**.
+    (First answer "30/04" was a slip — 30/04/2024 is fully occupied on p.29–30, including a 16:37–17:38Z
+    row that would overlap this 16:05–17:05 flight.)
+  - **Type `C172sea` is NOT a type.** From this page the book writes `C172sea` for the float C172s —
+    the pilot's own informal seaplane marker (*"my own (bad way) of marking seaplanes"*). **Stored as
+    plain `C172`**; the SEP_Sea flag comes from the registration. Applies to all OH-GKT rows here.
+  - **Float season 2024 opens** on OH-GKT in the Päijänne/Vääksy area. New places **Lieso** and
+    **Lietsaari** (user-confirmed); **Vääksy** already known from Book 2.
+  - **One instructing row:** 05/05 **OH-CAY** EFHV local 1:07 (PIC + Instructor), 4 landings.
+  - **Late-evening rows are day, per the book:** rows 4/5/7 land 20:08 / 19:45 / 20:22 — these are
+    **local** times (see the timezone note), so they are ordinary late-May evening flights, not night.
+  - Landings page-total cell blank → no paper check; ours sums **36**.
+- **Paper-vs-ours drift at 07/06/2024 (end of p.32)** — book bottoms Total **999:35**, SE-VFR 917:42,
+  SE-IFR **81:53**, PIC **836:22**, Dual **163:13**, Flight-Instructor **102:16**. Ours: Total
+  **1001:00** (**+1:25**), Instrument **85:55** (**+4:02**), PIC **837:27** (**+1:05**), Student
+  **163:33** (**+0:20**), Instructor **100:56** (**−1:20**). **All five steady** across IMG_6021/6022 —
+  no new divergence.
 - **Book-3 landing drift now open & growing (day+night vs book's day-only).** At 10/06/2022 our
   Cumulative_Landings = **2172** (day+night). The book's printed day-only cumulative is lower by the running
   night-landing total (3 on 17/12/2021 + 8 on IMG_6010 = 11 so far) plus the ~2-landing IMG_6009 struck-cell
