@@ -2,6 +2,11 @@
 
 Log every correction that alters a row later rows built on. Fix cumulatives from that row forward.
 
+## Intentionally excluded (struck-through) entries
+- **IMG_4921 / 15/10/2018 / C172 OH-CWB / EFHF → EFHF / 12:15–13:12 / 0:57:** this line is
+  **struck through in the paper book** — a wrong entry. It is deliberately **NOT** in
+  `logbook_2.csv`. Do not "recover" it. The paper's own running total skips it (538:19 → 539:04).
+
 ## Confirmed corrections
 - **IMG_4905 / 28/06/2017 / P28A OH-PDP / EFHF → EFHF:** correct total is **00:37**, not 00:36.
   Cumulative Total and PIC corrected +00:01 from that row onward.

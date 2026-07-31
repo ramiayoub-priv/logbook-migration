@@ -16,21 +16,23 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — treat th
 hints at best, not source of truth. See `workflow.md` for the step-by-step.
 
 ## Current checkpoint
-- **Last processed page:** `IMG_4920.jpg` (book pages 44/45), verified & appended 2026-07-31.
-- **Last row in `logbook_2.csv`:** `04/10/2018 · C172 · OH-CTL · Hiidenvesi → Tuusulanjärvi ·
-  13:05–13:40 · Total 0:35 · PIC self · 1 landing`
+- **Last processed page:** `IMG_4921.jpg` (book pages 46/47), verified & appended 2026-07-31.
+  Its 15/10/2018 OH-CWB line was struck through in the book and deliberately excluded (see
+  `drift.md`).
+- **Last row in `logbook_2.csv`:** `28/10/2018 · C172 · OH-CWB · EFHV → EFHF ·
+  13:10–13:40 · Total 0:30 · PIC self · 1 landing`
 - **Cumulative totals at that row:**
-  - Cumulative_Total **535:45**
-  - Cumulative_PIC **442:10**
+  - Cumulative_Total **540:49**
+  - Cumulative_PIC **447:14**
   - Cumulative_Student **93:35**
   - Cumulative_Instrument **3:12**
-  - Cumulative_SEP_Sea **127:28**
-  - Cumulative_Landings **1255**
+  - Cumulative_SEP_Sea **128:09**
+  - Cumulative_Landings **1268**
   - Cumulative_Instructor **7:57**
-- **`logbook_2.csv` has 161 data rows** (+ header).
+- **`logbook_2.csv` has 168 data rows** (+ header).
 
 ## Next action
-Identify and process the next page after 04/10/2018. Confirm the correct next image with the user
+Identify and process the next page after 28/10/2018. Confirm the correct next image with the user
 before transcribing — image file numbers are NOT in chronological order, so always verify the page
 by its dates, not its filename.
 

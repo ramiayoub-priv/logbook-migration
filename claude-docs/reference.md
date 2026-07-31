@@ -7,6 +7,10 @@ pic_name, Landings, Remarks, Cumulative_Total, Cumulative_PIC, Cumulative_Studen
 Cumulative_Instrument, Cumulative_SEP_Sea, Cumulative_Landings, Cumulative_Instructor`
 
 - All values are quoted. Dates are `DD/MM/YYYY`. Times are `H:MM`/`HH:MM`.
+- **Time zone: transcribe times exactly as written in the paper book (a mix of local/UTC).**
+  Do NOT convert while digitizing. A future app (to be built after all logbooks are entered) will
+  normalize everything to UTC. So an apparent clock collision across two rows (e.g. a water landing
+  at 13:40 then an airport departure at 13:55) is usually a local-vs-UTC artifact, not a real error.
 - The **first data row** of `logbook_2.csv` is the final row carried over from
   `logbook_1_final.csv` — the seed for all Book 2 cumulative totals.
 
