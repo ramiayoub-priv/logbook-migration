@@ -139,6 +139,28 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
     **58** (all day) → Cumulative_Landings 2292. SEP_Sea +0:52 (OH-CTL 12/10 Tuusula→EFRY) → 241:16.
   - **All four steady paper-vs-ours deltas unchanged** (SE-IFR +4:02, Dual +0:23, Instructor −1:20,
     Total/PIC ±1:25) — confirms the transcription and that no new book slip crept in on this spread.
+- **IMG_6015 (pages 17–18, 14/02/2023–06/05/2023) — appended 2026-07-31.** 15 flights, all UTC (`Z`).
+  Image **already upright**. **All 3 available cross-checks exact, zero block warnings** (Δtotal 15:17,
+  Δpic 15:17, Δinstr 3:36). No Dual this page. Night +0:37 and SE-IFR +3:10 also tie to the book's own
+  bottom line exactly.
+  - **⚠ BOOK ARITHMETIC SLIP — page SE-VFR total (self-corrected by the pilot, does NOT affect us).**
+    Printed "TOTAL THIS PAGE" SE-VFR reads **12:35**, but the column sums to **12:07**. The book caught
+    it downstream: the SE-VFR cumulative cell is **struck through (`837:55`) and rewritten below as
+    `837:27`** = 825:20 + 12:07. Error confined to that one printed cell; Total/PIC/Night/SE-IFR all
+    reconcile. We don't store SE-VFR, so nothing propagates. (Unrelated to the p.14 running-Total slip.)
+  - **Row 7 = genuine one-way international leg (user-confirmed):** 15/04/2023 SR20 OH-ESR
+    **EFNU → ESNU (Umeå, Sweden)**, 05:45Z–07:45Z, 2:00 with **Instrument 1:50**. No return leg is
+    logged because **someone else flew the aircraft back** — not a missing entry. First Swedish
+    destination in Book 3.
+  - **Row 3 = night VFR (user-confirmed):** 10/03/2023 C172 OH-CGX EFHV local 17:17Z–17:54Z, **Night
+    0:37, no instrument**. Book struck the day-landing cell and wrote **2 in the NIGHT column** →
+    counted as **2** under the day+night convention.
+  - **Instructing (5, user-confirmed PIC + Instructor):** all five 06/05 **Kabböle** OH-CTL seaplane
+    locals (0:35 + 0:50 + 0:48 + 0:43 + 0:40 = 3:36). The 05/05 Räyskälä→Kabböle ferry leg (1:07) is
+    **PIC only**, no instructor time.
+  - **New airport: EFPO (Pori)** — 22/04 SR20 IFR day-return EFNU↔EFPO (0:50 IFR outbound).
+    SEP_Sea +4:43 (OH-CTL ×6) → 245:59. Book left the per-page landings cell blank again → no paper
+    check; ours sums to **58** (56 day + 2 night).
 - **Book-3 landing drift now open & growing (day+night vs book's day-only).** At 10/06/2022 our
   Cumulative_Landings = **2172** (day+night). The book's printed day-only cumulative is lower by the running
   night-landing total (3 on 17/12/2021 + 8 on IMG_6010 = 11 so far) plus the ~2-landing IMG_6009 struck-cell

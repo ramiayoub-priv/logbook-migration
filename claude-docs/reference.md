@@ -85,7 +85,8 @@ Rarer: `OH-TIL, OH-SPH, OH-CTH, OH-CMO`.
 Airports seen: EFHF (Malmi), EFLA (Vesivehmaa), EFHV (Hyvinkää), EFKI, EFNU (Nummela),
 EFHV, EFTU (Turku), EFMA (Mariehamn/Åland), EFHA (Halli), EFJY (Jyväskylä), EFLP (Lappeenranta),
 EFTP (Tampere-Pirkkala), EFRY (Räyskälä — C185 floatplane dep 29/04/2020); Swedish: ESSP (Norrköping)
-— the Aug–Sep 2019 CB-IR cross-countries.
+— the Aug–Sep 2019 CB-IR cross-countries. **Book 3 adds: EFPO (Pori)** and **ESNU (Umeå, Sweden —
+15/04/2023 SR20 IFR one-way; someone else ferried the aircraft back, so no return leg is logged)**.
 Estonian: **EETN** (Tallinn — 31/12/2019 DA40 day-trip, first non-Nordic field).
 Plus lakes for seaplane ops (Tuusulanjärvi, Hiidenvesi, Räyskälä, Gumbostrand, Salonsaari,
 Keilaniemi, Vuosaari, Kelvenne, Kahvisaari).

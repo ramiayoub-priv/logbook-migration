@@ -79,14 +79,23 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
   overwritten; 12:43 + 1:08). **Instructing ×3** (12/10 OH-PDP 1:07; 19/10 OH-CAY 1:08 + 1:09).
   **Student row** 11/02/2023 SR20 OH-ESR EFNU local 0:50, pic_name=**Stude** (second SR20 dual).
   Book left the per-page landings cell blank → no paper check; ours sums to 58.
-- **Last row in `logbook_3.csv`:** `11/02/2023 · SR20 · OH-ESR · EFNU → EFNU ·
-  11:30Z–12:20Z · Total 0:50 · Student 0:50 · pic_name Stude · 4 landings`
+- **Ninth spread done:** `IMG_6015` (pages 17–18), 15 flights **14/02/2023–06/05/2023**, verified &
+  appended 2026-07-31. Image **already upright**. **All 3 available cross-checks exact, zero block
+  warnings** (Δtotal 15:17, Δpic 15:17, Δinstr 3:36); no Dual this page. **Book slip: printed page
+  SE-VFR total 12:35 should be 12:07** — the pilot self-corrected it downstream (struck 837:55 →
+  837:27); we don't store SE-VFR so nothing propagates. **Row 7 = EFNU → ESNU (Umeå, Sweden)**,
+  2:00 / Instrument 1:50 — a genuine one-way leg, **someone else flew the aircraft back** (user-confirmed;
+  not a missing entry). **Night VFR** 10/03 OH-CGX EFHV local 0:37, **2 night landings** (day cell struck).
+  **Instructing ×5** — all five 06/05 **Kabböle** OH-CTL seaplane locals (3:36); the 05/05
+  Räyskälä→Kabböle ferry leg is PIC only. New airport **EFPO (Pori)** — 22/04 SR20 IFR day-return.
+- **Last row in `logbook_3.csv`:** `06/05/2023 · C172 · OH-CTL · Kabböle → Kabböle ·
+  17:28Z–18:08Z · Total 0:40 · PIC 0:40 · Instructor 0:40 · 5 landings`
 - **Cumulative totals at that row (our continuous series, seeded from Book 2):**
-  - Cumulative_Total **897:41** · Cumulative_PIC **738:01** · Cumulative_Student **159:40**
-  - Cumulative_Instrument **74:58** · Cumulative_SEP_Sea **241:16**
-  - Cumulative_Landings **2292** (= day+night; runs ahead of book's day-only count — see drift.md)
-  - Cumulative_Instructor **80:56**
-- **`logbook_3.csv` has 120 data rows** (+ header + seed row = 122 lines).
+  - Cumulative_Total **912:58** · Cumulative_PIC **753:18** · Cumulative_Student **159:40**
+  - Cumulative_Instrument **78:08** · Cumulative_SEP_Sea **245:59**
+  - Cumulative_Landings **2350** (= day+night; runs ahead of book's day-only count — see drift.md)
+  - Cumulative_Instructor **84:32**
+- **`logbook_3.csv` has 135 data rows** (+ header + seed row = 137 lines).
 
 ### Book-3 conventions (locked 2026-07-31 with user)
 - **Same 26-col schema.** EASA→our-schema mapping: **Dual (Oppilas) → Student_Time**;
@@ -103,8 +112,8 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
 - **Tooling:** `logbook_tools.py <batch.json> --csv logbook_3.csv [--append]` (new `--csv` flag targets
   Book 3; defaults to Book 2). Block-vs-total diffs ≤5 min now warn instead of blocking append.
 
-## Next action — Book 3, IMG_6015 (pages 17–18)
-Process **`IMG_6015`** next (continues from 11/02/2023). **Check orientation first** — image
+## Next action — Book 3, IMG_6016 (pages 19–20)
+Process **`IMG_6016`** next (continues from 06/05/2023). **Check orientation first** — image
 orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, but **6012, 6013 and 6014
 were already upright** in the original (no rotation). Quickest check: `Image.open(p).resize((1024,768))` and eyeball
 which way is up; then crop the two pages at high res (the original is ~2048×1536). Transcribe all rows,
@@ -115,20 +124,22 @@ time, suspect a local-vs-UTC mix and ask the user *which rows*, not just whether
 that greenlights clean pages and surfaces only flagged rows (student/instructing/night/odd-time/landing
 anomalies) for user sign-off before append. Watch for: SR20 OH-ESR (now a PIC type), Stude (SR20 instr),
 Sinervä + **Salo** (instructors), night landings, and the day+night landings convention.
-Then continue IMG_6015…6037 at that pace (each spread is
+Then continue IMG_6016…6037 at that pace (each spread is
 ~15 flights — sizeable, so 1–2 spreads per pass is plenty).
-- **Paper-vs-ours drift, refreshed at end of page 16 (11/02/2023 boundary; EASA "TOTAL" bottom-of-page):**
-  book Total **896:16** vs ours **897:41** (**+1:25**, steady since the IMG_6013 running-Total slip — our
-  value correct); book PIC **739:26** vs ours **738:01** (**−1:25**); book SE-IFR **70:56** vs our
-  Instrument **74:58** (**+4:02**, steady); book Dual **159:17** vs our Student **159:40** (**+0:23**, steady);
-  book Flight-Instructor **82:16** vs ours **80:56** (**−1:20**, steady). **All five deltas held exactly
-  across IMG_6014** — strong confirmation of the transcription and that no new book slip crept in.
-  Landings: ours **2292** (day+night) runs ahead of the book's day-only cumulative (see drift.md).
+- **Paper-vs-ours drift, refreshed at end of page 18 (06/05/2023 boundary; EASA "TOTAL" bottom-of-page):**
+  book Total **911:33** vs ours **912:58** (**+1:25**, steady since the IMG_6013 running-Total slip — our
+  value correct); book PIC **754:43** vs ours **753:18** (**−1:25**); book SE-IFR **74:06** vs our
+  Instrument **78:08** (**+4:02**, steady); book Dual **159:17** vs our Student **159:40** (**+0:23**, steady);
+  book Flight-Instructor **85:52** vs ours **84:32** (**−1:20**, steady). **All five deltas have now held
+  exactly across both IMG_6014 and IMG_6015** — strong confirmation of the transcription and that no new
+  book slip has crept into a column we store.
+  Landings: ours **2350** (day+night) runs ahead of the book's day-only cumulative (see drift.md).
   **Always cross-check on offset-independent per-page Δ ("TOTAL THIS PAGE"), never absolute totals — and
   note the book's Total column is itself 1:00 low from p.14 on.**
 - **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. master is pushed &
-  up-to-date through IMG_6013 (`1a3ba5d`) as of 2026-07-31; IMG_6014 appended locally (not yet committed);
-  images/HEIC/zip are gitignored (not pushed).
+  up-to-date through IMG_6014 (`646cf85`) as of 2026-07-31; IMG_6015 appended locally (not yet committed);
+  images/HEIC/zip are gitignored (not pushed). Git identity is now set repo-locally
+  (`Rami Ayoub <rami.ayoub@gmail.com>`) — it was missing and blocked a commit.
   Push only when asked.
 
 ## Conventions locked in this session
