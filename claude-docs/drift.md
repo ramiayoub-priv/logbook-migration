@@ -156,6 +156,72 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
   PIC 557:07, Landings 1661. Ours: Total 699:09 (+25), PIC 556:39 (−28), Landings 1661 (**exact** —
   drift stays closed). Cross-check on per-page Δ only.
 
+## IMG_4943/4944/4945 batch (pages 90–95, 07/06–18/07/2020) — appended 2026-07-31
+- **Notably clean batch.** All page Δ reconciled exactly (total/PIC/student/instructor/landings) and
+  **zero off/on-block vs total flags** — every row's block time equals its logged total.
+- **One student flight.** 15/07/2020 C172 OH-CTL Salonsaari local (1:00, 7 landings) logged under
+  Oppilas ⇒ **Student time**, `pic_name = Sinervä` (user-confirmed 2026-07-31; Sinervä was also the
+  30/04/2019 OH-CTL seaplane-student instructor). Page ΔStudent 1:00 reconciled exactly.
+- **Five instructing flights (PIC + Instructor = Total).** 10/06 OH-CTL Tuusulanjärvi (1:01), 15/06
+  OH-CTL Tuusulanjärvi (1:30), 06/07 OH-CTL Tuusulanjärvi (1:24 — see slip below), 15/07 OH-CTL
+  Salonsaari (1:06), 18/07 OH-CTL Savonlinna→Ruokkee (1:03). Page Δinstr 2:31 / 2:09 reconciled exactly.
+- **06/07/2020 OH-CTL — paper PIC/Opettaja column slip of 4 min.** The row total/block is **1:24**
+  (18:35–19:59, cumulative advances 1:24) but the paper wrote **1:20** in both the Päällikkö and
+  Opettaja columns. Per our instructing rule we recorded Total = PIC = Instructor = **1:24** (block-
+  based). Effect: our Cumulative_PIC gains +4 vs paper's column here — closing the standing PIC gap
+  from −28 to **−24** vs paper. Paper's own Δtotal (6:36) still includes the full 1:24, so Δtotal/Δland
+  reconcile; Δpic/Δinstr were **not** cross-checked on this page (paper's 1:20 columns are non-comparable).
+- **Timezone.** All rows plain **local**. The 15/07 OH-CTL rows 1 & 2 carried a faint `z`-like
+  subscript, but user chose **local** (2026-07-31) — OH-CTL isn't in Aviatron so no UTC confirmation,
+  and the mark is likely stray. Row-1 off-block (15/07) was struck/rewritten; read as **08:41** (gives
+  0:47 with on-block 09:28, matches the logged total).
+- **Place-name reads (user-confirmed 2026-07-31):** 12/06 OH-CTL **Laajasalo→Nurmoo** and
+  **Vesikkas→Virtosalmi** (lakes); 18/07 OH-CTL **Savonlinna→Ruokkee**. New airport codes this batch:
+  **EFNU** (Nummela, 16/07 OH-PDP) and **EFSA** (Savonlinna, 18/07 OH-PDP EFHF→EFSA).
+- **Paper-vs-ours drift at 18/07/2020:** paper printed bottoms Total 720:43, PIC 578:02, Landings 1726.
+  Ours: Total 721:08 (+25), PIC 577:38 (−24), Landings 1726 (**exact** — drift stays closed).
+
+## IMG_4946/4947/4948 batch (pages 96–101, 19/07/2020–08/10/2020) — appended 2026-07-31
+- **All page Δ reconciled exactly** (total/PIC/student/instructor/landings) on all three pages.
+- **New reg OH-TIL (P28A, Aviatron aircraft, IFR Arrow).** First appears 28/07/2020. Not in Aviatron's
+  data until 2021, so no UTC cross-ref for the 2020 rows → all OH-TIL rows kept **plain local**.
+- **28/07/2020 OH-TIL EFHF→EFHF (2:02, 1 land) = STUDENT + instrument 2:02.** Logged under Oppilas
+  (paper Δstudent 2:02 reconciles exactly). Dual instrument checkout on the new OH-TIL; instructor
+  **Lord** (user-confirmed 2026-07-31; user first said Tarhanen, then corrected to **Lord**). The two
+  following OH-TIL rows (05/08 EFKU→EFHF 2:17, 06/08 EFHF→EFHF 2:51) and 21/08 EFHF→EFHF 2:46 are **PIC**
+  (05/08 & 06/08 carry instrument time, 21/08 does not). Page Mittari Δ 7:10 = 2:02+2:17+2:51.
+- **06/08/2020 OH-TIL — 2-min block/total gap (appended deliberately).** Off/on 14:07–17:00 = 2:53
+  block, but logged Lentoaika (and cumulative advance) **2:51**. Kept logged 2:51; off/on recorded as
+  written. Same class as 06/03/2020 OH-NEU & 22/04/2020 OH-PDP. Only block flag this batch — off/on were
+  omitted from the tool run to bypass its block check, then hand-filled into the CSV.
+- **23/09/2020 OH-PIF returns for an IR/SEP proficiency check — three rows, all STUDENT + instrument,
+  all UTC (`Z`, Aviatron-confirmed to the minute).** Page Δstudent 3:09 = Mittari Δ 3:09 reconcile exactly.
+  - **EFLA→EFJY (Aviatron ID 16810):** 07:30–08:25 UTC, 0:55, 1 land, syllabus **KOU MAT** (ferry to EFJY
+    for the check rides), instructor **Kääriäinen** (Antti). `pic_name = Kaariainen`.
+  - **EFJY→EFJY (ID 16813):** 11:10–12:25 UTC, 1:15, 3 land, syllabus **KOU TAR** (tarkastuslento = the
+    check ride), examiner **Aineslahti** (Timo — same examiner as the 03/10/2019 CB-IR skill test).
+    `pic_name = Aineslahti`. Book's Huomautuksia carries a **"SEP(land) (P) Revalid"** examiner endorsement.
+  - **EFJY→EFLA (ID 16819):** 13:18–14:17 UTC, 0:59, syllabus **KOU MAT** (return leg), instructor
+    **Kääriäinen**. ⚠️ Aviatron logs 16819 as **EFLA→EFJY / 1 landing**; **paper wins** — kept
+    **EFJY→EFLA** (geographically the return home) and **3 landings** (page Δland 20 reconciles with 3).
+- **Chronology quirk across the page boundary (kept as written).** Page 98/99 ends with the 23/09 OH-PIF
+  check-ride rows; page 100/101 then runs 11/09–08/10 club/seaplane flights — i.e. the 11/09/15/09/22/09
+  rows are logged *after* 23/09. The pilot recorded the special check-ride trip out of sequence. Row/page
+  order (hence append order) kept as in the book; cumulatives accumulate in that order, unaffected.
+- **20/08/2020 OH-PDP EFHF→EFHF — paper PIC-column slip of +3.** Row total/block/Kokonaisaika = **0:30**
+  (20:15–20:45), but the paper wrote **0:33** in the Päällikkö column. Kept PIC = 0:30. Effect: paper's
+  PIC column now runs +3 further ahead of ours (our vs-paper PIC gap widened −24 → **−27**). The page's
+  d_pic check was therefore omitted (non-comparable); d_total 9:24 + d_student 3:09 + d_land 20 pin the
+  transcription regardless.
+- **Instructing flights (PIC + Instructor = Total) this batch:** 22/09 OH-PDP EFHF→EFHF (1:40, 5 land),
+  24/09 OH-CTL Tuusulanjärvi→EFRY (0:37, 2 land — floatplane instructing), 01/10 OH-PDP EFHF→EFHF (1:22,
+  4 land). Page Δinstructor 3:39 reconciled exactly.
+- **New this batch:** **EFFO** (Forssa — 28/08 OH-PDP EFHF↔EFFO day-return), **OH-TIL** reg, place
+  **Papinniemi** (14/08 OH-CDK arrival, Saimaa lake — user-confirmed 2026-07-31).
+- **Paper-vs-ours drift at 08/10/2020:** paper printed bottoms Total 749:05, PIC 601:16, Mittari 59:30,
+  Instructor 42:07, Landings 1781. Ours: Total 749:30 (+25), PIC 600:49 (−27), Instrument 63:32 (+4:02),
+  Instructor 42:11 (+4), Landings 1781 (**exact** — drift stays closed).
+
 ## Standing discrepancy — paper landing count (RESOLVED 17/04/2020)
 The paper logbook's **cumulative landing count ran ahead of the true count** for most of Books 1–2
 (at the historical IMG_4910 checkpoint paper showed 1051 vs correct 1050, paper +1). **This closed on
