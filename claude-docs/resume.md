@@ -16,32 +16,34 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — treat th
 hints at best, not source of truth. See `workflow.md` for the step-by-step.
 
 ## Current checkpoint
-- **Last processed pages:** `IMG_4934/4935/4936.jpg` (book pages 72–77), verified & appended
-  2026-07-31 as a 3-page hybrid batch. 24 flights, 10/08–27/09/2019 — the tail of the **CB-IR
-  course** (OH-PIF Student/IR, Autere; course completed 27/09) plus OH-PDP/OH-CTL/OH-CDK PIC and two
-  new **instructing** flights. All page Δ cross-checks (total/PIC/student/instructor/landings)
-  reconciled exactly. New airports: **EFJY** (Jyväskylä), **EFLP** (Lappeenranta), **EFTP**
-  (Tampere-Pirkkala). See drift.md for the IMG_4936 pilot correction and the 27.08→27.09 fix.
-- **Timezone (this batch):** all OH-PIF rows + the 10/08 OH-GKT row are **Aviatron-confirmed UTC**
-  and were written **with the `Z` suffix**; OH-PDP/OH-CTL/OH-CDK stay plain (local; one 17/09 OH-PDP
-  row is explicitly marked "LT").
-- **Z backfill DONE (2026-07-31):** added `Z` to the 12 earlier plain OH-PIF rows that were actually
-  UTC — 18/04 (×3), 14/06, 28/06 (×2), 23/07, 01/08 (×2), 02/08 (×3). Eleven were confirmed against
-  Aviatron to the minute; **18/04 05:44–06:35 was inferred** (not in Aviatron, but its two same-day
-  sibling lessons are UTC and 05:44 local = 02:44 UTC is implausibly pre-dawn) — flag for the user if
-  their memory differs. File now has 37 `Z`-marked time cells. Cumulatives unchanged (Z is
-  computation-neutral). See drift.md.
-- **Last row in `logbook_2.csv`:** `27/09/2019 · P28A · OH-PIF · EFLA → EFLA · 14:22Z–15:11Z ·
-  Total 0:49 · Student/IR (Autere) · 1 landing` (CB-IR course completed)
+- **Last processed pages:** `IMG_4937/4938/4939.jpg` (book pages 78–83), verified & appended
+  2026-07-31 as a 3-page hybrid batch. 23 flights, **30/09/2019–17/04/2020**. Contents: the **CB-IR
+  skill test** (03/10/2019, OH-PIF, examiner **Timo Aineslahti** FI.FCL 20163 — CB-IR fully done,
+  OH-PIF era ends here), then a long run of club/DA40/PA28 flying (OH-STL DA40, C152 OH-COF/OH-CRA/
+  OH-NEU/OH-KLS, OH-PDP), incl. two **instructing** flights and one DA40 **student (KOU)** flight.
+  **All page Δ cross-checks (total/PIC/student/instructor/landings) reconciled exactly** on all three
+  pages. New: **EETN** (Tallinn — first Estonian/intl field, 31/12/2019 DA40 day-trip), **OH-NEU**
+  (C152), **Särkijärvi** (seaplane lake). See drift.md for details.
+- **Landing drift CLOSED (2026-07-31):** on IMG_4937 the paper's landing column advanced +12 while
+  its row entries summed to +13; following the rows brought our cumulative to **exactly the paper's
+  printed bottoms** (1542, then 1591). The historical paper **+1 landing lead is now consumed** —
+  our Cumulative_Landings equals the paper's printed count as of 17/04/2020.
+- **First Night_Time in the file:** 26/03/2020 DA40 evening flight, Night 0:50 (no Cumulative_Night
+  column in schema; per-row only).
+- **Timezone (this batch):** only the two 03/10 OH-PIF skill-test rows are UTC (`Z`, Aviatron-
+  confirmed to the minute); everything else (OH-PDP/DA40/C152/C185) is plain local. OH-PIF era is
+  over, so future pages are expected to be all-local unless a new UTC-logged type appears.
+- **Last row in `logbook_2.csv`:** `17/04/2020 · DA40 · OH-STL · EFHF → EFHF · 06:38–08:50 ·
+  Total 2:12 · PIC · instrument 1:00 · 3 landings`
 - **Cumulative totals at that row:**
-  - Cumulative_Total **650:28**
-  - Cumulative_PIC **513:29**
-  - Cumulative_Student **136:59**
-  - Cumulative_Instrument **44:10** (runs +4:02 ahead of paper's Mittari 40:08 — pure seed drift; per-page Δ match)
-  - Cumulative_SEP_Sea **157:25**
-  - Cumulative_Landings **1529**
-  - Cumulative_Instructor **23:22** (matches paper)
-- **`logbook_2.csv` has 286 data rows** (+ header).
+  - Cumulative_Total **675:50**
+  - Cumulative_PIC **535:34**
+  - Cumulative_Student **140:16**
+  - Cumulative_Instrument **49:48**
+  - Cumulative_SEP_Sea **158:10**
+  - Cumulative_Landings **1591** (now equals paper's printed count — drift closed)
+  - Cumulative_Instructor **25:25**
+- **`logbook_2.csv` has 309 data rows** (+ header).
 - **Workflow note:** user approved a **hybrid-batch** pace (2026-07-31) — transcribe several pages
   per pass, auto-cross-check each with `logbook_tools.py`, present a report that greenlights clean
   pages and flags only ambiguous rows for user verification. Not fully autonomous.
@@ -55,15 +57,17 @@ hints at best, not source of truth. See `workflow.md` for the step-by-step.
   IMG_4921 ("pic added +1:20"); our PIC is the more correct figure.
 
 ## Next action
-Process **IMG_4937.jpg** (next spread after 27/09/2019). Hybrid-batch pace is approved at **3 pages
+Process **IMG_4940.jpg** (next spread after 17/04/2020). Hybrid-batch pace is approved at **3 pages
 per pass**: transcribe, cross-check each with `logbook_tools.py`, and surface only flagged rows for
-the user. Use Aviatron cross-ref for OH-PIF/OH-GKT rows (also resolves local-vs-UTC — mark UTC rows
-with `Z`). Confirm each page by its dates (image numbers aren't chronological).
-- **Paper-vs-ours drift, post-IMG_4936 correction:** the pilot's 27.9.2019 "kokonaisaika korjattu"
-  lump-corrected the paper Total column, so it now sits **~5 min AHEAD** of ours (was ~26 behind).
-  PIC and instrument columns still lag ours (seed drift). Always cross-check on offset-independent
+the user. OH-PIF/OH-GKT (Aviatron) rows are unlikely from here (CB-IR done); if a UTC-logged row
+appears, cross-check Aviatron and mark `Z`. Confirm each page by its dates (image numbers aren't
+chronological).
+- **Paper-vs-ours drift:** landings now MATCH the paper's printed count (drift closed 17/04/2020).
+  Total runs ~a few min either side of paper depending on the pilot's lump corrections; PIC ~+0:28
+  and Instrument still run ahead of paper (seed drift). Always cross-check on offset-independent
   per-page Δ, never absolute totals.
-- **Z-backfill of earlier UTC OH-PIF rows is complete** (see checkpoint block above / drift.md).
+- **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. User pushed master
+  (13+ commits) on 2026-07-31; images/HEIC are gitignored (not pushed). Push only when asked.
 
 ## Conventions locked in this session
 - **Zulu times:** keep the `Z` suffix in Off/On block (e.g. `07:56Z`) for UTC-logged rows; plain

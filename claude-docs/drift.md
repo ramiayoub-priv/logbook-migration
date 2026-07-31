@@ -99,10 +99,40 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
   Mittari column (40:08) — accumulated seed drift present since the IMG_4933 checkpoint (paper siirto
   23:05 vs our 27:08). All per-page instrument Δ match the paper's Mittari Δ (2:55 / 5:53 / 8:14).
 
-## Standing discrepancy — paper landing count
-The paper logbook's **cumulative landing count runs ahead of the true count.** At the historical
-IMG_4910 checkpoint the paper showed 1051 but 1050 was correct (paper +1). Treat the paper
-running landing total as suspect; cross-check landing sums on new pages.
+## IMG_4937/4938/4939 batch (pages 78–83, 30/09/2019–17/04/2020) — appended 2026-07-31
+- **CB-IR skill test (03/10/2019, OH-PIF, 2 flights).** Aviatron confirms syllabus "KOU TAR"
+  (tarkastuslento/check-ride), examiner **Timo Aineslahti** (FI.FCL 20163) — *not* Autere. Logged
+  under the paper's Oppilas column ⇒ **Student time** (+ instrument 0:44 / 1:39), `pic_name =
+  Aineslahti`. Both block times match Aviatron **UTC to the minute** (EFHA-EFHA 10:23→11:07, EFHA-
+  EFJY off-block paper 11:12 / Aviatron 11:11 →12:51) ⇒ written **with `Z`**. This closes the CB-IR
+  syllabus; OH-PIF does not recur after this.
+- **IMG_4937 landing column under-add of 1 (paper +1 drift CLOSED).** The page's landing column
+  advances **+12** (Siirto 1530 → bottom 1542) but the 8 row entries sum to **+13** (1,2,2,1,1,4,1,1).
+  Per policy we sum the row entries (13), which puts our Cumulative_Landings at **1542 — exactly the
+  paper's printed bottom**. Because our count had been running 1 *behind* the paper's printed running
+  total (the standing paper +1), this page consumes that lead: **from 17/04/2020 our landings equal
+  the paper's printed count** (batch ends 1591 = paper 1591). The row5/row6 landing split (23/10
+  OH-PDP instructing = 1; 30/10 OH-STL KOU student = 4) is inferred but endpoint-neutral.
+- **Instructing flights (PIC + Instructor).** 23/10/2019 OH-PDP EFHF→EFHF (1:26, 1 landing) and
+  19/12/2019 OH-STL EFTU→EFTU (0:37, 4 landings). Both set Instructor_Time = PIC_Time = Total.
+  Page Δinstructor 1:26 / 0:37 reconciled exactly.
+- **30/10/2019 DA40 OH-STL student flight ("KOU JS").** Logged under Oppilas (0:54, 4 landings) ⇒
+  Student time. `pic_name = Stude` (user-confirmed 2026-07-31; the "JS" in the remark left as-is).
+- **First Night_Time in the file.** 26/03/2020 DA40 OH-STL EFHF→EFHF evening flight: Night 0:50
+  (also instrument 1:05). Schema has no Cumulative_Night, so it is a per-row value only.
+- **06/03/2020 C152 OH-NEU** has a struck duplicate line directly above it in the book (on-block
+  1414 crossed out, rewritten 1416). Kept **one** row; off/on recorded as written (12:41–14:16 = 1:35
+  block vs logged Lentoaika 1:33 — a 2-min taxi-rounding gap, same class as prior accepted rows; the
+  only `logbook_tools.py` block/total flag this batch, appended deliberately).
+- **New this batch:** **EETN** (Tallinn — first Estonian/international field, 31/12/2019 DA40 EFHF↔
+  EETN day-trip), **OH-NEU** (C152 landplane), **Särkijärvi** (seaplane lake, 30/09 C185 OH-CDK).
+
+## Standing discrepancy — paper landing count (RESOLVED 17/04/2020)
+The paper logbook's **cumulative landing count ran ahead of the true count** for most of Books 1–2
+(at the historical IMG_4910 checkpoint paper showed 1051 vs correct 1050, paper +1). **This closed on
+IMG_4937 (2026-07-31):** the paper under-added its own landing column by 1 there, so from 17/04/2020
+our Cumulative_Landings **equals** the paper's printed count (1591). Still cross-check landing sums
+on new pages — a fresh divergence can reopen.
 
 ## Historical checkpoint (superseded — see resume.md for current)
 - After IMG_4910: last row 15/03/2018 C172 OH-CWB EFHF→EFHF total 00:26 PIC self;

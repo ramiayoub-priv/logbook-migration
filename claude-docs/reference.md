@@ -24,7 +24,7 @@ These regs are seaplanes; their `Total_Time` adds to `Cumulative_SEP_Sea`. Pay e
 ## Aircraft registrations seen so far in Book 2
 Common: `OH-PDP` (P28A), `OH-CTL` (C172, seaplane), `OH-GKT` (C172 seaplane, ex-`SE-GKT`,
 now owned by the user; in Aviatron), `OH-CDK`, `OH-CWB` (C172),
-`OH-CAV`, `OH-DBS`, `OH-PAX`. C152: `OH-CRA`, `OH-COF`, `OH-CKO`, `OH-KLS` (all landplanes, appear from Nov 2018).
+`OH-CAV`, `OH-DBS`, `OH-PAX`. C152: `OH-CRA`, `OH-COF`, `OH-CKO`, `OH-KLS`, `OH-NEU` (all landplanes; OH-NEU appears Mar 2020).
 P28A IR trainer: `OH-PIF` (used for CB-IR instrument training from Apr 2019, instructor Autere).
 DA40: `OH-STL` (Diamond DA40, appears Apr 2019).
 C185 floatplane: `OH-CDK` (Cessna 185 on floats, seaplane; Saimaa-lakes trip Jun–Jul 2019).
@@ -56,6 +56,7 @@ Rarer: `OH-TIL, OH-SPH, OH-CTH, OH-CMO`.
 Airports seen: EFHF (Malmi), EFLA (Vesivehmaa), EFHV (Hyvinkää), EFKI, EFNU (Nummela),
 EFHV, EFTU (Turku), EFMA (Mariehamn/Åland), EFHA (Halli), EFJY (Jyväskylä), EFLP (Lappeenranta),
 EFTP (Tampere-Pirkkala); Swedish: ESSP (Norrköping) — the Aug–Sep 2019 CB-IR cross-countries.
+Estonian: **EETN** (Tallinn — 31/12/2019 DA40 day-trip, first non-Nordic field).
 Plus lakes for seaplane ops (Tuusulanjärvi, Hiidenvesi, Räyskälä, Gumbostrand, Salonsaari,
 Keilaniemi, Vuosaari, Kelvenne, Kahvisaari).
 Finnish regs are `OH-xxx`. **Flag anything that breaks this pattern** (e.g. `OK-PDP` is almost
