@@ -161,7 +161,7 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
 
 ## Next action — Book 3, IMG_6021 (pages 29–30)
 Process **`IMG_6021`** next (continues from 05/03/2024). **Check orientation first** — image
-orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, but **6012–6015 have all
+orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, but **6012–6020 have all
 been already upright** in the original (no rotation) — still check, don't assume.
 Quickest check: `Image.open(p).resize((1024,768))` and eyeball
 which way is up; then crop the two pages at high res (the original is ~2048×1536). Transcribe all rows,
@@ -172,13 +172,27 @@ time, suspect a local-vs-UTC mix and ask the user *which rows*, not just whether
 that greenlights clean pages and surfaces only flagged rows (student/instructing/night/odd-time/landing
 anomalies) for user sign-off before append. Watch for: SR20 OH-ESR (now a PIC type, flown IFR on
 cross-countries), Stude (SR20 instr), Sinervä + **Salo** (instructors), night landings, and the day+night
-landings convention. **May 2023 onward the pilot is float-instructing at Kabböle on OH-CTL** — expect
-clusters of short seaplane locals with high landing counts, logged PIC + Instructor.
+landings convention. **Seasonality:** May–Sep the pilot float-instructs (Kabböle/Tuusulanjärvi/Kahvisaari
+on OH-CTL/OH-GKT/OH-MIL) — clusters of short lake locals with high landing counts, logged PIC +
+Instructor; **Oct–Mar it switches to EFHV landplane circuits** (OH-CGX/OH-CAY/OH-AWB/OH-CMU) with
+night flights. From 05/03/2024 we are at the start of a new float season.
 Then continue IMG_6021…6037 at that pace (each spread is
 ~15 flights — sizeable, so 1–2 spreads per pass is plenty).
-**When a block time doesn't match the logged flight time, do NOT assume which cell is wrong** — on
-IMG_6016 one row's off-block was correct and one row's on-block was correct, and guessing would have
-gotten one of them backwards. Present both readings and let the user pick.
+
+### Hard-won reading lessons (all cost a round-trip; don't relearn them)
+- **When a block time doesn't match the logged flight time, do NOT assume which cell is wrong.** On
+  IMG_6016 one row's off-block was correct and one row's on-block was correct — guessing would have
+  gotten one backwards. Present both readings and let the user pick.
+- **Check every row for a strike-through before transcribing.** IMG_6019 row 2 was ruled through and
+  was a *duplicate of the previous spread's last row*. The page total only reconciles with it excluded.
+- **The book's per-row running-Total column is unreliable** (four slips so far: p.14 −1:00, p.21 −1:52,
+  p.23 −0:36, p.26 PIC −2:30). Its **"TOTAL THIS PAGE"** and bottom-line totals are still good.
+  **Cross-check only on those.** When a total cell is scribbled illegible, look for a **margin note** —
+  on IMG_6019 the pilot wrote "\* 15:04 ←" and that was the only legible source.
+- **Registrations: read the last letter carefully.** `OH-CMU` ≠ `OH-CMV` (both C152, both real).
+  `OH-CGX`'s X often looks like a T — there is no OH-CGT.
+- **A night flight's landings may still be written in the DAY column** (IMG_6020 row 15). If the clock
+  times make daylight impossible, they're night landings — say so.
 - **Paper-vs-ours drift, refreshed at end of page 28 (05/03/2024 boundary; EASA "TOTAL" bottom-of-page):**
   book Total **980:56** vs ours **982:21** (**+1:25**, steady since the IMG_6013 running-Total slip — our
   value correct); book PIC **818:35** vs ours **819:40** (**+1:05** — ⚠ *flipped from −1:25 on IMG_6019*,
