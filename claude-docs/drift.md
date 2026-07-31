@@ -222,6 +222,29 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
   Instructor 42:07, Landings 1781. Ours: Total 749:30 (+25), PIC 600:49 (−27), Instrument 63:32 (+4:02),
   Instructor 42:11 (+4), Landings 1781 (**exact** — drift stays closed).
 
+## IMG_4949/4950/4951 batch (pages 102–107, 13/10/2020–07/05/2021) — appended 2026-07-31
+- **Crosses into 2021.** Book has no year on page 102; 13/10–28/12 are 2020, 20/01 onward 2021
+  (page 104 prints "2021"). 24 flights, all page Δ (total/PIC/student/landings) reconciled exactly.
+- **UTC rows (user-confirmed):** the two **18/04/2021 C172 OH-COK** ferry legs are UTC → `Z`
+  (07:25Z→08:38Z EFIM→EFPR, 10:54Z→12:04Z EFPR→EFIM). The book logged them **out of order with two
+  arrows** marking the swap; user confirmed the correct order is by time. Reordered on append. The two
+  C185 OH-CDK float rows between them stay **local** (clock overlap with the OH-COK legs is the expected
+  local-vs-UTC artifact, not an error). OH-COK is a landplane C172, not in Aviatron — UTC per pilot's log.
+- **Student flights (2):** 18/04/2021 **C185 OH-CDK** EFIM locals, 0:59 + 0:28, instructor **Matikainen**
+  (signature + "FI.RCL2234" in remarks — a SEP-sea class-rating check). Student_Time; feeds Cumulative_
+  Student (+1:27) and Cumulative_SEP_Sea (+1:27, OH-CDK seaplane). pic_name = Matikainen.
+- **11/02/2021 DA40 OH-STL** night flight (EFHF local, 17:27–19:40): **PIC self**, Total 2:13,
+  **Instrument 1:36 + Night 1:55**. User-confirmed instrument < PIC because part of the flight was VFR
+  (and part was not night). Only instrument row this batch (+1:36 → Cumulative_Instrument 65:08).
+- **28/12/2020 DA40 OH-STL** (EFHF local): off-block cell had a struck-through correction; used **off
+  10:30 / on 11:31** (Total 1:01, confirmed by the cumulative Δ). Type handwritten "D140" = the DA40.
+- **New this batch:** reg **OH-COK** (C172, user flew it briefly 2021/2022), **DA40 OH-STL** recurring,
+  airports **EFPR** and **EFIM** (Immola — Saimaa-region float base).
+- **Paper-vs-ours drift at 07/05/2021:** paper printed bottoms Total 772:12, PIC 622:56, Mittari 61:06,
+  Oppilas 149:45, Instructor 42:07, Landings 1843. Ours: Total 772:37 (+25), PIC 622:29 (−27),
+  Instrument 65:08 (+4:02), Student 150:08 (+0:23), Instructor 42:11 (+4), Landings 1843 (**exact** —
+  drift stays closed).
+
 ## Standing discrepancy — paper landing count (RESOLVED 17/04/2020)
 The paper logbook's **cumulative landing count ran ahead of the true count** for most of Books 1–2
 (at the historical IMG_4910 checkpoint paper showed 1051 vs correct 1050, paper +1). **This closed on

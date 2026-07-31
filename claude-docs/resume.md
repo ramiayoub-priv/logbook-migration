@@ -16,29 +16,30 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — treat th
 hints at best, not source of truth. See `workflow.md` for the step-by-step.
 
 ## Current checkpoint
-- **Last processed pages:** `IMG_4946/4947/4948.jpg` (book pages 96–101), verified & appended
-  2026-07-31 as a 3-page hybrid batch. 24 flights, **19/07/2020–08/10/2020**. Contents: club **OH-PDP
-  P28A** hops (EFHF/EFSA/EFHV/EFFO), a new **OH-TIL P28A** (Aviatron aircraft, IFR-capable Arrow) run
-  of instrument flights (28/07 dual checkout + 05/08 & 06/08 & 21/08 PIC instrument), **OH-CDK C185
-  floatplane** Saimaa (Salonsaari/Hillosensalmi/Papinniemi), **OH-CTL C172 seaplane** Tuusulanjärvi
-  locals + EFRY, and **OH-PIF P28A** returning 23/09 for an **IR/SEP proficiency check** at EFJY.
-  **All page Δ reconciled exactly** (total/PIC/student/instructor/landings). Two student flights, three
-  instructing flights (22/09 OH-PDP 1:40, 24/09 OH-CTL 0:37, 01/10 OH-PDP 1:22). New: **EFFO** (Forssa),
-  **OH-TIL** reg, place **Papinniemi**. See drift.md.
-- **Landing drift still CLOSED:** our Cumulative_Landings **= paper's printed count** (1781 at 08/10/2020).
-- **Timezone (this batch):** club/seaplane rows plain local; the three **23/09 OH-PIF** rows are **UTC →
-  `Z`** (Aviatron-confirmed to the minute). OH-TIL rows plain local (OH-TIL not in Aviatron until 2021).
-- **Last row in `logbook_2.csv`:** `08/10/2020 · P28A · OH-PDP · EFHF → EFHF · 17:00–17:37 ·
-  Total 0:37 · PIC 0:37 · 1 landing`
+- **Last processed pages:** `IMG_4949/4950/4951.jpg` (book pages 102–107), verified & appended
+  2026-07-31 as a 3-page hybrid batch. 24 flights, **13/10/2020–07/05/2021** (crosses into 2021).
+  Contents: club **OH-PDP P28A** hops (EFHF/EFHV/EFLA), a **07/12/2020 OH-TIL P28A** night flight,
+  a new **DA40 OH-STL** night-IFR flight (11/02/2021: instrument 1:36 + night 1:55), C152 club flying
+  (**OH-COF**, **OH-CRA** at EFNU), a new **C172 OH-COK** at **EFPR**, and an **18/04/2021 float trip
+  to EFIM (Immola)**: two OH-COK ferry legs (UTC) + two **C185 OH-CDK seaplane student** flights
+  (instructor **Matikainen**, SEP-sea class-rating check, "FI.RCL2234").
+  **All page Δ reconciled exactly** (total/PIC/student/landings). Two student flights, no instructing.
+  New: **OH-COK** (C172), **DA40 OH-STL** recurring, airports **EFPR** and **EFIM** (Immola). See drift.md.
+- **Landing drift still CLOSED:** our Cumulative_Landings **= paper's printed count** (1843 at 07/05/2021).
+- **Timezone (this batch):** all rows plain local **except** the two **18/04/2021 OH-COK** ferry legs,
+  which the user confirmed are **UTC → `Z`** (07:25Z→08:38Z EFIM→EFPR, 10:54Z→12:04Z EFPR→EFIM; the
+  book had them in the wrong order with two arrows — reordered by time). C185 float rows stay local.
+- **Last row in `logbook_2.csv`:** `07/05/2021 · P28A · OH-PDP · EFHV → EFHV · 20:05–20:32 ·
+  Total 0:27 · PIC 0:27 · 1 landing`
 - **Cumulative totals at that row:**
-  - Cumulative_Total **749:30**
-  - Cumulative_PIC **600:49**
-  - Cumulative_Student **148:41**
-  - Cumulative_Instrument **63:32** (+10:19 this batch: OH-TIL 7:10 + OH-PIF 3:09)
-  - Cumulative_SEP_Sea **190:32**
-  - Cumulative_Landings **1781** (equals paper's printed count — drift closed)
-  - Cumulative_Instructor **42:11**
-- **`logbook_2.csv` has 381 data rows** (+ header).
+  - Cumulative_Total **772:37**
+  - Cumulative_PIC **622:29**
+  - Cumulative_Student **150:08** (+1:27 this batch: two OH-CDK student flights)
+  - Cumulative_Instrument **65:08** (+1:36 this batch: 11/02/2021 DA40 OH-STL night-IFR)
+  - Cumulative_SEP_Sea **191:59** (+1:27 this batch: OH-CDK 0:59 + 0:28)
+  - Cumulative_Landings **1843** (equals paper's printed count — drift closed)
+  - Cumulative_Instructor **42:11** (unchanged — no instructing this batch)
+- **`logbook_2.csv` has 405 data rows** (+ header).
 - **Workflow note:** user approved a **hybrid-batch** pace (2026-07-31) — transcribe several pages
   per pass, auto-cross-check each with `logbook_tools.py`, present a report that greenlights clean
   pages and flags only ambiguous rows for user verification. Not fully autonomous.
@@ -52,16 +53,16 @@ hints at best, not source of truth. See `workflow.md` for the step-by-step.
   IMG_4921 ("pic added +1:20"); our PIC is the more correct figure.
 
 ## Next action
-Process **IMG_4949.jpg** (next spread after 08/10/2020). Hybrid-batch pace is approved at **3 pages
+Process **IMG_4952.jpg** (next spread after 07/05/2021). Hybrid-batch pace is approved at **3 pages
 per pass**: transcribe, cross-check each with `logbook_tools.py`, and surface only flagged rows for
-the user. If a UTC-logged OH-PIF/OH-GKT/OH-TIL row appears, cross-check Aviatron and mark `Z`.
-Confirm each page by its dates (image numbers aren't chronological — note the 23/09 OH-PIF rows sat
-on page 98/99 *before* the 11/09–08/10 club rows on page 100/101).
-- **Paper-vs-ours drift (at 08/10/2020):** landings MATCH paper's printed count (1781, drift closed
-  17/04/2020). Total runs **+25** ahead of paper (749:05 printed → ours 749:30; seed residue). PIC runs
-  **−27** vs paper's column (paper 601:16; the gap widened 3 min from the 20/08 paper PIC slip below).
-  Instrument runs **+4:02** ahead of paper's Mittari (59:30 printed; steady seed drift). Instructor runs
-  **+4** ahead (paper 42:07). Always cross-check on offset-independent per-page Δ, never absolute totals.
+the user. If a UTC-logged OH-PIF/OH-GKT/OH-TIL/OH-COK row appears, cross-check Aviatron and mark `Z`.
+Confirm each page by its dates (image numbers aren't chronological).
+- **Paper-vs-ours drift (at 07/05/2021):** landings MATCH paper's printed count (1843, drift closed
+  17/04/2020). Total runs **+25** ahead of paper (772:12 printed → ours 772:37; seed residue). PIC runs
+  **−27** vs paper's column (paper 622:56). Instrument runs **+4:02** ahead of paper's Mittari (61:06
+  printed; steady seed drift). Instructor runs **+4** ahead (paper 42:07). Student runs **+0:23**
+  ahead of paper's Oppilas column (149:45 printed → ours 150:08; the long-standing IMG_4925 slip).
+  Always cross-check on offset-independent per-page Δ, never absolute totals.
 - **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. User pushed master
   (13+ commits) on 2026-07-31; images/HEIC are gitignored (not pushed). Push only when asked.
 
