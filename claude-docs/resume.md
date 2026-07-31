@@ -16,19 +16,20 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — treat th
 hints at best, not source of truth. See `workflow.md` for the step-by-step.
 
 ## Current checkpoint
-- **Last processed page:** `IMG_4922.jpg` (book pages 48/49), verified & appended 2026-07-31.
-  Dates roll into 2019; new C152 regs OH-CRA / OH-COF appear.
-- **Last row in `logbook_2.csv`:** `20/01/2019 · C172 · OH-CWB · EFHF → EFHF ·
-  10:52–11:58 · Total 1:06 · PIC self · 3 landings`
+- **Last processed page:** `IMG_4923.jpg` (book pages 50/51), verified & appended 2026-07-31.
+- **Last row in `logbook_2.csv`:** `03/04/2019 · P28A · OH-PDP · EFHF → EFHV ·
+  13:06–13:26 · Total 0:20 · PIC self · 2 landings`
 - **Cumulative totals at that row:**
-  - Cumulative_Total **547:15**
-  - Cumulative_PIC **453:40**
+  - Cumulative_Total **553:53**
+  - Cumulative_PIC **460:18**
   - Cumulative_Student **93:35**
   - Cumulative_Instrument **3:12**
   - Cumulative_SEP_Sea **128:09**
-  - Cumulative_Landings **1280**
+  - Cumulative_Landings **1298**
   - Cumulative_Instructor **7:57**
-- **`logbook_2.csv` has 176 data rows** (+ header).
+- **`logbook_2.csv` has 184 data rows** (+ header).
+- **PIC vs paper:** our Cumulative_PIC runs **+2:39** ahead of the paper's written value (old +1:19
+  seed drift plus the 1:20 the paper omitted on IMG_4921). Consistent, carries forward.
 - **PIC vs paper:** our Cumulative_PIC runs **+2:39** ahead of the paper's written value (old +1:19
   seed drift plus the 1:20 the paper omitted on IMG_4921). Consistent, carries forward.
 
