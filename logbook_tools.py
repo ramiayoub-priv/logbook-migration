@@ -43,8 +43,12 @@ def m(s):
 
 def fmt(x): return f'{x // 60}:{x % 60:02d}'
 
+def clock(s):
+    """Parse a clock time that may carry a 'Z' (Zulu/UTC) suffix, e.g. '07:56Z'."""
+    return m((s or '').rstrip('Zz'))
+
 def diff_hhmm(off, on):
-    d = m(on) - m(off)
+    d = clock(on) - clock(off)
     return d + 24 * 60 if d < 0 else d   # tolerate midnight wrap
 
 def main():

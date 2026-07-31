@@ -16,27 +16,34 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — treat th
 hints at best, not source of truth. See `workflow.md` for the step-by-step.
 
 ## Current checkpoint
-- **Last processed page:** `IMG_4923.jpg` (book pages 50/51), verified & appended 2026-07-31.
-- **Last row in `logbook_2.csv`:** `03/04/2019 · P28A · OH-PDP · EFHF → EFHV ·
-  13:06–13:26 · Total 0:20 · PIC self · 2 landings`
+- **Last processed page:** `IMG_4924.jpg` (book pages 52/53), verified & appended 2026-07-31.
+  First training page: IR flights with pilot as student (OH-PIF, instructor **Autere**), Zulu times.
+- **Last row in `logbook_2.csv`:** `12/04/2019 · P28A · OH-PDP · EFHF → EFPR ·
+  09:11Z–09:55Z · Total 0:44 · PIC self · 1 landing`
 - **Cumulative totals at that row:**
-  - Cumulative_Total **553:53**
-  - Cumulative_PIC **460:18**
-  - Cumulative_Student **93:35**
-  - Cumulative_Instrument **3:12**
+  - Cumulative_Total **559:53**
+  - Cumulative_PIC **464:10**
+  - Cumulative_Student **95:43**
+  - Cumulative_Instrument **5:20**  ← first change since 3:12 (IR training instrument time)
   - Cumulative_SEP_Sea **128:09**
-  - Cumulative_Landings **1298**
-  - Cumulative_Instructor **9:17**  ← corrected 2026-07-31 (was 7:57; see drift.md)
-- **`logbook_2.csv` has 184 data rows** (+ header).
+  - Cumulative_Landings **1307**
+  - Cumulative_Instructor **9:17**
+- **`logbook_2.csv` has 192 data rows** (+ header).
 - **PIC vs paper:** our Cumulative_PIC runs **+1:19** ahead of the paper's *corrected* value (pure
   seed drift). The paper's *written* PIC is a further 1:20 low from an arithmetic slip it flags on
   IMG_4921 ("pic added +1:20"); our PIC is the more correct figure.
 
 ## Next action
-Process **IMG_4924.jpg** (pages 52/53) — the training section starts here: IR-training flights
-where the pilot is the **student** (Student_Time + pic_name = instructor, PIC blank), instructing
-flights (PIC **and** Instructor both filled), Zulu times, and strike-throughs. Do these **one page
-at a time** with explicit user classification; batching resumes once pages are clean PIC.
+Process **IMG_4925.jpg** (pages 54/55) — still in the training section: DA40 (OH-SIL/OH-STL)
+appears, more IR/student flights, seaplane lake ops, and **strike-throughs**. Do these **one page at
+a time** with explicit user classification; batching resumes once pages are clean PIC.
+
+## Conventions locked in this session
+- **Zulu times:** keep the `Z` suffix in Off/On block (e.g. `07:56Z`) for UTC-logged rows; plain
+  `HH:MM` for local. Preserves which rows the future app must NOT re-convert.
+- **IR instructor:** `Autere` (pilot flew as student in OH-PIF for the CB-IR rating).
+- **Batch helper:** `logbook_tools.py <batch.json> [--append]` computes cumulatives + cross-checks
+  each page against the paper's Δtotal/Δpic/Δlandings before writing. Use it for every page.
 
 > Note: the old ollama output in `logbook-2-csv/` shows obvious OCR errors (e.g. a date
 > "41/09/2018" and reg "OK-PDP" in `logbook_IMG_4920.csv`) — exactly why we now transcribe with

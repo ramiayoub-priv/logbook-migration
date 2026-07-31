@@ -11,6 +11,9 @@ Cumulative_Instrument, Cumulative_SEP_Sea, Cumulative_Landings, Cumulative_Instr
   Do NOT convert while digitizing. A future app (to be built after all logbooks are entered) will
   normalize everything to UTC. So an apparent clock collision across two rows (e.g. a water landing
   at 13:40 then an airport departure at 13:55) is usually a local-vs-UTC artifact, not a real error.
+  - **Zulu rows:** when the book writes a time with a `Z`/`z` (UTC), keep the **`Z` suffix** in
+    `Off_Block`/`On_Block` (e.g. `07:56Z`). Local rows stay plain `HH:MM`. This is how the app tells
+    already-UTC rows apart from local ones. `logbook_tools.py` handles the `Z` suffix.
 - The **first data row** of `logbook_2.csv` is the final row carried over from
   `logbook_1_final.csv` — the seed for all Book 2 cumulative totals.
 
@@ -21,6 +24,7 @@ These regs are seaplanes; their `Total_Time` adds to `Cumulative_SEP_Sea`. Pay e
 ## Aircraft registrations seen so far in Book 2
 Common: `OH-PDP` (P28A), `OH-CTL` (C172, seaplane), `OH-GKT`, `OH-CDK`, `OH-CWB` (C172),
 `OH-CAV`, `OH-DBS`, `OH-PAX`. C152: `OH-CRA`, `OH-COF`, `OH-CKO`, `OH-KLS` (all landplanes, appear from Nov 2018).
+P28A IR trainer: `OH-PIF` (used for CB-IR instrument training from Apr 2019, instructor Autere).
 Rarer: `OH-TIL, OH-SPH, OH-CTH, OH-CMO`.
 Airports seen: EFHF (Malmi), EFLA (Vesivehmaa), EFHV (Hyvinkää), EFKI, EFNU (Nummela),
 EFHV; plus lakes for seaplane ops (Tuusulanjärvi, Hiidenvesi, Räyskälä, Gumbostrand).
