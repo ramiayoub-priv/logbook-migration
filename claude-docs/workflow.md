@@ -1,0 +1,43 @@
+# Workflow — Processing One Page
+
+Work **one page at a time, with the user**. Never batch-process future pages.
+
+## Steps
+1. **Confirm the page.** With the user, identify the next unprocessed page by its *dates*, not
+   its image filename (filenames are not chronological). Images are in `logbook-2/IMG_XXXX.jpg`.
+   If only a `.HEIC` exists, convert with `convert_heic_to_jpg.py` first.
+2. **Transcribe.** Claude reads the JPG directly and extracts every flight row: Date, Aircraft
+   Type, Reg, Departure, Arrival, Off/On block, Takeoff/Landing, times, PIC/Student/Instructor
+   time, pic_name, Landings, Remarks.
+3. **Present for verification.** Show the transcribed rows to the user. **Do not append until the
+   user confirms.** The user verifies against the paper book / image.
+4. **Sanity-check before appending** (report discrepancies, don't silently fix):
+   - On-block − off-block should ≈ Block_Time ≈ Total_Time. Flag mismatches.
+   - Watch aircraft registrations — flag anything outside the known set (`reference.md`).
+   - Flag OCR-style oddities (impossible dates, transposed reg letters).
+5. **Append & recompute.** Append verified rows to `logbook_2.csv` and recompute the cumulative
+   columns from the last existing row (per-image cumulative values, if any, are placeholders).
+
+## PIC vs Student default
+- **Default: every appended row is PIC time.**
+- Treat a row as **student time only when the user explicitly** gives the row and says it is
+  student time, plus the non-self PIC name. Never infer student time from blanks or names.
+
+## Cumulative recompute rules
+Seed each run from the **last row already in `logbook_2.csv`**, then per new row:
+- `Cumulative_Total` += `Total_Time`
+- `Cumulative_PIC` += `PIC_Time`; if `PIC_Time` is blank, treat the row as PIC and add
+  `Total_Time` — **unless** the user explicitly marked it student time.
+- `Cumulative_Student` += `Student_Time` (only for rows the user explicitly marked student).
+- `Cumulative_Instrument` += `Instrument_Time`
+- `Cumulative_Instructor` += `Instructor_Time`
+- `Cumulative_SEP_Sea`: carry forward, **plus** `Total_Time` when the reg is a seaplane
+  (see `reference.md` for the seaplane reg list).
+- `Cumulative_Landings` += `Landings`
+
+Times are `H:MM` / `HH:MM` (60-minute carry). Add as minutes, then reformat.
+
+## After appending
+- If a correction changes a row that later rows already built on, record it in `drift.md` and
+  fix cumulatives from that row forward.
+- Update the checkpoint block in `resume.md` (last row + all cumulative totals + row count).
