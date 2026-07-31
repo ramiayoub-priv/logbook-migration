@@ -91,6 +91,14 @@ rather than trying to fetch it. Never touch the site's add/edit/delete endpoints
   flag discrepancies to the user, don't silently rewrite.
 - **42 of its rows postdate 21/07/2024**, so it is a *forward* cross-check for the pages still to do
   (IMG_6026 onward) — but only for the club regs listed above.
+- ⚠⚠ **INCOMPLETE — absence proves nothing.** Established 2026-08-01 on IMG_6026/6027: the file has
+  **zero rows** for 06.08.2024 and 14.08.2024 although both days flew (the user pasted full records
+  from the live site). It holds **7** rows across Jul–Sep 2024 where the paper has ~20 OH-CTL legs,
+  and the 20/08 Hiidenvesi **return** leg is missing while the outbound is present. Never conclude a
+  flight didn't happen, or that a paper row is wrong, because this file lacks it.
+- ⚠ **It never carries names.** `Opettaja`/`Oppilas` are a `1`/`0` flag in all 128 rows. **The live
+  laskukierros view shows instructor + pupil names and per-leg takeoff/landing times** — a fuller
+  re-export from there would cover far more of Book 3. Ask the user for one.
 
 ## Aviatron.pdf — electronic cross-reference (NOT the source of truth)
 `Aviatron.pdf` (repo root, tracked) is an electronic-logbook export of the **Blue Skies aviation
@@ -117,8 +125,13 @@ off/on-block, landings, syllabus codes (`CB-IR/n`), instructor (PIC column), stu
 - **Tarhanen** — PIC on the pilot's IR-revalidation student rows (20/09/2021 OH-TIL, 10/08/2022 OH-PIF).
 - **Salo** — instructor on the 05/07/2022 OH-TIL P28A dual row (IMG_6012).
 - **Ignaty Romanov-Chernigovsky** — a *student* of the pilot's (Oppilas) on the OH-CTL Tuusulanjärvi
-  seaplane instruction, e.g. 01/07/2024 (IMG_6024). Not stored in the CSV: on instructing rows
-  `pic_name` stays `self`. Recorded here only as context for who the summer-2024 float pupils were.
+  seaplane instruction, e.g. 01/07/2024 (IMG_6024) and 06/08/2024 (IMG_6026). Not stored in the CSV:
+  on instructing rows `pic_name` stays `self`. Recorded here only as context for who the pupils were.
+- **Other summer-2024 float pupils** (Oppilas; same convention — not stored, context only):
+  **Tommi Nirkkonen** (28/07 + three 06/08 OH-CTL legs), **Ilkka Korkiakoski** (14/08 OH-CTL),
+  **Ivan Siragusa** (19/09 OH-GKT Vääksy→Kahvisaari).
+- **Tarhanen** also examines the **02/08/2024** SR20 OH-ESR IR revalidation (IMG_6026 row 9, remark
+  `(TAR)`) — a third Tarhanen student row.
 
 ## ⚠ `LT` subscripts in Book 3 — present but NOT applied consistently
 From IMG_6024 the pilot writes a tiny **`LT`** subscript beside some off/on-block minute cells

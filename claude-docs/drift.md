@@ -409,6 +409,63 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
   night-landing total (3 on 17/12/2021 + 8 on IMG_6010 = 11 so far) plus the ~2-landing IMG_6009 struck-cell
   slip. Cross-check on per-page Δland (day+night sum) only; do not expect our cumulative to equal the book's.
 
+## IMG_6026/6027 batch (pages 39–42, 21/07/2024–19/09/2024) — appended 2026-08-01
+Both spreads **sideways** (CCW `rotate(90)`), no `LT` subscripts anywhere. **All cross-checks exact**
+(6026: Δtotal 18:33 / Δpic 16:51 / Δstudent 1:42 / Δinstr 7:21; 6027: Δtotal 12:22 / Δpic 12:22 /
+Δinstr **7:41**, see below). Landings cells blank on both → ours sum **34** and **61**.
+
+- **⚠ TIME ZONES: back to UTC after two all-local spreads.** All 30 rows stored with `Z`. Proved on
+  five independent rows, each exactly **+3h** to the electronic local time — and one of them,
+  19/09/2024 OH-GKT, matched an **Aviatron row stamped `14:04:00 UTC`, digit-for-digit with the paper
+  cell**. That is the strongest zone evidence we have had; it is not an inference. Confirms once more
+  that the zone flips **per spread** (6024/6025 local → 6026/6027 UTC) and must be re-established
+  every time.
+- **⚠ Book's Flight-Instructor page total on p.42 is 3 min high (7:44 vs true 7:41).** Row 7
+  (30/08/2024 OH-MIL Tuusulanjärvi→Lohja) is written **0:44** in SE-VFR, PIC *and* Flight Instructor,
+  but the block cells (`08:44→09:25`), the running-Total column (+41) and **both** page totals
+  (12:22) all require **0:41**. User confirmed **0:41**. Only the FI page total needs 44 → the book's
+  own addition slipped. **Our Instructor drift therefore moves −1:20 → −1:23.**
+- **Row 7 pilot-name cell:** `SINERVÄ` is **struck through** over `Ayoub`. User confirms **PIC is
+  Ayoub** — this is an instructing row (PIC + FI), *not* a Maule dual like 24/08/2023. Don't let the
+  Sinervä name pull it into Student_Time.
+- **Student row (6026 row 9):** 02/08/2024 SR20 OH-ESR EFNU→EFHV **1:42**, book logs Dual + SE-IFR,
+  remark `(TAR)` → **Tarhanen**, another IR revalidation. `Student_Time 1:42` + `Instrument_Time 1:42`,
+  `pic_name = Tarhanen`.
+
+### Three inferred block cells (logged flight time authoritative in all three)
+| row | book cells | stored | basis |
+|---|---|---|---|
+| 6026 r14 · 06/08 Tuusulanjärvi→Haikko 0:37 | `16:16 → 16:48` | on-block **16:53** | electronic record `19:16→19:53` local, block 37 |
+| 6027 r3 · 14/08 Tuusulanjärvi local 1:15 | `15:35 → 17:50` | on-block **16:50** | electronic record `18:35→19:50` local, block 75 |
+| 6027 r6 · 20/08 Hiidenvesi→Tuusulanjärvi 0:56 | `16:59 → 17:50` | on-block **17:55** | electronic record `19:59→20:55` local, block 56 |
+- ⚠ **I initially proposed off-block `16:11` for the Haikko row and the user picked it; the electronic
+  record then proved the off-block `16:16` was right and the *on-block* was the bad cell.** **All three**
+  resolved rows turned out to be **on-block** errors, not off-block. *Don't offer an off-block
+  candidate first just because it closes the arithmetic.*
+- **⚠⚠ ROOT CAUSE FOUND — the pilot sometimes writes the LANDING time into the on-block cell.**
+  Proved on 20/08: the record reads `20:50` landing / `20:55` on-block, and the book's on-block cell
+  says `17:50Z` = **the landing time**. He habitually taxis ~5 min on the water at Tuusulanjärvi
+  (20/08 outbound `19:25→19:30`; 06/08 leg 3 `19:48→19:53`). **So when a row is short by ~5 min and the
+  cells look clean, suspect on-block = landing time and add the taxi — don't hunt for a mangled digit.**
+
+### ⚠ `laskukierros_export.csv` is INCOMPLETE — do not read "absent" as "didn't happen"
+The committed export has **zero rows** for 06.08.2024 and 14.08.2024, yet the user pasted full
+records for both from the live source. Across Jul–Sep 2024 it holds **7** rows where the paper has
+~20 OH-CTL legs. It also **never carries instructor/pupil names** — the `Opettaja`/`Oppilas` columns
+are a `1`/`0` flag in all 128 rows — while the live view shows names *and* per-leg takeoff/landing
+times. **A fuller re-export is worth requesting before the next batch.**
+
+### Record conflicts this batch (paper kept — documented only)
+| ours (paper) | electronic record | conflict |
+|---|---|---|
+| `21/07/2024` OH-CTL dep **Vääksy** 17:53Z | laskukierros dep **Pulkkilanharju** 20:53 local | departure place |
+| `28/07/2024` OH-CTL Tuusulanjärvi local 1:41, **6 ldg** | block 101 ✓, **5 ldg** | landing count |
+| `20/08/2024` OH-CTL Hiidenvesi→Tuusulanjärvi, **3 ldg** | block 56 ✓, 3 ldg ✓ | none — full match |
+| `06/08/2024` OH-CTL Tuusulanjärvi local 1:14, `14:22Z→15:36Z` | `14:22→15:36` **local**, block 74 | zone |
+- That last one only *looks* like a zone mismatch: as local it would **overlap the preceding leg**
+  (`13:27→14:57`) in the same aeroplane. The club-system row is the one entered in UTC by mistake;
+  the paper's `14:22Z` is right and the whole 06/08 chain is UTC.
+
 ## Confirmed corrections
 - **IMG_4953 (closeout, pages 110/111) — row-1 landing & instructor rows (user-verified 2026-07-31).**
   Row 1 (27/05/2021 OH-CTL Räyskälä→Vääksy) landings read ambiguously as 10; user confirmed **9**
