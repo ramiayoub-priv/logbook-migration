@@ -16,7 +16,12 @@ any new session can pick up exactly where the last left off. Keep them current a
   Book 1 (do not edit; it seeds Book 2's cumulatives). More books follow after Book 2.
 - **Claude transcribes the page images directly** (`logbook-2/IMG_XXXX.jpg`); **the user
   verifies** before anything is appended. (No more ollama.)
-- **Never batch-process pages.** One page at a time, with the user's confirmation.
+- **Hybrid-batch pace (user-approved):** transcribe up to **3 pages per pass**, cross-check each
+  with `logbook_tools.py`, and present a report that greenlights clean pages and surfaces only the
+  ambiguous/flagged rows. The user still verifies the flags before append — never fully autonomous.
 - After appending, **update the checkpoint in `resume.md`** and log any corrections in `drift.md`.
+- **Session-length heads-up:** when the session grows long (context filling up, many pages
+  processed in one sitting), proactively tell the user and nudge them to start a fresh session — a
+  clean session re-reads `claude-docs/` and resumes seamlessly.
 
 Details in `claude-docs/`. When in doubt, that directory wins over this summary.
