@@ -53,10 +53,13 @@ hints at best, not source of truth. See `workflow.md` for the step-by-step.
   IMG_4921 ("pic added +1:20"); our PIC is the more correct figure.
 
 ## Next action
-Process **IMG_4952.jpg** (next spread after 07/05/2021). Hybrid-batch pace is approved at **3 pages
-per pass**: transcribe, cross-check each with `logbook_tools.py`, and surface only flagged rows for
-the user. If a UTC-logged OH-PIF/OH-GKT/OH-TIL/OH-COK row appears, cross-check Aviatron and mark `Z`.
-Confirm each page by its dates (image numbers aren't chronological).
+Process **IMG_4952.jpg** then **IMG_4953.jpg** — these are the **last two images of Book 2**
+(only 4952 & 4953 remain in `logbook-2/`; likely the final spread(s), so this is the **closeout
+batch**). Transcribe both, cross-check each with `logbook_tools.py`, and surface only flagged rows
+for the user. If a UTC-logged OH-PIF/OH-GKT/OH-TIL/OH-COK row appears, cross-check Aviatron and mark
+`Z`. Confirm each page by its dates (image numbers aren't chronological).
+- **After Book 2 is complete:** rename/finalize `logbook_2.csv` per the project's Book-1 pattern
+  (`logbook_1_final.csv`) if the user wants, then Book 3 begins with a fresh source set.
 - **Paper-vs-ours drift (at 07/05/2021):** landings MATCH paper's printed count (1843, drift closed
   17/04/2020). Total runs **+25** ahead of paper (772:12 printed → ours 772:37; seed residue). PIC runs
   **−27** vs paper's column (paper 622:56). Instrument runs **+4:02** ahead of paper's Mittari (61:06
