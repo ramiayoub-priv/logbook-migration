@@ -25,6 +25,7 @@ These regs are seaplanes; their `Total_Time` adds to `Cumulative_SEP_Sea`. Pay e
 Common: `OH-PDP` (P28A), `OH-CTL` (C172, seaplane), `OH-GKT` (C172 seaplane, ex-`SE-GKT`,
 now owned by the user; in Aviatron), `OH-CDK`, `OH-CWB` (C172),
 `OH-CAV`, `OH-DBS`, `OH-PAX`. C152: `OH-CRA`, `OH-COF`, `OH-CKO`, `OH-KLS`, `OH-NEU` (all landplanes; OH-NEU appears Mar 2020).
+C172 landplanes: `OH-CAY`, `OH-CGX` (both appear 19/04/2020 at EFHV; OH-CGX flown as a student checkout).
 P28A IR trainer: `OH-PIF` (used for CB-IR instrument training from Apr 2019, instructor Autere).
 DA40: `OH-STL` (Diamond DA40, appears Apr 2019).
 C185 floatplane: `OH-CDK` (Cessna 185 on floats, seaplane; Saimaa-lakes trip Jun–Jul 2019).
@@ -48,6 +49,7 @@ off/on-block, landings, syllabus codes (`CB-IR/n`), instructor (PIC column), stu
 - **Sinervä** — instructor for a 30/04/2019 OH-CTL seaplane student flight (IMG_4926).
 - **Jansson, Korjula** — PIC/instructor on early seaplane student flights (2017). **Jansson** is
   also the instructor on the 19/06/2019 C185 OH-CDK floatplane student flight (IMG_4930).
+- **Härkönen** — instructor on the 19/04/2020 C172 OH-CGX student checkout flight (IMG_4940).
 
 Seaplane places seen: Laajasalo, Kalkkiranta, Inkoo, **Kabböle** (near Loviisa), Kubböle,
 Tuusulanjärvi, Hiidenvesi, Räyskälä, Gumbostrand, Salonsaari, Leikonvesi, Savonlinna, Kuohijärvi,
@@ -55,7 +57,8 @@ Kahvisaari, Kelvenne, Iso-Jälä (Saimaa-lakes region, Jun–Jul 2019).
 Rarer: `OH-TIL, OH-SPH, OH-CTH, OH-CMO`.
 Airports seen: EFHF (Malmi), EFLA (Vesivehmaa), EFHV (Hyvinkää), EFKI, EFNU (Nummela),
 EFHV, EFTU (Turku), EFMA (Mariehamn/Åland), EFHA (Halli), EFJY (Jyväskylä), EFLP (Lappeenranta),
-EFTP (Tampere-Pirkkala); Swedish: ESSP (Norrköping) — the Aug–Sep 2019 CB-IR cross-countries.
+EFTP (Tampere-Pirkkala), EFRY (Räyskälä — C185 floatplane dep 29/04/2020); Swedish: ESSP (Norrköping)
+— the Aug–Sep 2019 CB-IR cross-countries.
 Estonian: **EETN** (Tallinn — 31/12/2019 DA40 day-trip, first non-Nordic field).
 Plus lakes for seaplane ops (Tuusulanjärvi, Hiidenvesi, Räyskälä, Gumbostrand, Salonsaari,
 Keilaniemi, Vuosaari, Kelvenne, Kahvisaari).

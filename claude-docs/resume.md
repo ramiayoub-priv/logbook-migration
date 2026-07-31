@@ -16,34 +16,29 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — treat th
 hints at best, not source of truth. See `workflow.md` for the step-by-step.
 
 ## Current checkpoint
-- **Last processed pages:** `IMG_4937/4938/4939.jpg` (book pages 78–83), verified & appended
-  2026-07-31 as a 3-page hybrid batch. 23 flights, **30/09/2019–17/04/2020**. Contents: the **CB-IR
-  skill test** (03/10/2019, OH-PIF, examiner **Timo Aineslahti** FI.FCL 20163 — CB-IR fully done,
-  OH-PIF era ends here), then a long run of club/DA40/PA28 flying (OH-STL DA40, C152 OH-COF/OH-CRA/
-  OH-NEU/OH-KLS, OH-PDP), incl. two **instructing** flights and one DA40 **student (KOU)** flight.
-  **All page Δ cross-checks (total/PIC/student/instructor/landings) reconciled exactly** on all three
-  pages. New: **EETN** (Tallinn — first Estonian/intl field, 31/12/2019 DA40 day-trip), **OH-NEU**
-  (C152), **Särkijärvi** (seaplane lake). See drift.md for details.
-- **Landing drift CLOSED (2026-07-31):** on IMG_4937 the paper's landing column advanced +12 while
-  its row entries summed to +13; following the rows brought our cumulative to **exactly the paper's
-  printed bottoms** (1542, then 1591). The historical paper **+1 landing lead is now consumed** —
-  our Cumulative_Landings equals the paper's printed count as of 17/04/2020.
-- **First Night_Time in the file:** 26/03/2020 DA40 evening flight, Night 0:50 (no Cumulative_Night
-  column in schema; per-row only).
-- **Timezone (this batch):** only the two 03/10 OH-PIF skill-test rows are UTC (`Z`, Aviatron-
-  confirmed to the minute); everything else (OH-PDP/DA40/C152/C185) is plain local. OH-PIF era is
-  over, so future pages are expected to be all-local unless a new UTC-logged type appears.
-- **Last row in `logbook_2.csv`:** `17/04/2020 · DA40 · OH-STL · EFHF → EFHF · 06:38–08:50 ·
-  Total 2:12 · PIC · instrument 1:00 · 3 landings`
+- **Last processed pages:** `IMG_4940/4941/4942.jpg` (book pages 84–89), verified & appended
+  2026-07-31 as a 3-page hybrid batch. 24 flights, **19/04/2020–30/05/2020**. Contents: club/DA40/
+  PA28 flying (OH-PDP, OH-STL DA40 incl. **2 instructing**), a big run of **OH-CTL C172 seaplane**
+  lake-hopping (Joensuu/Anttola/Salonsaari/Tuusulanjärvi/Kabböle/Pirttisaari; several instructing),
+  OH-CDK C185 floatplane, and **OH-PIF returns twice** (post-CB-IR): 22/04 a *Kertauslento* (refresher,
+  student, Autere) and 30/05 a VUO-MAT proficiency (PIC). **All page Δ cross-checks (total/PIC/
+  student/instructor/landings) reconciled exactly** on all three pages. New regs: **OH-CAY** & **OH-CGX**
+  (C172 landplanes, EFHV). New seaplane field: **EFRY** (Räyskälä). See drift.md for details.
+- **Landing drift still CLOSED:** our Cumulative_Landings **= paper's printed count** (1661 at 30/05/2020).
+- **Timezone (this batch):** only the two OH-PIF rows are UTC (`Z`, Aviatron-confirmed to the minute):
+  22/04 EFLA-EFLA 12:56–14:51 and 30/05 EFLA-EFLA 10:53–12:46. Everything else plain local. OH-PIF can
+  still reappear (Aviatron shows it again 23/09/2020) — cross-check Aviatron + mark `Z` when it does.
+- **Last row in `logbook_2.csv`:** `30/05/2020 · P28A · OH-PIF · EFLA → EFLA · 10:53Z–12:46Z ·
+  Total 1:53 · PIC · instrument 1:30 · 1 landing`
 - **Cumulative totals at that row:**
-  - Cumulative_Total **675:50**
-  - Cumulative_PIC **535:34**
-  - Cumulative_Student **140:16**
-  - Cumulative_Instrument **49:48**
-  - Cumulative_SEP_Sea **158:10**
-  - Cumulative_Landings **1591** (now equals paper's printed count — drift closed)
-  - Cumulative_Instructor **25:25**
-- **`logbook_2.csv` has 309 data rows** (+ header).
+  - Cumulative_Total **699:09**
+  - Cumulative_PIC **556:39**
+  - Cumulative_Student **142:30**
+  - Cumulative_Instrument **53:13**
+  - Cumulative_SEP_Sea **169:29**
+  - Cumulative_Landings **1661** (equals paper's printed count — drift closed)
+  - Cumulative_Instructor **32:28**
+- **`logbook_2.csv` has 333 data rows** (+ header).
 - **Workflow note:** user approved a **hybrid-batch** pace (2026-07-31) — transcribe several pages
   per pass, auto-cross-check each with `logbook_tools.py`, present a report that greenlights clean
   pages and flags only ambiguous rows for user verification. Not fully autonomous.
@@ -57,11 +52,10 @@ hints at best, not source of truth. See `workflow.md` for the step-by-step.
   IMG_4921 ("pic added +1:20"); our PIC is the more correct figure.
 
 ## Next action
-Process **IMG_4940.jpg** (next spread after 17/04/2020). Hybrid-batch pace is approved at **3 pages
+Process **IMG_4943.jpg** (next spread after 30/05/2020). Hybrid-batch pace is approved at **3 pages
 per pass**: transcribe, cross-check each with `logbook_tools.py`, and surface only flagged rows for
-the user. OH-PIF/OH-GKT (Aviatron) rows are unlikely from here (CB-IR done); if a UTC-logged row
-appears, cross-check Aviatron and mark `Z`. Confirm each page by its dates (image numbers aren't
-chronological).
+the user. If a UTC-logged OH-PIF/OH-GKT row appears (OH-PIF recurs 23/09/2020 per Aviatron),
+cross-check Aviatron and mark `Z`. Confirm each page by its dates (image numbers aren't chronological).
 - **Paper-vs-ours drift:** landings now MATCH the paper's printed count (drift closed 17/04/2020).
   Total runs ~a few min either side of paper depending on the pilot's lump corrections; PIC ~+0:28
   and Instrument still run ahead of paper (seed drift). Always cross-check on offset-independent
