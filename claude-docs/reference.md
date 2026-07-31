@@ -95,6 +95,18 @@ off/on-block, landings, syllabus codes (`CB-IR/n`), instructor (PIC column), stu
   (OH-GKT, Kahvisaari local, PASSED). Logged under Dual → Student_Time. See IMG_6018 in `drift.md`.
 - **Tarhanen** — PIC on the pilot's IR-revalidation student rows (20/09/2021 OH-TIL, 10/08/2022 OH-PIF).
 - **Salo** — instructor on the 05/07/2022 OH-TIL P28A dual row (IMG_6012).
+- **Ignaty Romanov-Chernigovsky** — a *student* of the pilot's (Oppilas) on the OH-CTL Tuusulanjärvi
+  seaplane instruction, e.g. 01/07/2024 (IMG_6024). Not stored in the CSV: on instructing rows
+  `pic_name` stays `self`. Recorded here only as context for who the summer-2024 float pupils were.
+
+## ⚠ `LT` subscripts in Book 3 — present but NOT applied consistently
+From IMG_6024 the pilot writes a tiny **`LT`** subscript beside some off/on-block minute cells
+(6024 rows 2–6, all OH-CTL). That is the book's documented "this row is local" marker and it is the
+first time we have seen it actually used. **But its absence proves nothing** — IMG_6023 carries no
+`LT` marks at all and the user confirmed those rows are local too. Treat `LT` as positive evidence
+only; for unmarked rows fall back on the per-aircraft rule and ask the user.
+⚠ Watch for the `LT` subscript blurring the preceding digit: on IMG_6024 rows 2 and 5 an off-block
+`20` + `LT` read convincingly as `29`, putting both rows 9 minutes out (see `drift.md`).
 
 Seaplane places seen: Laajasalo, Kalkkiranta, Inkoo, **Kabböle** (near Loviisa), Kubböle,
 Tuusulanjärvi, Hiidenvesi, Räyskälä, Gumbostrand, Salonsaari, Leikonvesi, Savonlinna, Kuohijärvi,
@@ -111,7 +123,8 @@ Estonian: **EETN** (Tallinn — 31/12/2019 DA40 day-trip, first non-Nordic field
 **Also in Book 3: EFVP (Vampula)** — user-confirmed; 08/09/2023 OH-PDP EFHV↔EFVP day-return (IMG_6019).
 **EFIK (Kiikala)** — 29/04/2024 SR20 dual round-trip with Stude (IMG_6021).
 **Book 3 float season 2024 adds: Lieso, Lietsaari** (Päijänne/Vääksy area, OH-GKT — all three names
-user-confirmed 2026-08-01) and **Padasjoki** (Päijänne, IMG_6023).
+user-confirmed 2026-08-01) and **Padasjoki** (Päijänne, IMG_6023), **Pulkkilanharju** (Päijänne,
+IMG_6024) and **Mäntyharju** (IMG_6025).
 ⚠ **`Kahvisaari` is OH-GKT's HOME BASE, near Lahti** (user-confirmed 2026-08-01) — not a Saimaa /
 Hillosensalmi lake as earlier notes implied. That is why Tuusulanjärvi↔Kahvisaari (~0:40) and
 Padasjoki→Kahvisaari (0:27) legs are routine ferry hops, not anomalies.

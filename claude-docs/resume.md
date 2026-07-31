@@ -174,14 +174,31 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
   The pilot's running-Total column on this page is built off the struck **997:43** carry (1:52 low,
   the same p.30 slip) but he fixed it at the bottom line: 999:35 + 15:01 = **1014:36**. No action.
   Landings cell blank → ours sums **65**.
-- **Last row in `logbook_3.csv`:** `28/06/2024 · C172 · OH-GKT · Padasjoki → Kahvisaari ·
-  12:39Z–13:06Z · Total 0:27 · PIC 0:27 · 4 landings` (seaplane)
+- **Eighteenth & nineteenth spreads done:** `IMG_6024` (pages 35–36, 15 flights **28/06/2024–12/07/2024**)
+  and `IMG_6025` (pages 37–38, 15 flights **12/07/2024–21/07/2024**), verified & appended 2026-08-01.
+  **Both SIDEWAYS — CCW `rotate(90)`** (6022–6025 now all sideways). **All six cross-checks exact**
+  (6024: Δtotal 14:05/Δpic 14:05/Δinstr **11:47**; 6025: Δtotal 11:52/Δpic 11:52/Δinstr **5:13**).
+  All SE-VFR; no night, no IFR, no dual. Every row a float row (OH-CTL or OH-GKT). Instructing:
+  **11 rows on 6024**, **7 on 6025**. Landings blank on both → ours sum **74** and **65**.
+  **⚠⚠ THE BOOK'S `LT` SUBSCRIPT IS REAL — first sighting.** Tiny handwritten `LT` beside the block
+  minutes of **6024 rows 2–6** (all OH-CTL). **Absence still means nothing** — 6023 has none and its
+  rows are local. Positive evidence only. **⚠ And the `LT` mark corrupts the digit before it:**
+  6024 rows 2 and 5 both read `…29` and were both **exactly 9 min short**; the truth is `20`+`LT`
+  (19:20→20:50 = 1:30; 17:20→19:15 = 1:55), **confirmed by an electronic record the user supplied**
+  (01/07/2024 OH-CTL off **16:20Z** / on **17:50Z**, 90 min block, 9 ldg, *Opettaja* Rami Ayoub /
+  *Oppilas* **Ignaty Romanov-Chernigovsky**). 16:20Z + 3h = 19:20 local.
+  **Time zones: user says ALL 30 rows on both spreads are LOCAL** (no `Z`) — including OH-GKT, a
+  departure from the 6022/6023 per-aircraft rule. **Ask per spread; don't carry the rule forward.**
+  **6024 row 11's instructor entry is struck out** by the pilot (excluded; the 11:47 total needs it out).
+  New places **Pulkkilanharju** (Päijänne) and **Mäntyharju**.
+- **Last row in `logbook_3.csv`:** `21/07/2024 · C172 · OH-CTL · Pulkkilanharju → Vääksy ·
+  16:38–17:05 (local) · Total 0:27 · PIC 0:27 · Instructor 0:27 · 3 landings` (seaplane)
 - **Cumulative totals at that row (our continuous series, seeded from Book 2):**
-  - Cumulative_Total **1016:01** · Cumulative_PIC **852:28** · Cumulative_Student **163:33**
-  - Cumulative_Instrument **85:55** · Cumulative_SEP_Sea **292:18**
-  - Cumulative_Landings **2709** (= day+night; runs ahead of book's day-only count — see drift.md)
-  - Cumulative_Instructor **113:33**
-- **`logbook_3.csv` has 254 data rows** (+ header + seed row = 256 lines).
+  - Cumulative_Total **1041:58** · Cumulative_PIC **878:25** · Cumulative_Student **163:33**
+  - Cumulative_Instrument **85:55** · Cumulative_SEP_Sea **318:15**
+  - Cumulative_Landings **2848** (= day+night; runs ahead of book's day-only count — see drift.md)
+  - Cumulative_Instructor **130:33**
+- **`logbook_3.csv` has 284 data rows** (+ header + seed row = 286 lines).
 
 ### Book-3 conventions (locked 2026-07-31 with user)
 - **Same 26-col schema.** EASA→our-schema mapping: **Dual (Oppilas) → Student_Time**;
@@ -198,11 +215,11 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
 - **Tooling:** `logbook_tools.py <batch.json> --csv logbook_3.csv [--append]` (new `--csv` flag targets
   Book 3; defaults to Book 2). Block-vs-total diffs ≤5 min now warn instead of blocking append.
 
-## Next action — Book 3, IMG_6024 (pages 35–36)
-Process **`IMG_6024`** next (continues from 28/06/2024). **Check orientation first** — image
+## Next action — Book 3, IMG_6026 (pages 39–40)
+Process **`IMG_6026`** next (continues from 21/07/2024). **Check orientation first** — image
 orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, 6012–6021 were all
-already upright, and **6022 and 6023 were sideways again (CCW `rotate(90)`)**. Never assume —
-thumbnail first.
+already upright, and **6022–6025 were all sideways (CCW `rotate(90)`)**. Never assume —
+thumbnail first. **Also scan the block-minute cells for the tiny `LT` subscript** (see below).
 Quickest check: `Image.open(p).resize((1024,768))` and eyeball
 which way is up; then crop the two pages at high res (the original is ~2048×1536). Transcribe all rows,
 cross-check via the book's "TOTAL THIS PAGE" using `--csv logbook_3.csv`, and surface flags.
@@ -241,11 +258,15 @@ Then continue IMG_6021…6037 at that pace (each spread is
   the row by its neighbours' dates and offer the candidates rather than guessing silently.
 - **A night flight's landings may still be written in the DAY column** (IMG_6020 row 15). If the clock
   times make daylight impossible, they're night landings — say so.
-- **Paper-vs-ours drift, refreshed at end of page 34 (28/06/2024 boundary; EASA "TOTAL" bottom-of-page):**
-  book Total **1014:36** vs ours **1016:01** (**+1:25**); book PIC **851:23** vs ours **852:28** (**+1:05**);
+- **⚠ The book's tiny `LT` subscript (first seen IMG_6024) is positive evidence a row is LOCAL — but
+  its absence proves nothing** (IMG_6023 has none and is local throughout). **And it corrupts the digit
+  it follows:** `20`+`LT` read as `29` on two IMG_6024 rows, each putting the row 9 min out. *When two
+  rows on one page are short by the same odd amount, suspect one systematic digit misread.*
+- **Paper-vs-ours drift, refreshed at end of page 38 (21/07/2024 boundary; EASA "TOTAL" bottom-of-page):**
+  book Total **1040:33** vs ours **1041:58** (**+1:25**); book PIC **877:20** vs ours **878:25** (**+1:05**);
   book SE-IFR **81:53** vs our Instrument **85:55** (**+4:02**); book Dual **163:13** vs our Student
-  **163:33** (**+0:20**); book Flight-Instructor **114:53** vs ours **113:33** (**−1:20**).
-  **All five steady across IMG_6021/6022/6023 — no new divergence.** (The +1:25 dates from the IMG_6013
+  **163:33** (**+0:20**); book Flight-Instructor **131:53** vs ours **130:33** (**−1:20**).
+  **All five steady across IMG_6021 → IMG_6025 — no new divergence.** (The +1:25 dates from the IMG_6013
   running-Total slip, our value correct; the +1:05 flipped from −1:25 on IMG_6019 where the pilot struck
   his own PIC total 810:09 → 807:39, a hand −2:30 correction he doesn't recall the reason for.)
   Landings: ours **2644** (day+night) runs ahead of the book's day-only cumulative (see drift.md).

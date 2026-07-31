@@ -371,11 +371,39 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
     slip as p.30), but the pilot corrected it at the bottom line: 999:35 + 15:01 = **1014:36**. The
     per-page and bottom-line totals are sound; the running column is not. No action.
   - Landings page-total cell blank → no paper check; ours sums **65**.
-- **Paper-vs-ours drift at 28/06/2024 (end of p.34)** — book bottoms Total **1014:36**, SE-VFR 932:43,
-  SE-IFR **81:53**, PIC **851:23**, Dual **163:13**, Flight-Instructor **114:53**. Ours: Total
-  **1016:01** (**+1:25**), Instrument **85:55** (**+4:02**), PIC **852:28** (**+1:05**), Student
-  **163:33** (**+0:20**), Instructor **113:33** (**−1:20**). **All five steady** across
-  IMG_6021/6022/6023 — no new divergence.
+- **IMG_6024 (pages 35–36, 28/06/2024–12/07/2024) and IMG_6025 (pages 37–38, 12/07/2024–21/07/2024)
+  — appended 2026-08-01.** 15 flights each; both **sideways, CCW `rotate(90)`**. All six cross-checks
+  exact (6024: Δtotal 14:05 / Δpic 14:05 / Δinstr **11:47**; 6025: Δtotal 11:52 / Δpic 11:52 /
+  Δinstr **5:13**). All SE-VFR — no night, no IFR, no dual on either page. Every row is a float row
+  (OH-CTL or OH-GKT). Instructing: **11 rows on 6024** (2–6, 8–10, 12, 13, 15) and **7 on 6025**
+  (3–6, 13–15). Landings cells blank on both → ours sum **74** and **65**.
+  - **⚠⚠ THE BOOK'S `LT` SUBSCRIPT IS REAL — first sighting.** On 6024 a tiny handwritten **`LT`**
+    sits beside the block-time minutes of **rows 2–6** (all OH-CTL); nowhere else on either spread.
+    **Its absence means nothing though** — IMG_6023 has no `LT` marks at all and the user confirmed
+    those rows are local. Positive evidence only. See `reference.md`.
+  - **⚠ The `LT` subscript can corrupt the digit it follows.** 6024 rows 2 and 5 both read as
+    off-block `…29` and both came out **exactly 9 minutes short** of the logged time. The true value
+    is **`20` + `LT`**: row 2 = 19:20→20:50 (1:30), row 5 = 17:20→19:15 (1:55).
+    **Confirmed by an independent electronic record the user supplied** for 01/07/2024 OH-CTL:
+    off-block **16:20Z**, on-block **17:50Z**, block 90 min, flight 75 min, 9 landings, *Opettaja*
+    Rami Ayoub / *Oppilas* **Ignaty Romanov-Chernigovsky**. 16:20Z + 3h = 19:20 local — so the paper
+    row is local and the off-block minute is 20. *When two rows on a page are short by the same odd
+    amount, suspect one systematic digit misread, not two independent slips.*
+  - **Time zones: user says ALL 30 rows on both spreads are LOCAL** (no `Z`) — including the OH-GKT
+    rows, which is a departure from the 6022/6023 per-aircraft rule. Corroborated by the electronic
+    record above. **Don't carry the per-aircraft rule forward blindly; ask each spread.**
+  - **6024 row 11's instructor entry is STRUCK OUT** by the pilot (05/07 Kahvisaari→Tuusulanjärvi
+    0:39). Excluded from Instructor_Time — the page's 11:47 instructor total only works without it.
+  - **New places: `Pulkkilanharju`** (Päijänne, 6024) and **`Mäntyharju`** (6025). Kelvenne,
+    Leikonvesi, Lietsaari, Vääksy, Pellinki, Hiidenvesi all already known.
+  - The running-Total column stays **1:52 low** on both pages (the struck 997:43 carry from p.30);
+    the pilot again corrected it at each bottom line — 1014:36 + 14:05 = **1028:41**, then
+    1028:41 + 11:52 = **1040:33**. Per-page and bottom-line totals sound; running column is not.
+- **Paper-vs-ours drift at 21/07/2024 (end of p.38)** — book bottoms Total **1040:33**, SE-VFR 958:40,
+  SE-IFR **81:53**, PIC **877:20**, Dual **163:13**, Flight-Instructor **131:53**. Ours: Total
+  **1041:58** (**+1:25**), Instrument **85:55** (**+4:02**), PIC **878:25** (**+1:05**), Student
+  **163:33** (**+0:20**), Instructor **130:33** (**−1:20**). **All five steady** across
+  IMG_6021 through IMG_6025 — no new divergence.
 - **Book-3 landing drift now open & growing (day+night vs book's day-only).** At 10/06/2022 our
   Cumulative_Landings = **2172** (day+night). The book's printed day-only cumulative is lower by the running
   night-landing total (3 on 17/12/2021 + 8 on IMG_6010 = 11 so far) plus the ~2-landing IMG_6009 struck-cell
