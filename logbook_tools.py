@@ -68,7 +68,7 @@ def main():
     print(f"seed: {last[idx['Date']]} {last[idx['Aircraft_Reg']]}  "
           f"Total {fmt(ct)} PIC {fmt(cp)} Land {cl}\n")
     for page in batch:
-        pt = pp = pl = 0
+        pt = pp = pl = ps = pins = 0
         print(f"=== {page['img']} ===")
         for f in page['flights']:
             tot = m(f['total'])
@@ -84,7 +84,7 @@ def main():
             cins += ins_t
             if f['reg'] in SEAPLANES: csea += tot
             cl += int(f['land'])
-            pt += tot; pp += pic_t; pl += int(f['land'])
+            pt += tot; pp += pic_t; pl += int(f['land']); ps += stu_t; pins += ins_t
             row = [f['date'], f['type'], f['reg'], f['dep'], f['arr'], f.get('off',''),
                 f.get('on',''), '', '', f['total'], f['total'], f.get('instrument',''),
                 f.get('night',''), fmt(pic_t) if pic_t else '', fmt(stu_t) if stu_t else '',
@@ -98,6 +98,8 @@ def main():
         pap = page.get('paper', {})
         checks = [('total', pt, m(pap.get('d_total','')) if pap.get('d_total') else None),
                   ('pic', pp, m(pap.get('d_pic','')) if pap.get('d_pic') else None),
+                  ('student', ps, m(pap.get('d_student','')) if pap.get('d_student') else None),
+                  ('instr', pins, m(pap.get('d_instr','')) if pap.get('d_instr') else None),
                   ('land', pl, pap.get('d_land'))]
         for name, got, exp in checks:
             if exp is None: continue

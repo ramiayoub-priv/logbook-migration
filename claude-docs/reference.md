@@ -43,7 +43,11 @@ off/on-block, landings, syllabus codes (`CB-IR/n`), instructor (PIC column), stu
 ## Instructors / other-pilot names (pic_name for non-PIC rows)
 - **Autere** — IR instructor for the pilot's OH-PIF student flights (student time + instrument).
 - **Stude** — instructor for DA40 OH-STL student flights (and the 2017 student flights in drift.md).
+- **Sinervä** — instructor for a 30/04/2019 OH-CTL seaplane student flight (IMG_4926).
 - **Jansson, Korjula** — PIC on early seaplane student flights (2017).
+
+Seaplane places seen: Laajasalo, Kalkkiranta, Inkoo, **Kabböle** (near Loviisa), Kubböle,
+Tuusulanjärvi, Hiidenvesi, Räyskälä, Gumbostrand.
 Rarer: `OH-TIL, OH-SPH, OH-CTH, OH-CMO`.
 Airports seen: EFHF (Malmi), EFLA (Vesivehmaa), EFHV (Hyvinkää), EFKI, EFNU (Nummela),
 EFHV; plus lakes for seaplane ops (Tuusulanjärvi, Hiidenvesi, Räyskälä, Gumbostrand).

@@ -16,28 +16,28 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — treat th
 hints at best, not source of truth. See `workflow.md` for the step-by-step.
 
 ## Current checkpoint
-- **Last processed page:** `IMG_4925.jpg` (book pages 54/55), verified & appended 2026-07-31.
-  Struck 2:03 line + void first row excluded (see drift.md); DA40 OH-STL student (instructor Stude);
-  OH-PIF student+instrument (Autere).
-- **Last row in `logbook_2.csv`:** `18/04/2019 · P28A · OH-PDP · EFLA → EFHF ·
-  12:40–13:26 · Total 0:46 · PIC self · 1 landing`
+- **Last processed page:** `IMG_4926.jpg` (book pages 56/57), verified & appended 2026-07-31.
+  Seaplane ops with mixed roles: OH-CTL student flight (instructor Sinervä) + two instructing
+  flights (PIC+instructor); dual off/on-block+takeoff/landing times (block times used).
+- **Last row in `logbook_2.csv`:** `13/05/2019 · P28A · OH-PDP · EFHF → EFHF ·
+  15:26–16:05 · Total 0:39 · PIC self · 4 landings`
 - **Cumulative totals at that row:**
-  - Cumulative_Total **565:39**
-  - Cumulative_PIC **466:00**
-  - Cumulative_Student **99:39**
+  - Cumulative_Total **571:32**
+  - Cumulative_PIC **471:01**
+  - Cumulative_Student **100:31**
   - Cumulative_Instrument **8:36**
-  - Cumulative_SEP_Sea **128:09**
-  - Cumulative_Landings **1318**
-  - Cumulative_Instructor **9:17**
-- **`logbook_2.csv` has 198 data rows** (+ header).
+  - Cumulative_SEP_Sea **132:11**
+  - Cumulative_Landings **1353**
+  - Cumulative_Instructor **11:01**
+- **`logbook_2.csv` has 206 data rows** (+ header).
 - **PIC vs paper:** our Cumulative_PIC runs **+1:19** ahead of the paper's *corrected* value (pure
   seed drift). The paper's *written* PIC is a further 1:20 low from an arithmetic slip it flags on
   IMG_4921 ("pic added +1:20"); our PIC is the more correct figure.
 
 ## Next action
-Process **IMG_4926.jpg** (pages 56/57) — seaplane lake ops (OH-CTL at Laajasalo/Kalkkiranta/
-Kubböle/Sipoo, Kahvisaari→Kelvenne) plus P28A/C172, dual off/on-block+takeoff/landing times.
-Still one page at a time with user classification.
+Process **IMG_4927.jpg** (pages 58/59) — more 2019 flights (P28A, OH-PIF IR, OH-CTL seaplane at
+Sipoo/Laajasalo). Still one page at a time with user classification; use `logbook_tools.py` +
+Aviatron cross-ref for the OH-PIF rows.
 
 ## Conventions locked in this session
 - **Zulu times:** keep the `Z` suffix in Off/On block (e.g. `07:56Z`) for UTC-logged rows; plain
