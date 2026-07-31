@@ -27,6 +27,19 @@ Common: `OH-PDP` (P28A), `OH-CTL` (C172, seaplane), `OH-GKT`, `OH-CDK`, `OH-CWB`
 P28A IR trainer: `OH-PIF` (used for CB-IR instrument training from Apr 2019, instructor Autere).
 DA40: `OH-STL` (Diamond DA40, appears Apr 2019).
 
+## Aviatron.pdf — electronic cross-reference (NOT the source of truth)
+`Aviatron.pdf` (repo root, tracked) is an electronic-logbook export of the **Blue Skies aviation
+aircraft only**: `OH-PIF` (IR trainer), `OH-GKT` (= re-registered SE-GKT seaplane), `OH-DBS`,
+`OH-TIL`, `OH-DBE`. 126 flights, 05/2018→07/2026, **all times UTC**. Columns include exact
+off/on-block, landings, syllabus codes (`CB-IR/n`), instructor (PIC column), student (OPPILAS =
+"Ayoub, Rami"), and remarks (approach types, "CB-IR course completed").
+
+- **The paper logbook is authoritative** (user decision). Aviatron is a cross-check only.
+- Use it to: resolve unreadable Zulu times, confirm instructor names, and enrich `Remarks`.
+- **Known to differ from paper:** block times by ~1–2 min, landings (Aviatron often counts more),
+  and Aviatron omits solo/non-course flights. Do NOT rewrite paper-based rows to match Aviatron;
+  flag material discrepancies to the user instead.
+
 ## Instructors / other-pilot names (pic_name for non-PIC rows)
 - **Autere** — IR instructor for the pilot's OH-PIF student flights (student time + instrument).
 - **Stude** — instructor for DA40 OH-STL student flights (and the 2017 student flights in drift.md).
