@@ -114,16 +114,19 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
 
 ## Next action — Book 3, IMG_6016 (pages 19–20)
 Process **`IMG_6016`** next (continues from 06/05/2023). **Check orientation first** — image
-orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, but **6012, 6013 and 6014
-were already upright** in the original (no rotation). Quickest check: `Image.open(p).resize((1024,768))` and eyeball
+orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, but **6012–6015 have all
+been already upright** in the original (no rotation) — still check, don't assume.
+Quickest check: `Image.open(p).resize((1024,768))` and eyeball
 which way is up; then crop the two pages at high res (the original is ~2048×1536). Transcribe all rows,
 cross-check via the book's "TOTAL THIS PAGE" using `--csv logbook_3.csv`, and surface flags.
 **Time zones can be mixed within one spread** (proved on IMG_6014) — when rows appear to overlap in
 time, suspect a local-vs-UTC mix and ask the user *which rows*, not just whether.
 **Hybrid-batch pace works well:** transcribe 2–3 spreads/pass, tool-reconcile each, present ONE digest
 that greenlights clean pages and surfaces only flagged rows (student/instructing/night/odd-time/landing
-anomalies) for user sign-off before append. Watch for: SR20 OH-ESR (now a PIC type), Stude (SR20 instr),
-Sinervä + **Salo** (instructors), night landings, and the day+night landings convention.
+anomalies) for user sign-off before append. Watch for: SR20 OH-ESR (now a PIC type, flown IFR on
+cross-countries), Stude (SR20 instr), Sinervä + **Salo** (instructors), night landings, and the day+night
+landings convention. **May 2023 onward the pilot is float-instructing at Kabböle on OH-CTL** — expect
+clusters of short seaplane locals with high landing counts, logged PIC + Instructor.
 Then continue IMG_6016…6037 at that pace (each spread is
 ~15 flights — sizeable, so 1–2 spreads per pass is plenty).
 - **Paper-vs-ours drift, refreshed at end of page 18 (06/05/2023 boundary; EASA "TOTAL" bottom-of-page):**
@@ -136,9 +139,9 @@ Then continue IMG_6016…6037 at that pace (each spread is
   Landings: ours **2350** (day+night) runs ahead of the book's day-only cumulative (see drift.md).
   **Always cross-check on offset-independent per-page Δ ("TOTAL THIS PAGE"), never absolute totals — and
   note the book's Total column is itself 1:00 low from p.14 on.**
-- **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. master is pushed &
-  up-to-date through IMG_6014 (`646cf85`) as of 2026-07-31; IMG_6015 appended locally (not yet committed);
-  images/HEIC/zip are gitignored (not pushed). Git identity is now set repo-locally
+- **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. **master is pushed &
+  fully up-to-date through IMG_6015 (`d851be5`) as of 2026-07-31 — working tree clean, nothing pending.**
+  Images/HEIC/zip are gitignored (not pushed). Git identity is now set repo-locally
   (`Rami Ayoub <rami.ayoub@gmail.com>`) — it was missing and blocked a commit.
   Push only when asked.
 
