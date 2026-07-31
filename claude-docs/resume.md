@@ -16,27 +16,28 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — treat th
 hints at best, not source of truth. See `workflow.md` for the step-by-step.
 
 ## Current checkpoint
-- **Last processed page:** `IMG_4924.jpg` (book pages 52/53), verified & appended 2026-07-31.
-  First training page: IR flights with pilot as student (OH-PIF, instructor **Autere**), Zulu times.
-- **Last row in `logbook_2.csv`:** `12/04/2019 · P28A · OH-PDP · EFHF → EFPR ·
-  09:11Z–09:55Z · Total 0:44 · PIC self · 1 landing`
+- **Last processed page:** `IMG_4925.jpg` (book pages 54/55), verified & appended 2026-07-31.
+  Struck 2:03 line + void first row excluded (see drift.md); DA40 OH-STL student (instructor Stude);
+  OH-PIF student+instrument (Autere).
+- **Last row in `logbook_2.csv`:** `18/04/2019 · P28A · OH-PDP · EFLA → EFHF ·
+  12:40–13:26 · Total 0:46 · PIC self · 1 landing`
 - **Cumulative totals at that row:**
-  - Cumulative_Total **559:53**
-  - Cumulative_PIC **464:10**
-  - Cumulative_Student **95:43**
-  - Cumulative_Instrument **5:20**  ← first change since 3:12 (IR training instrument time)
+  - Cumulative_Total **565:39**
+  - Cumulative_PIC **466:00**
+  - Cumulative_Student **99:39**
+  - Cumulative_Instrument **8:36**
   - Cumulative_SEP_Sea **128:09**
-  - Cumulative_Landings **1307**
+  - Cumulative_Landings **1318**
   - Cumulative_Instructor **9:17**
-- **`logbook_2.csv` has 192 data rows** (+ header).
+- **`logbook_2.csv` has 198 data rows** (+ header).
 - **PIC vs paper:** our Cumulative_PIC runs **+1:19** ahead of the paper's *corrected* value (pure
   seed drift). The paper's *written* PIC is a further 1:20 low from an arithmetic slip it flags on
   IMG_4921 ("pic added +1:20"); our PIC is the more correct figure.
 
 ## Next action
-Process **IMG_4925.jpg** (pages 54/55) — still in the training section: DA40 (OH-SIL/OH-STL)
-appears, more IR/student flights, seaplane lake ops, and **strike-throughs**. Do these **one page at
-a time** with explicit user classification; batching resumes once pages are clean PIC.
+Process **IMG_4926.jpg** (pages 56/57) — seaplane lake ops (OH-CTL at Laajasalo/Kalkkiranta/
+Kubböle/Sipoo, Kahvisaari→Kelvenne) plus P28A/C172, dual off/on-block+takeoff/landing times.
+Still one page at a time with user classification.
 
 ## Conventions locked in this session
 - **Zulu times:** keep the `Z` suffix in Off/On block (e.g. `07:56Z`) for UTC-logged rows; plain

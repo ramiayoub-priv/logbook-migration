@@ -2,7 +2,12 @@
 
 Log every correction that alters a row later rows built on. Fix cumulatives from that row forward.
 
-## Intentionally excluded (struck-through) entries
+## Intentionally excluded (struck-through / void) entries
+- **IMG_4925 / 18/04/2019 / P28A OH-PIF / EFLA → EFLA / 10:00–12:03 / 2:03:** struck through —
+  excluded. Paper running total skips it (562:32 → 563:55).
+- **IMG_4925 / 12/04/2019 / P28A OH-PDP / EFPR → EFHF:** void first-row entry with no time, not in
+  the page total — excluded (the EFHF→EFPR outbound is the last row of IMG_4924).
+
 - **IMG_4921 / 15/10/2018 / C172 OH-CWB / EFHF → EFHF / 12:15–13:12 / 0:57:** this line is
   **struck through in the paper book** — a wrong entry. It is deliberately **NOT** in
   `logbook_2.csv`. Do not "recover" it. The paper's own running total skips it (538:19 → 539:04).

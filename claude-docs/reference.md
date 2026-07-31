@@ -25,6 +25,12 @@ These regs are seaplanes; their `Total_Time` adds to `Cumulative_SEP_Sea`. Pay e
 Common: `OH-PDP` (P28A), `OH-CTL` (C172, seaplane), `OH-GKT`, `OH-CDK`, `OH-CWB` (C172),
 `OH-CAV`, `OH-DBS`, `OH-PAX`. C152: `OH-CRA`, `OH-COF`, `OH-CKO`, `OH-KLS` (all landplanes, appear from Nov 2018).
 P28A IR trainer: `OH-PIF` (used for CB-IR instrument training from Apr 2019, instructor Autere).
+DA40: `OH-STL` (Diamond DA40, appears Apr 2019).
+
+## Instructors / other-pilot names (pic_name for non-PIC rows)
+- **Autere** — IR instructor for the pilot's OH-PIF student flights (student time + instrument).
+- **Stude** — instructor for DA40 OH-STL student flights (and the 2017 student flights in drift.md).
+- **Jansson, Korjula** — PIC on early seaplane student flights (2017).
 Rarer: `OH-TIL, OH-SPH, OH-CTH, OH-CMO`.
 Airports seen: EFHF (Malmi), EFLA (Vesivehmaa), EFHV (Hyvinkää), EFKI, EFNU (Nummela),
 EFHV; plus lakes for seaplane ops (Tuusulanjärvi, Hiidenvesi, Räyskälä, Gumbostrand).
