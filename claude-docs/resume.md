@@ -16,26 +16,27 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — treat th
 hints at best, not source of truth. See `workflow.md` for the step-by-step.
 
 ## Current checkpoint
-- **Last row in `logbook_2.csv`:** `29/08/2018 · C172 · OH-CTL · Gumbostrand → Tuusulanjärvi ·
-  13:12–13:45 · Total 0:33 · PIC self · 2 landings`
+- **Last processed page:** `IMG_4920.jpg` (book pages 44/45), verified & appended 2026-07-31.
+- **Last row in `logbook_2.csv`:** `04/10/2018 · C172 · OH-CTL · Hiidenvesi → Tuusulanjärvi ·
+  13:05–13:40 · Total 0:35 · PIC self · 1 landing`
 - **Cumulative totals at that row:**
-  - Cumulative_Total **530:11**
-  - Cumulative_PIC **436:36**
+  - Cumulative_Total **535:45**
+  - Cumulative_PIC **442:10**
   - Cumulative_Student **93:35**
   - Cumulative_Instrument **3:12**
-  - Cumulative_SEP_Sea **125:23**
-  - Cumulative_Landings **1239**
+  - Cumulative_SEP_Sea **127:28**
+  - Cumulative_Landings **1255**
   - Cumulative_Instructor **7:57**
-- **`logbook_2.csv` has 153 data rows** (+ header).
+- **`logbook_2.csv` has 161 data rows** (+ header).
 
 ## Next action
-Identify and process the next page after 29/08/2018. Candidate image is **`IMG_4919.jpg` /
-`IMG_4920.jpg`** (both contain 29/08/2018 flights; 4920 continues into 05–30/09/2018). Confirm
-the correct next page with the user before transcribing — image file numbers are NOT in
-chronological order, so always verify the page by its dates, not its filename.
+Identify and process the next page after 04/10/2018. Confirm the correct next image with the user
+before transcribing — image file numbers are NOT in chronological order, so always verify the page
+by its dates, not its filename.
 
-> Note: `logbook-2-csv/logbook_IMG_4920.csv` (old ollama output) shows obvious OCR errors like a
-> date "41/09/2018" and reg "OK-PDP" — exactly why we now transcribe with Claude and verify.
+> Note: the old ollama output in `logbook-2-csv/` shows obvious OCR errors (e.g. a date
+> "41/09/2018" and reg "OK-PDP" in `logbook_IMG_4920.csv`) — exactly why we now transcribe with
+> Claude and verify.
 
 ## Known open items
 - Landings drift: the paper book's cumulative landing count has historically run ahead of the
