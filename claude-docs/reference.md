@@ -77,12 +77,16 @@ off/on-block, landings, syllabus codes (`CB-IR/n`), instructor (PIC column), stu
 - **Jansson, Korjula** — PIC/instructor on early seaplane student flights (2017). **Jansson** is
   also the instructor on the 19/06/2019 C185 OH-CDK floatplane student flight (IMG_4930).
 - **Härkönen** — instructor on the 19/04/2020 C172 OH-CGX student checkout flight (IMG_4940).
+- **Ravantti** (FI.FCL.34041) — examiner on the **04/09/2023 CRI(A) Assessment of Competence**
+  (OH-GKT, Kahvisaari local, PASSED). Logged under Dual → Student_Time. See IMG_6018 in `drift.md`.
+- **Tarhanen** — PIC on the pilot's IR-revalidation student rows (20/09/2021 OH-TIL, 10/08/2022 OH-PIF).
+- **Salo** — instructor on the 05/07/2022 OH-TIL P28A dual row (IMG_6012).
 
 Seaplane places seen: Laajasalo, Kalkkiranta, Inkoo, **Kabböle** (near Loviisa), Kubböle,
 Tuusulanjärvi, Hiidenvesi, Räyskälä, Gumbostrand, Salonsaari, Leikonvesi, Savonlinna, Kuohijärvi,
 Kahvisaari, Kelvenne, Iso-Jälä (Saimaa-lakes region, Jun–Jul 2019).
-**Book 3 float season 2023 adds:** Anttola, Siltasaari, Pellinki, **Halsholm** (that last one is a
-best-effort read of a partly-obscured word on IMG_6016, not user-confirmed).
+**Book 3 float season 2023 adds:** Anttola, Siltasaari, Pellinki, **Halsholmen** (all user-confirmed
+2026-07-31; the book's handwriting for Halsholmen is partly obscured and reads as "Halsholm").
 Rarer: `OH-TIL, OH-SPH, OH-CTH, OH-CMO`.
 Airports seen: EFHF (Malmi), EFLA (Vesivehmaa), EFHV (Hyvinkää), EFKI, EFNU (Nummela),
 EFHV, EFTU (Turku), EFMA (Mariehamn/Åland), EFHA (Halli), EFJY (Jyväskylä), EFLP (Lappeenranta),

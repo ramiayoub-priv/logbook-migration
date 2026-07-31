@@ -185,9 +185,9 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
   - **Row 5 (09/05 SR20 OH-ESR EFNU local 0:50) is logged out of date order**, sitting between the two
     12/05 rows — user-confirmed as written in the book, not a misread date. Kept in book order.
   - **Instructing (5, PIC + Instructor = Total):** 07/05 Kabböle local 1:13 (7 ldg); 12/05 Laajasalo
-    local 0:52 (11 ldg); 24/05 Tuusula local 1:23 (7 ldg); 14/06 Tuusula↔**Halsholm** 0:45 + 0:28.
-    Δinstr 4:41 exact. New float places this page: **Anttola, Siltasaari, Pellinki, Halsholm**
-    (Halsholm is my best read of a partly-cut word — not user-confirmed).
+    local 0:52 (11 ldg); 24/05 Tuusula local 1:23 (7 ldg); 14/06 Tuusula↔**Halsholmen** 0:45 + 0:28.
+    Δinstr 4:41 exact. New float places this page: **Anttola, Siltasaari, Pellinki, Halsholmen**
+    (Halsholmen user-confirmed 2026-07-31; the book's handwriting truncates it to "Halsholm").
   - Book left the **per-page landings cell blank** for the third time (as on IMG_6014/6015) → no paper
     check; ours sums to **58** (all day) → Cumulative_Landings **2408**.
   - **Paper-vs-ours drift at 14/06/2023** (book bottoms Total 924:55, PIC 767:31, SE-IFR 74:06,
@@ -195,6 +195,64 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
     Instrument 78:08 (**+4:02**), Student 160:14 (**+0:20** — moved by the Dual slip above),
     Instructor 89:13 (**−1:20**). Four of five deltas steady; the Dual one stepped by exactly the
     book's 3-min error.
+- **IMG_6017 (pages 21–22, 19/06/2023–17/07/2023) — appended 2026-07-31.** 15 flights, all UTC (`Z`).
+  Image **already upright**. **All 3 available cross-checks exact** (Δtotal 15:59, Δpic 15:59,
+  Δinstr 4:09). No night, no dual this page.
+  - **⚠ THE PILOT FLAGGED HIS OWN ERROR — handwritten note below the table: "\* Error in total time
+    14:07 → 15:59".** Row 12 (14/07 **OH-PIF** EFLA local) is **2:07** = SE-VFR 0:15 + **SE-IFR 1:52**,
+    but the running-Total column only advanced 0:15 (933:51 → 934:06), dropping the IFR leg. He caught
+    it at the page total and rewrote 14:07 → 15:59; the bottom-line cumulative (940:54) already
+    includes the fix. Our row sum reaches 15:59 independently, confirming both his correction and the
+    2:07 reconstruction. **The book's per-row running-Total column stays 1:52 low from row 12 onward
+    (on top of the p.14 1:00 slip) — but its printed page/bottom totals are correct, so our steady
+    +1:25 Total drift is unchanged.** Always cross-check on "TOTAL THIS PAGE", never the row column.
+  - **Row 12 is OH-PIF flown PIC, not student (user-confirmed 2026-07-31).** Every prior OH-PIF row in
+    Books 2–3 was student time (Autere/Tarhanen IR work), so this is the exception worth remembering:
+    PIC 2:07 + Instrument 1:52, pic_name=self. Book has AYOUB in the PIC column, Dual column struck.
+  - **Row 13 (15/07 SR20 EFNU→EFTU) on-block = 13:16 (user-confirmed);** book's cell reads 13:46, which
+    would leave a 3-min turnaround before the 13:49 departure to Sweden. Logged time 0:46 either way.
+  - **Date corrections (user-confirmed):** row 8 is **07/07/2023**, not the book's "09/07" — rows 6–9
+    are one continuous EFHV→EFRY→EFFO→EFLA→EFHV day, pinned by the block times (EFFO 13:32 arr →
+    14:25 dep; EFLA 15:12 arr → 15:31 dep). Row 4 is **29/06/2023**, same day as row 3 (book's digits
+    read as 27/06); user confirmed **29/06** explicitly.
+  - **Sweden round-trip, this time with a return leg:** 15/07 EFNU→EFTU→**ESNU** (Umeå) and 17/07
+    ESNU→EFTU, all SR20 OH-ESR, IFR 1:56 + 1:50. (Contrast the 15/04/2023 one-way in IMG_6015.)
+  - **Instructing (3):** 19/06 + 20/06 OH-CTL Tuusulanjärvi float locals (1:31 + 1:36, 9 and 5 ldg)
+    and 29/06 OH-CAY EFHV local (1:02). Δinstr 4:09 exact.
+  - One block warn: 29/06 OH-CAY 11:45–12:42 = 0:57 vs logged 1:02 (5 min; logged authoritative).
+  - Landings page-total cell blank again → no paper check; ours sums to **35**. SEP_Sea +3:07 → 261:02.
+- **IMG_6018 (pages 23–24, 12/07/2023–07/09/2023) — appended 2026-07-31.** 15 flights. Image
+  **already upright**. **All 4 cross-checks exact, zero block warnings** (Δtotal 14:02, Δpic 12:57,
+  Δstudent 1:05, Δinstr 1:08). No night, no SE-IFR (book's SE-IFR total stays 79:44).
+  - **🎓 CRI(A) RATING EARNED — row 13, 04/09/2023, C172 **OH-GKT** Kahvisaari local, 1:05, 6 ldg.**
+    Book remark: *"AoC for CRI(A) Passed"* + examiner signature + **FI.FCL.34041**; PIC column reads
+    **RAVANTTI**. Logged under Dual → `Student_Time 1:05`, `pic_name = Ravantti`. (AoC = Assessment of
+    Competence; CRI(A) = Class Rating Instructor, Aeroplane.) **New name: Ravantti.** First OH-GKT
+    flight of Book 3 — the pilot's own seaplane, last seen in Book 2.
+  - **⚠ MIXED TIME ZONES AGAIN — second occurrence in Book 3 (user-confirmed 2026-07-31).** On 04/09
+    row 12 (OH-CTL Tuusulanjärvi→Kahvisaari 11:25–12:15) *arrives* Kahvisaari at 12:15, yet row 13
+    (OH-GKT Kahvisaari local) runs 11:05–12:10 — impossible. User: **"GKT is UTC time"** → row 13
+    keeps `Z`, **row 12 stored plain local** (11:25–12:15 LT = 08:25–09:15Z, which slots cleanly before
+    the checkride). **Row 14 (OH-CTL Kahvisaari→Tuusulanjärvi 16:53–17:35) was left as `Z`** — it has
+    no time conflict either way, so it was transcribed as the column header states. That is a residual
+    uncertainty: same aircraft, same day as the local row 12. Worth asking if it ever matters.
+  - **Row 5 date = 12/07/2023 (user-confirmed): "an older flight I missed."** The book's cell is
+    overwritten and sits physically between 25/07 and 06/08 — it was entered late, out of order.
+    Kept in book row order. Rows 6 (06/08) and 7 (05/08) are likewise inverted, as written.
+  - **Lapland float ferry:** 19/08 OH-CTL **Ranua → Viitasaari** 2:23 (place read, not user-confirmed).
+    New float places this page: **Ranua, Viitasaari** (Kahvisaari already known).
+  - **Instructing (1):** 12/07 OH-CTL Tuusulanjärvi local 1:08. Δinstr 1:08 exact.
+  - **Book's running-Total column starts 0:36 low on this page** — the pilot carried 939:02 forward and
+    wrote it again on row 1 instead of adding row 1's 0:36. Internally consistent from row 2 on, and his
+    "TOTAL PREVIOUS PAGES 940:54 + TOTAL THIS PAGE 14:02 = 954:56" bottom line is right, so nothing
+    propagates to us. (Third distinct arithmetic slip in that column: p.14 1:00, p.21 1:52, p.23 0:36.)
+  - Landings page-total cell blank for the fifth time → no paper check; ours sums to **42**.
+    SEP_Sea +10:25 → 271:27.
+  - **Paper-vs-ours drift at 07/09/2023** (book bottoms Total 954:56, PIC 796:27, SE-IFR 79:44,
+    Dual 160:59, Flight-Instructor 95:50): ours Total 956:21 (**+1:25**), PIC 795:02 (**−1:25**),
+    Instrument 83:46 (**+4:02**), Student 161:19 (**+0:20**), Instructor 94:30 (**−1:20**).
+    **All five deltas held exactly across both spreads** — independent confirmation of the whole batch,
+    including the 2:07 reconstruction on IMG_6017 row 12.
 - **Book-3 landing drift now open & growing (day+night vs book's day-only).** At 10/06/2022 our
   Cumulative_Landings = **2172** (day+night). The book's printed day-only cumulative is lower by the running
   night-landing total (3 on 17/12/2021 + 8 on IMG_6010 = 11 so far) plus the ~2-landing IMG_6009 struck-cell
