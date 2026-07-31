@@ -91,18 +91,19 @@ cross-check via the book's "TOTAL THIS PAGE" using `--csv logbook_3.csv`, and su
 **Hybrid-batch pace works well:** transcribe 2–3 spreads/pass, tool-reconcile each, present ONE digest
 that greenlights clean pages and surfaces only flagged rows (student/instructing/night/odd-time/landing
 anomalies) for user sign-off before append. Watch for: SR20 OH-ESR (now a PIC type), Stude (SR20 instr),
-Sinervä (seaplane instr), night landings, and the day+night landings convention.
+Sinervä + **Salo** (instructors), night landings, and the day+night landings convention.
 Then continue IMG_6013…6037 at that pace (each spread is
 ~15 flights — sizeable, so 1–2 spreads per pass is plenty).
-- **Paper-vs-ours drift (offsets unchanged from Book-2 close; verified against EASA "previous pages"):**
-  **Landings MATCH** (EASA book's carry = 1909 = ours; now 1966 after IMG_6007). Total runs **+25**
-  ahead of paper (EASA carry 787:06 → ours 787:31). PIC runs **−27** vs paper (EASA carry PIC 637:50 →
-  ours 637:23). Instrument/SE-IFR runs **+4:02** ahead (EASA carry 61:06 → ours 65:08). Instructor: the
-  EASA book carries **48:59** vs ours **47:39** (paper **+1:20**; note this differs in sign from earlier
-  Book-2 estimates — reconcile if it matters). Student/Dual: EASA carry **149:45** vs ours **150:08**
-  (+0:23). Always cross-check on offset-independent per-page Δ ("TOTAL THIS PAGE"), never absolute totals.
-- **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. User pushed master
-  (13+ commits) on 2026-07-31; images/HEIC are gitignored (not pushed). Push only when asked.
+- **Paper-vs-ours drift, refreshed at end of page 12 (21/07/2022 boundary; EASA "TOTAL" bottom-of-page):**
+  book Total **868:20** vs ours **868:45** (**+0:25**); book PIC **714:15** vs ours **711:50** (**−2:25** —
+  widened by the IMG_6011 paper PIC-column slip, our value is correct); book SE-IFR **69:01** vs our
+  Instrument **73:03** (**+4:02**); book Dual **156:32** vs our Student **156:55** (**+0:23**); book
+  Flight-Instructor **76:35** vs ours **75:15** (**−1:20**). Landings: ours **2205** (day+night) runs ahead
+  of the book's day-only cumulative (see drift.md). **Always cross-check on offset-independent per-page Δ
+  ("TOTAL THIS PAGE"), never absolute totals.**
+- **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. master is pushed &
+  up-to-date through IMG_6012 (`40618a4`) as of 2026-07-31; images/HEIC/zip are gitignored (not pushed).
+  Push only when asked.
 
 ## Conventions locked in this session
 - **Zulu times:** keep the `Z` suffix in Off/On block (e.g. `07:56Z`) for UTC-logged rows; plain
