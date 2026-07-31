@@ -22,7 +22,8 @@ These regs are seaplanes; their `Total_Time` adds to `Cumulative_SEP_Sea`. Pay e
 `OH-CTL, SE-GKT, OH-GKT, OH-PAX, OH-MIL, OH-CTE, OH-CDK`
 
 ## Aircraft registrations seen so far in Book 2
-Common: `OH-PDP` (P28A), `OH-CTL` (C172, seaplane), `OH-GKT`, `OH-CDK`, `OH-CWB` (C172),
+Common: `OH-PDP` (P28A), `OH-CTL` (C172, seaplane), `OH-GKT` (C172 seaplane, ex-`SE-GKT`,
+now owned by the user; in Aviatron), `OH-CDK`, `OH-CWB` (C172),
 `OH-CAV`, `OH-DBS`, `OH-PAX`. C152: `OH-CRA`, `OH-COF`, `OH-CKO`, `OH-KLS` (all landplanes, appear from Nov 2018).
 P28A IR trainer: `OH-PIF` (used for CB-IR instrument training from Apr 2019, instructor Autere).
 DA40: `OH-STL` (Diamond DA40, appears Apr 2019).
