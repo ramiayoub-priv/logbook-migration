@@ -19,8 +19,11 @@ These regs are seaplanes; their `Total_Time` adds to `Cumulative_SEP_Sea`. Pay e
 `OH-CTL, SE-GKT, OH-GKT, OH-PAX, OH-MIL, OH-CTE, OH-CDK`
 
 ## Aircraft registrations seen so far in Book 2
-Common: `OH-PDP` (P28A), `OH-CTL` (C172, seaplane), `OH-GKT`, `OH-CDK`, `OH-CWB`, `OH-CAV`,
-`OH-DBS`, `OH-PAX`. Rarer: `OH-TIL, OH-SPH, OH-CTH, OH-CRA, OH-CMO`.
+Common: `OH-PDP` (P28A), `OH-CTL` (C172, seaplane), `OH-GKT`, `OH-CDK`, `OH-CWB` (C172),
+`OH-CAV`, `OH-DBS`, `OH-PAX`. C152: `OH-CRA`, `OH-COF` (both landplanes, appear from Nov 2018).
+Rarer: `OH-TIL, OH-SPH, OH-CTH, OH-CMO`.
+Airports seen: EFHF (Malmi), EFLA (Vesivehmaa), EFHV (Hyvinkää), EFKI, EFNU (Nummela),
+EFHV; plus lakes for seaplane ops (Tuusulanjärvi, Hiidenvesi, Räyskälä, Gumbostrand).
 Finnish regs are `OH-xxx`. **Flag anything that breaks this pattern** (e.g. `OK-PDP` is almost
 certainly an OCR error for `OH-PDP`).
 

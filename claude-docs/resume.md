@@ -16,23 +16,24 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — treat th
 hints at best, not source of truth. See `workflow.md` for the step-by-step.
 
 ## Current checkpoint
-- **Last processed page:** `IMG_4921.jpg` (book pages 46/47), verified & appended 2026-07-31.
-  Its 15/10/2018 OH-CWB line was struck through in the book and deliberately excluded (see
-  `drift.md`).
-- **Last row in `logbook_2.csv`:** `28/10/2018 · C172 · OH-CWB · EFHV → EFHF ·
-  13:10–13:40 · Total 0:30 · PIC self · 1 landing`
+- **Last processed page:** `IMG_4922.jpg` (book pages 48/49), verified & appended 2026-07-31.
+  Dates roll into 2019; new C152 regs OH-CRA / OH-COF appear.
+- **Last row in `logbook_2.csv`:** `20/01/2019 · C172 · OH-CWB · EFHF → EFHF ·
+  10:52–11:58 · Total 1:06 · PIC self · 3 landings`
 - **Cumulative totals at that row:**
-  - Cumulative_Total **540:49**
-  - Cumulative_PIC **447:14**
+  - Cumulative_Total **547:15**
+  - Cumulative_PIC **453:40**
   - Cumulative_Student **93:35**
   - Cumulative_Instrument **3:12**
   - Cumulative_SEP_Sea **128:09**
-  - Cumulative_Landings **1268**
+  - Cumulative_Landings **1280**
   - Cumulative_Instructor **7:57**
-- **`logbook_2.csv` has 168 data rows** (+ header).
+- **`logbook_2.csv` has 176 data rows** (+ header).
+- **PIC vs paper:** our Cumulative_PIC runs **+2:39** ahead of the paper's written value (old +1:19
+  seed drift plus the 1:20 the paper omitted on IMG_4921). Consistent, carries forward.
 
 ## Next action
-Identify and process the next page after 28/10/2018. Confirm the correct next image with the user
+Identify and process the next page after 20/01/2019. Confirm the correct next image with the user
 before transcribing — image file numbers are NOT in chronological order, so always verify the page
 by its dates, not its filename.
 
