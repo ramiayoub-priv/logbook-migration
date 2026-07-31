@@ -69,14 +69,24 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
   impossible). **Instructing:** 01/08 & 07/08 OH-CTL Tuusula seaplane (Instr 1:11+1:06). **Lapland floatplane
   trip** 23/08 OH-CTL Inari→Kemijärvi→Sodankylä. **User-corrected reads:** Leikonvesi (float), Tuusula↔Hiidenvesi
   (24/09), row-15 date **04/09/2022** (book digits looked like 04/07).
-- **Last row in `logbook_3.csv`:** `04/09/2022 · P28A · OH-PDP · EFHV → EFLA ·
-  10:55Z–11:35Z · Total 0:40 · PIC 0:40 · 1 landing`
+- **Eighth spread done:** `IMG_6014` (pages 15–16), 15 flights **04/09/2022–11/02/2023**, verified &
+  appended 2026-07-31. Image **already UPRIGHT — no rotation** (like 6012/6013). **All 4 cross-checks
+  exact, zero block warnings** (Δtotal 14:07, Δpic 13:17, Δstudent 0:50, Δinstr 3:24). No night, no
+  SE-IFR this page. **⚠ FIRST MIXED-TIMEZONE SPREAD:** the three 19/10/2022 OH-CAY rows looked
+  overlapping — user confirmed **row 10 is UTC, rows 8 & 9 are local** (row 10 → 15:21 local slots
+  cleanly after row 9's 15:04). Rows 8 & 9 stored **without `Z`**; the other 12 rows stay `Z`.
+  **Don't assume a whole spread shares one time zone.** Row 8 on-block **inferred 13:51** (digit
+  overwritten; 12:43 + 1:08). **Instructing ×3** (12/10 OH-PDP 1:07; 19/10 OH-CAY 1:08 + 1:09).
+  **Student row** 11/02/2023 SR20 OH-ESR EFNU local 0:50, pic_name=**Stude** (second SR20 dual).
+  Book left the per-page landings cell blank → no paper check; ours sums to 58.
+- **Last row in `logbook_3.csv`:** `11/02/2023 · SR20 · OH-ESR · EFNU → EFNU ·
+  11:30Z–12:20Z · Total 0:50 · Student 0:50 · pic_name Stude · 4 landings`
 - **Cumulative totals at that row (our continuous series, seeded from Book 2):**
-  - Cumulative_Total **883:34** · Cumulative_PIC **724:44** · Cumulative_Student **158:50**
-  - Cumulative_Instrument **74:58** · Cumulative_SEP_Sea **240:24**
-  - Cumulative_Landings **2234** (= day+night; runs ahead of book's day-only count — see drift.md)
-  - Cumulative_Instructor **77:32**
-- **`logbook_3.csv` has 105 data rows** (+ header + seed row = 107 lines).
+  - Cumulative_Total **897:41** · Cumulative_PIC **738:01** · Cumulative_Student **159:40**
+  - Cumulative_Instrument **74:58** · Cumulative_SEP_Sea **241:16**
+  - Cumulative_Landings **2292** (= day+night; runs ahead of book's day-only count — see drift.md)
+  - Cumulative_Instructor **80:56**
+- **`logbook_3.csv` has 120 data rows** (+ header + seed row = 122 lines).
 
 ### Book-3 conventions (locked 2026-07-31 with user)
 - **Same 26-col schema.** EASA→our-schema mapping: **Dual (Oppilas) → Student_Time**;
@@ -93,28 +103,31 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
 - **Tooling:** `logbook_tools.py <batch.json> --csv logbook_3.csv [--append]` (new `--csv` flag targets
   Book 3; defaults to Book 2). Block-vs-total diffs ≤5 min now warn instead of blocking append.
 
-## Next action — Book 3, IMG_6014 (pages 15–16)
-Process **`IMG_6014`** next (continues from 04/09/2022). **Check orientation first** — image
-orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, but **6012 and 6013 were
-already upright** in the original (no rotation). Quickest check: `Image.open(p).resize((1024,768))` and eyeball
+## Next action — Book 3, IMG_6015 (pages 17–18)
+Process **`IMG_6015`** next (continues from 11/02/2023). **Check orientation first** — image
+orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, but **6012, 6013 and 6014
+were already upright** in the original (no rotation). Quickest check: `Image.open(p).resize((1024,768))` and eyeball
 which way is up; then crop the two pages at high res (the original is ~2048×1536). Transcribe all rows,
 cross-check via the book's "TOTAL THIS PAGE" using `--csv logbook_3.csv`, and surface flags.
+**Time zones can be mixed within one spread** (proved on IMG_6014) — when rows appear to overlap in
+time, suspect a local-vs-UTC mix and ask the user *which rows*, not just whether.
 **Hybrid-batch pace works well:** transcribe 2–3 spreads/pass, tool-reconcile each, present ONE digest
 that greenlights clean pages and surfaces only flagged rows (student/instructing/night/odd-time/landing
 anomalies) for user sign-off before append. Watch for: SR20 OH-ESR (now a PIC type), Stude (SR20 instr),
 Sinervä + **Salo** (instructors), night landings, and the day+night landings convention.
-Then continue IMG_6014…6037 at that pace (each spread is
+Then continue IMG_6015…6037 at that pace (each spread is
 ~15 flights — sizeable, so 1–2 spreads per pass is plenty).
-- **Paper-vs-ours drift, refreshed at end of page 14 (04/09/2022 boundary; EASA "TOTAL" bottom-of-page):**
-  book Total **882:09** vs ours **883:34** (**+1:25** — widened +1:00 by the IMG_6013 row-9 running-Total
-  slip, our value correct); book PIC **726:09** vs ours **724:44** (**−1:25**); book SE-IFR **70:56** vs our
-  Instrument **74:58** (**+4:02**, steady); book Dual **158:27** vs our Student **158:50** (**+0:23**, steady);
-  book Flight-Instructor **78:52** vs ours **77:32** (**−1:20**, steady). The three steady deltas confirm our
-  transcription; only Total/PIC moved ±1:00 (book's slip). Landings: ours **2234** (day+night) runs ahead
-  of the book's day-only cumulative (see drift.md). **Always cross-check on offset-independent per-page Δ
-  ("TOTAL THIS PAGE"), never absolute totals — and note the book's Total column is itself 1:00 low from p.14 on.**
+- **Paper-vs-ours drift, refreshed at end of page 16 (11/02/2023 boundary; EASA "TOTAL" bottom-of-page):**
+  book Total **896:16** vs ours **897:41** (**+1:25**, steady since the IMG_6013 running-Total slip — our
+  value correct); book PIC **739:26** vs ours **738:01** (**−1:25**); book SE-IFR **70:56** vs our
+  Instrument **74:58** (**+4:02**, steady); book Dual **159:17** vs our Student **159:40** (**+0:23**, steady);
+  book Flight-Instructor **82:16** vs ours **80:56** (**−1:20**, steady). **All five deltas held exactly
+  across IMG_6014** — strong confirmation of the transcription and that no new book slip crept in.
+  Landings: ours **2292** (day+night) runs ahead of the book's day-only cumulative (see drift.md).
+  **Always cross-check on offset-independent per-page Δ ("TOTAL THIS PAGE"), never absolute totals — and
+  note the book's Total column is itself 1:00 low from p.14 on.**
 - **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. master is pushed &
-  up-to-date through IMG_6012 (`40618a4`) as of 2026-07-31; IMG_6013 appended locally (not yet committed);
+  up-to-date through IMG_6013 (`1a3ba5d`) as of 2026-07-31; IMG_6014 appended locally (not yet committed);
   images/HEIC/zip are gitignored (not pushed).
   Push only when asked.
 

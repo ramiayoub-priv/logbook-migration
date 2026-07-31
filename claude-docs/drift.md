@@ -119,6 +119,26 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
     24/09 round-trip is **Tuusula ↔ Hiidenvesi** (seaplane lake, OH-CTL floatplane), read initially as "Hitanpää".
   - **Lapland floatplane trip:** 23/08 OH-CTL Inari→Kemijärvi→Sodankylä (2:05 + 2:06), SEP_Sea.
   - SEP_Sea this page +9:31 (OH-CDK ×3 + OH-CTL ×6) → 240:24.
+- **IMG_6014 (pages 15–16, 04/09/2022–11/02/2023) — appended 2026-07-31.** 15 flights. Original image
+  **already UPRIGHT — no rotation** (like 6012/6013). **All 4 page cross-checks exact, zero block
+  warnings** — every off/on-block matched its logged time to the minute (Δtotal 14:07, Δpic 13:17,
+  Δstudent 0:50, Δinstr 3:24). No night and no SE-IFR this page (book's SE-IFR total stays 70:56).
+  - **⚠ MIXED TIME ZONES ON ONE PAGE — first occurrence in Book 3 (user-confirmed 2026-07-31).** The
+    three 19/10/2022 OH-CAY rows appeared to overlap: 12:43–13:51, 14:18–15:04, 12:21–13:30. User: the
+    **third row is UTC, the first two are local**. Converting row 3 to local (UTC+3, EEST until 30/10)
+    gives 15:21–16:30 — the three flights are then perfectly sequential. Stored accordingly: rows 8 & 9
+    **plain local (no `Z`)**, row 10 keeps **`Z`**. Scope confirmed as *those two rows only* — the other
+    12 rows on the spread stay `Z`/UTC. **Do not assume a whole spread shares one time zone.**
+  - **Row 8 (19/10 OH-CAY) on-block inferred = 13:51** — the last digit is written over itself (reads as
+    51/56/58). Logged time 1:08 and the page total both require 13:51 (12:43 + 1:08).
+  - **Instructing (3):** 12/10 OH-PDP EFHV local 1:07; 19/10 OH-CAY EFHV locals 1:08 + 1:09 = Δinstr 3:24.
+    First instructing rows on P28A OH-PDP and on OH-CAY in Book 3.
+  - **Student row:** 11/02/2023 SR20 OH-ESR EFNU local 0:50, pic_name=**Stude** — a second SR20 dual with
+    the type-rating instructor, 9 months after the 12/05/2022 checkride. Dual 0:50, no instrument.
+  - Book left the **per-page landings cell blank**, so no paper check on landings this page; ours sums to
+    **58** (all day) → Cumulative_Landings 2292. SEP_Sea +0:52 (OH-CTL 12/10 Tuusula→EFRY) → 241:16.
+  - **All four steady paper-vs-ours deltas unchanged** (SE-IFR +4:02, Dual +0:23, Instructor −1:20,
+    Total/PIC ±1:25) — confirms the transcription and that no new book slip crept in on this spread.
 - **Book-3 landing drift now open & growing (day+night vs book's day-only).** At 10/06/2022 our
   Cumulative_Landings = **2172** (day+night). The book's printed day-only cumulative is lower by the running
   night-landing total (3 on 17/12/2021 + 8 on IMG_6010 = 11 so far) plus the ~2-landing IMG_6009 struck-cell

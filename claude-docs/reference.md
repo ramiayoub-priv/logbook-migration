@@ -19,8 +19,9 @@ Cumulative_Instrument, Cumulative_SEP_Sea, Cumulative_Landings, Cumulative_Instr
 
 ## Book 3 — EASA logbook (active, `logbook_3.csv`)
 Book 3 is a **newer EASA-format paper logbook** with a wider layout, but we keep the **same 26-column
-CSV schema**. Photos: `logbook-3/IMG_6007–6037.JPEG` (each = one two-page spread; **rotate CW** to read,
-they're stored sideways). Book pages numbered "Page N of 128".
+CSV schema**. Photos: `logbook-3/IMG_6007–6037.JPEG` (each = one two-page spread). **Orientation varies —
+check each image:** 6007–6011 are stored sideways (`rotate(90, expand=True)`); **6012 onward are
+already upright**. Book pages numbered "Page N of 128".
 
 **EASA columns → our schema mapping:**
 - GENERAL: Date · Dep(place) · **Off-block (UTC)** · Arr(place) · **On-block (UTC)** · Type · Reg · PIC name.
@@ -35,6 +36,9 @@ they're stored sideways). Book pages numbered "Page N of 128".
 **Conventions (locked 2026-07-31):**
 - **Times are UTC → suffix `Z`** on Off/On block, UNLESS an entry is annotated **`LT`** (then plain
   local). The book is not 100% consistent; **flag suspicious times** (out-of-order/colliding).
+  **A single spread can mix local and UTC rows** — confirmed on IMG_6014, where three same-day rows
+  looked overlapping because one was UTC and two were local. When times collide, ask the user *which
+  rows* are which; don't assume the whole page shares one zone.
 - We continue **our own internally-consistent cumulative series** (seeded from `logbook_2_final.csv`),
   NOT the EASA book's printed "previous pages" totals. The book prints a per-page **"TOTAL THIS PAGE"**
   for every column — use those as the offset-independent cross-check (`d_total/d_pic/d_land/d_instr`).

@@ -2,11 +2,14 @@
 
 Work **one page at a time, with the user**. Never batch-process future pages.
 
-> **Book 3 (active, EASA) note:** images are `logbook-3/IMG_XXXX.JPEG` and are **stored sideways —
-> rotate CW first** (`Image.open(p).rotate(-90, expand=True)`). One image = one two-page spread
-> (~15 flights). The EASA book prints a **"TOTAL THIS PAGE"** row per column — read it straight off
+> **Book 3 (active, EASA) note:** images are `logbook-3/IMG_XXXX.JPEG`. **Orientation varies — always
+> check first** (thumbnail it): 6007–6011 are stored sideways and need `Image.open(p).rotate(90, expand=True)`,
+> but **6012 onward are already upright**. One image = one two-page spread (~15 flights). The EASA book
+> prints a **"TOTAL THIS PAGE"** row per column — read it straight off
 > for the cross-check deltas (`d_total/d_pic/d_land/d_instr`). Times are **UTC → `Z`** unless marked
-> `LT`. Append with `logbook_tools.py <batch.json> --csv logbook_3.csv --append`. See `reference.md`
+> `LT` — but **a single spread can mix local and UTC rows** (proved on IMG_6014): if rows appear to
+> overlap in time, suspect a zone mix and ask the user *which rows*. Append with
+> `logbook_tools.py <batch.json> --csv logbook_3.csv --append`. See `reference.md`
 > "Book 3" for the full EASA→schema column mapping (Dual→Student, SE-IFR→Instrument, etc.).
 
 ## Steps
