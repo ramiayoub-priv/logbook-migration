@@ -1,0 +1,19 @@
+[{"img": "IMG_6021 (pages 29-30)",
+  "paper": {"d_total": "9:41", "d_pic": "8:49", "d_student": "0:52", "d_instr": "0:00"},
+  "flights": [
+    {"date":"28/03/2024","type":"C172","reg":"OH-CAM","dep":"EFHV","arr":"EFHV","off":"16:47Z","on":"17:37Z","total":"0:50","land":3},
+    {"date":"31/03/2024","type":"P28A","reg":"OH-PDP","dep":"EFHV","arr":"EFHV","off":"14:00Z","on":"14:34Z","total":"0:34","land":6},
+    {"date":"01/04/2024","type":"P28A","reg":"OH-PDP","dep":"EFHV","arr":"EFHV","off":"15:42Z","on":"16:30Z","total":"0:48","land":5},
+    {"date":"12/04/2024","type":"P28A","reg":"OH-PDP","dep":"EFHV","arr":"EFRY","off":"11:55Z","on":"12:20Z","total":"0:25","land":1},
+    {"date":"12/04/2024","type":"P28A","reg":"OH-PDP","dep":"EFRY","arr":"EFHV","off":"12:50Z","on":"13:16Z","total":"0:26","land":1},
+    {"date":"28/04/2024","type":"P28A","reg":"OH-PDP","dep":"EFHV","arr":"EFRY","off":"13:20Z","on":"13:50Z","total":"0:30","land":1},
+    {"date":"28/04/2024","type":"P28A","reg":"OH-PDP","dep":"EFRY","arr":"EFHV","off":"14:42Z","on":"15:13Z","total":"0:31","land":1},
+    {"date":"29/04/2024","type":"SR20","reg":"OH-ESR","dep":"EFNU","arr":"EFIK","off":"15:25Z","on":"15:53Z","total":"0:28","land":3,"student":true,"pic_name":"Stude"},
+    {"date":"29/04/2024","type":"SR20","reg":"OH-ESR","dep":"EFIK","arr":"EFNU","off":"16:10Z","on":"16:34Z","total":"0:24","land":3,"student":true,"pic_name":"Stude"},
+    {"date":"30/04/2024","type":"SR20","reg":"OH-ESR","dep":"EFNU","arr":"EFHV","off":"05:04Z","on":"05:21Z","total":"0:17","land":1},
+    {"date":"30/04/2024","type":"SR20","reg":"OH-ESR","dep":"EFHV","arr":"EFTP","off":"06:04Z","on":"06:48Z","total":"0:44","land":1,"instrument":"0:44"},
+    {"date":"30/04/2024","type":"SR20","reg":"OH-ESR","dep":"EFTP","arr":"EFNU","off":"07:12Z","on":"07:48Z","total":"0:36","land":1},
+    {"date":"30/04/2024","type":"C172","reg":"OH-CAM","dep":"EFTP","arr":"EFHV","off":"16:37Z","on":"17:38Z","total":"1:01","land":2,"instrument":"0:25"},
+    {"date":"04/05/2024","type":"SR20","reg":"OH-ESR","dep":"EFNU","arr":"EFPO","off":"08:37Z","on":"09:53Z","total":"1:16","land":1},
+    {"date":"04/05/2024","type":"SR20","reg":"OH-ESR","dep":"EFPO","arr":"EFNU","off":"12:39Z","on":"13:30Z","total":"0:51","land":1}
+  ]}]
