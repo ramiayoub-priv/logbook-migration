@@ -157,14 +157,31 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
   type** — it's the pilot's own informal seaplane marker; **store plain `C172`** (user). Float season
   2024 opens on OH-GKT in the Päijänne area — new places **Lieso, Lietsaari** (Vääksy already known).
   One instructing row 05/05 OH-CAY EFHV local 1:07. Landings blank → ours sums 36.
-- **Last row in `logbook_3.csv`:** `07/06/2024 · C172 · OH-GKT · Lietsaari → Lieso ·
-  08:39Z–09:37Z · Total 0:58 · PIC 0:58 · 4 landings` (seaplane)
+- **Seventeenth spread done:** `IMG_6023` (pages 33–34), 15 flights **17/06/2024–28/06/2024**, verified &
+  appended 2026-08-01. **⚠ SIDEWAYS AGAIN — CCW `rotate(90)`** (same as 6022). **All 3 cross-checks
+  exact, zero block warnings** — every block time matched its logged time to the minute
+  (Δtotal **15:01**, all SE-VFR; Δpic 15:01; Δinstr 12:37). No night, no IFR, no dual.
+  Pure float-instruction spread: **13 of 15 rows are OH-CTL** at Tuusulanjärvi, rows 14–15 OH-GKT.
+  **Instructing ×11** — rows 1–9 (17–18/06 Tuusulanjärvi locals + the Hiidenvesi out-and-back) and
+  rows 12–13 (27/06 Tuusula↔**Pellinki**). Rows 10/11 (Tuusula↔Kahvisaari ferry) and 14/15 PIC only.
+  **Time zones (user-confirmed): the IMG_6022 per-aircraft rule held — OH-CTL rows 1–13 stored
+  local (no `Z`), OH-GKT rows 14–15 stored `Z`.**
+  **Row 7** (18/06 14:29–15:12) sits in the book between the 16:16 and 18:55 rows — user says it is
+  simply **entered out of order**, times as written, same zone as its neighbours (not a zone mix).
+  **Row 8's arrival is struck through**; user confirms **Hiidenvesi** (row 9 departs from there).
+  **🏠 `Kahvisaari` is OH-GKT's HOME BASE near Lahti** (user) — so Tuusula↔Kahvisaari ~0:40 and
+  Padasjoki→Kahvisaari 0:27 are normal ferry hops. New place **Padasjoki** (Päijänne).
+  The pilot's running-Total column on this page is built off the struck **997:43** carry (1:52 low,
+  the same p.30 slip) but he fixed it at the bottom line: 999:35 + 15:01 = **1014:36**. No action.
+  Landings cell blank → ours sums **65**.
+- **Last row in `logbook_3.csv`:** `28/06/2024 · C172 · OH-GKT · Padasjoki → Kahvisaari ·
+  12:39Z–13:06Z · Total 0:27 · PIC 0:27 · 4 landings` (seaplane)
 - **Cumulative totals at that row (our continuous series, seeded from Book 2):**
-  - Cumulative_Total **1001:00** · Cumulative_PIC **837:27** · Cumulative_Student **163:33**
-  - Cumulative_Instrument **85:55** · Cumulative_SEP_Sea **277:17**
-  - Cumulative_Landings **2644** (= day+night; runs ahead of book's day-only count — see drift.md)
-  - Cumulative_Instructor **100:56**
-- **`logbook_3.csv` has 239 data rows** (+ header + seed row = 241 lines).
+  - Cumulative_Total **1016:01** · Cumulative_PIC **852:28** · Cumulative_Student **163:33**
+  - Cumulative_Instrument **85:55** · Cumulative_SEP_Sea **292:18**
+  - Cumulative_Landings **2709** (= day+night; runs ahead of book's day-only count — see drift.md)
+  - Cumulative_Instructor **113:33**
+- **`logbook_3.csv` has 254 data rows** (+ header + seed row = 256 lines).
 
 ### Book-3 conventions (locked 2026-07-31 with user)
 - **Same 26-col schema.** EASA→our-schema mapping: **Dual (Oppilas) → Student_Time**;
@@ -181,10 +198,11 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
 - **Tooling:** `logbook_tools.py <batch.json> --csv logbook_3.csv [--append]` (new `--csv` flag targets
   Book 3; defaults to Book 2). Block-vs-total diffs ≤5 min now warn instead of blocking append.
 
-## Next action — Book 3, IMG_6023 (pages 33–34)
-Process **`IMG_6023`** next (continues from 07/06/2024). **Check orientation first** — image
+## Next action — Book 3, IMG_6024 (pages 35–36)
+Process **`IMG_6024`** next (continues from 28/06/2024). **Check orientation first** — image
 orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, 6012–6021 were all
-already upright, and **6022 was sideways again (CCW `rotate(90)`)**. Never assume — thumbnail first.
+already upright, and **6022 and 6023 were sideways again (CCW `rotate(90)`)**. Never assume —
+thumbnail first.
 Quickest check: `Image.open(p).resize((1024,768))` and eyeball
 which way is up; then crop the two pages at high res (the original is ~2048×1536). Transcribe all rows,
 cross-check via the book's "TOTAL THIS PAGE" using `--csv logbook_3.csv`, and surface flags.
@@ -223,11 +241,11 @@ Then continue IMG_6021…6037 at that pace (each spread is
   the row by its neighbours' dates and offer the candidates rather than guessing silently.
 - **A night flight's landings may still be written in the DAY column** (IMG_6020 row 15). If the clock
   times make daylight impossible, they're night landings — say so.
-- **Paper-vs-ours drift, refreshed at end of page 32 (07/06/2024 boundary; EASA "TOTAL" bottom-of-page):**
-  book Total **999:35** vs ours **1001:00** (**+1:25**); book PIC **836:22** vs ours **837:27** (**+1:05**);
+- **Paper-vs-ours drift, refreshed at end of page 34 (28/06/2024 boundary; EASA "TOTAL" bottom-of-page):**
+  book Total **1014:36** vs ours **1016:01** (**+1:25**); book PIC **851:23** vs ours **852:28** (**+1:05**);
   book SE-IFR **81:53** vs our Instrument **85:55** (**+4:02**); book Dual **163:13** vs our Student
-  **163:33** (**+0:20**); book Flight-Instructor **102:16** vs ours **100:56** (**−1:20**).
-  **All five steady across IMG_6021/6022 — no new divergence.** (The +1:25 dates from the IMG_6013
+  **163:33** (**+0:20**); book Flight-Instructor **114:53** vs ours **113:33** (**−1:20**).
+  **All five steady across IMG_6021/6022/6023 — no new divergence.** (The +1:25 dates from the IMG_6013
   running-Total slip, our value correct; the +1:05 flipped from −1:25 on IMG_6019 where the pilot struck
   his own PIC total 810:09 → 807:39, a hand −2:30 correction he doesn't recall the reason for.)
   Landings: ours **2644** (day+night) runs ahead of the book's day-only cumulative (see drift.md).

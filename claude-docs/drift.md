@@ -348,11 +348,34 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
   - **Late-evening rows are day, per the book:** rows 4/5/7 land 20:08 / 19:45 / 20:22 — these are
     **local** times (see the timezone note), so they are ordinary late-May evening flights, not night.
   - Landings page-total cell blank → no paper check; ours sums **36**.
-- **Paper-vs-ours drift at 07/06/2024 (end of p.32)** — book bottoms Total **999:35**, SE-VFR 917:42,
-  SE-IFR **81:53**, PIC **836:22**, Dual **163:13**, Flight-Instructor **102:16**. Ours: Total
-  **1001:00** (**+1:25**), Instrument **85:55** (**+4:02**), PIC **837:27** (**+1:05**), Student
-  **163:33** (**+0:20**), Instructor **100:56** (**−1:20**). **All five steady** across IMG_6021/6022 —
-  no new divergence.
+- **IMG_6023 (pages 33–34, 17/06/2024–28/06/2024) — appended 2026-08-01.** 15 flights.
+  **⚠ ORIENTATION: sideways again, CCW `rotate(90)`** (same as 6022). **All 3 cross-checks exact and
+  every block time matched its logged time to the minute — zero warnings** (Δtotal **15:01** all
+  SE-VFR, Δpic 15:01, Δinstr **12:37**). No night, no SE-IFR, no dual.
+  - **Pure float-instruction spread.** 13 of 15 rows are **OH-CTL** at Tuusulanjärvi; rows 14–15 are
+    **OH-GKT** in the Päijänne/Lahti area. **Instructing ×11** — rows 1–9 (17–18/06 Tuusulanjärvi
+    locals plus the 18/06 Hiidenvesi out-and-back) and rows 12–13 (27/06 Tuusula↔**Pellinki**).
+    Rows 10/11 (Tuusula↔Kahvisaari ferry) and 14/15 are PIC only.
+  - **Time zones — the IMG_6022 per-aircraft rule held, no exception needed this time** (user-confirmed):
+    **OH-CTL rows 1–13 stored local (no `Z`); OH-GKT rows 14–15 stored `Z`.**
+  - **Row 7 (18/06 Tuusulanjärvi local, 14:29–15:12, 0:43) is entered OUT OF ORDER** — it sits in the
+    book between the 16:16 and 18:55 rows. User confirms the times are as written in the same zone as
+    its neighbours; it is **not** a zone mix. (As UTC it would have slotted perfectly at 17:29–18:12
+    local — a tempting but wrong reading. Ask, don't infer.)
+  - **Row 8's arrival place is struck through**; user confirms **Hiidenvesi** (row 9 departs from there).
+  - **🏠 `Kahvisaari` is OH-GKT's HOME BASE, near Lahti** (user-confirmed) — *not* a Saimaa/
+    Hillosensalmi lake as earlier notes implied. That makes Tuusulanjärvi↔Kahvisaari (~0:40) and
+    **Padasjoki**→Kahvisaari (0:27, "normal in good wind") routine ferry hops, not anomalies.
+    New place **Padasjoki** (Päijänne).
+  - **The running-Total column on this page is built off the struck 997:43 carry** (1:52 low — the same
+    slip as p.30), but the pilot corrected it at the bottom line: 999:35 + 15:01 = **1014:36**. The
+    per-page and bottom-line totals are sound; the running column is not. No action.
+  - Landings page-total cell blank → no paper check; ours sums **65**.
+- **Paper-vs-ours drift at 28/06/2024 (end of p.34)** — book bottoms Total **1014:36**, SE-VFR 932:43,
+  SE-IFR **81:53**, PIC **851:23**, Dual **163:13**, Flight-Instructor **114:53**. Ours: Total
+  **1016:01** (**+1:25**), Instrument **85:55** (**+4:02**), PIC **852:28** (**+1:05**), Student
+  **163:33** (**+0:20**), Instructor **113:33** (**−1:20**). **All five steady** across
+  IMG_6021/6022/6023 — no new divergence.
 - **Book-3 landing drift now open & growing (day+night vs book's day-only).** At 10/06/2022 our
   Cumulative_Landings = **2172** (day+night). The book's printed day-only cumulative is lower by the running
   night-landing total (3 on 17/12/2021 + 8 on IMG_6010 = 11 so far) plus the ~2-landing IMG_6009 struck-cell

@@ -111,7 +111,10 @@ Estonian: **EETN** (Tallinn — 31/12/2019 DA40 day-trip, first non-Nordic field
 **Also in Book 3: EFVP (Vampula)** — user-confirmed; 08/09/2023 OH-PDP EFHV↔EFVP day-return (IMG_6019).
 **EFIK (Kiikala)** — 29/04/2024 SR20 dual round-trip with Stude (IMG_6021).
 **Book 3 float season 2024 adds: Lieso, Lietsaari** (Päijänne/Vääksy area, OH-GKT — all three names
-user-confirmed 2026-08-01).
+user-confirmed 2026-08-01) and **Padasjoki** (Päijänne, IMG_6023).
+⚠ **`Kahvisaari` is OH-GKT's HOME BASE, near Lahti** (user-confirmed 2026-08-01) — not a Saimaa /
+Hillosensalmi lake as earlier notes implied. That is why Tuusulanjärvi↔Kahvisaari (~0:40) and
+Padasjoki→Kahvisaari (0:27) legs are routine ferry hops, not anomalies.
 ⚠ **From IMG_6022 the book writes the type as `C172sea` for float C172s.** That is the pilot's own
 informal seaplane marker, not a type — **store plain `C172`**; the seaplane flag comes from the
 registration (user-confirmed 2026-08-01).
