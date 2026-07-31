@@ -12,7 +12,93 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
   **struck through in the paper book** — a wrong entry. It is deliberately **NOT** in
   `logbook_2.csv`. Do not "recover" it. The paper's own running total skips it (538:19 → 539:04).
 
+## Book 3 (EASA) — start & carry-over cross-check (2026-07-31)
+- `logbook_3.csv` seeded from `logbook_2_final.csv`'s last row (our continuous series). The EASA book's
+  printed **"TOTAL PREVIOUS PAGES"** gives an independent read of the Book-2 end totals: Total **787:06**,
+  Night 18:42, SE-VFR 726:00, SE-IFR (instrument) **61:06**, PIC **637:50**, Flight Instructor **48:59**,
+  Dual/Student **149:45**, Landings **1909**. Offsets vs ours match the standing drift (Total +25, PIC −27,
+  Instrument +4:02, Student +0:23, **Landings exact**) — **except Instructor**: EASA carries **48:59** but
+  ours is **47:39** (paper **+1:20** here, opposite sign to earlier Book-2 estimates that had ours slightly
+  ahead). Not reconciled; harmless as long as we cross-check on per-page Δ. Revisit only if the final app
+  needs absolute-instructor agreement with the paper.
+- **IMG_6007 (pages 1–2):** all 4 page cross-checks reconciled exactly (Δtotal 12:10, Δpic 12:10,
+  Δinstr 7:11, Δland 57). No corrections needed.
+- **IMG_6008 (pages 3–4, 29/07/2021–10/09/2021) — appended 2026-07-31.** 15 flights, all UTC (`Z`),
+  a **notably clean page**: all 4 page Δ reconciled exactly (Δtotal 13:30, Δpic 13:30, Δinstr 2:45,
+  Δland 44) and **zero block-vs-total flags** (every off/on-block equals its logged total). No
+  student/dual and no night this page. Instructing rows (PIC+Instructor=Total): 29/07 OH-CAY EFHV
+  local (1:00), 01/08 OH-CTL Tuusulanjärvi local (1:05, seaplane), 06/08 OH-COK EFPR local (0:40).
+  Two instrument (SE-IFR) rows, both **PIC** OH-TIL P28A: 05/08 EFLA local 1:56, 03/09 EFKU→EFLA 1:18
+  (page SE-IFR Δ 3:14 reconciles). Lake ops on OH-CTL/OH-GKT (Tuusulanjärvi/Salonsaari/Kahvisaari/
+  Virtosaari/Sandö — the Virtosaari & Sandö reads user-confirmed 2026-07-31). New reg **OH-COK** already
+  seen in Book-2 closeout; new airport **EFKU** (Kuopio). **Paper-vs-ours drift at 10/09/2021:** paper
+  printed bottoms Total 812:46, PIC 663:30, SE-IFR 64:20, Instructor 58:55, Landings 2010. Ours: Total
+  813:11 (+25), PIC 663:03 (−27), Instrument 68:22 (+4:02), Instructor 57:35 (paper +1:20), Landings
+  2010 (**exact** — drift stays closed).
+- **IMG_6009 (pages 5–6, 20/09/2021–26/12/2021) — appended 2026-07-31.** 15 flights, all UTC (`Z`).
+  Time cross-checks all exact (Δtotal 13:56, Δpic 12:16, Δstudent 1:40, Δinstr 4:56). One 2-min taxi
+  warning (17/12 OH-CAM 17:57–18:29 = 0:32 vs logged 0:30; appended deliberately, same class as prior).
+  - **Student row (user-confirmed):** 20/09 P28A **OH-TIL** EFLA→**EFIM** 1:40, **PIC = Tarhanen**, user
+    flew as student on an **IR revalidation** → Student_Time 1:40 + Instrument 1:40, pic_name=Tarhanen.
+    (Note: distinct from the 2020 OH-TIL "Lord" instructor correction — the book here literally writes
+    TARHANEN as PIC.) Only SE-IFR/instrument row this page.
+  - **Instructing rows (PIC+Instructor=Total):** 29/10 OH-PDP EFHV local (1:30), and three 30/10 **OH-CAM**
+    flights (1:05 EFHV, 1:32 EFPR, 0:49 EFHV). Δinstr 4:56 reconciled exactly. **OH-CAM** = new C172 reg.
+  - **First night flight of Book 3:** 17/12 OH-CAM EFHV local 0:30, **Night 0:30, 3 night landings**
+    (day-landing cell struck in the book → 0 day, 3 night). New reg **OH-CMV** (C152, 26/12 EFHV local).
+  - **LANDINGS CONVENTION CHANGED — count ALL landings (day+night) in Cumulative_Landings** (user decision
+    2026-07-31, replacing the day-only "match the paper" rule now that night landings occur). Per-row reads
+    sum to **39 day + 3 night = 42** this page → **Cumulative_Landings 2052**. The book's printed cumulative
+    reads **2047** (day-only; its page day-total cell is struck/overwritten, best read ~37–39). So from
+    17/12/2021 **ours runs +5 ahead of the book's printed count** (= 3 night landings + a ~2-landing slip in
+    the book's own struck day column that we don't inherit — we trust per-row sums). This is a **new standing
+    drift**; the old "landings exact vs paper" note is superseded for Book 3. Day-landing reads on the short
+    rows (27/09 OH-PDP 0:18 = 3; 13/10 OH-CTL lake hops = 3 each) are my best legible reads, not
+    independently reconciled against the struck page-total.
+  - **New regs:** OH-CAM (C172), OH-CMV (C152). New field **EFIM** (Immola) already in Book-2 notes.
+- **IMG_6010 (pages 7–8, 10/02/2022–12/05/2022) — appended 2026-07-31.** 15 flights, all UTC (`Z`).
+  All Δ exact (Δtotal 14:18, Δpic 11:37, Δstudent 2:41, Δinstr 4:02, Δland 54). Zero block flags.
+  - **New type SR20 (OH-ESR)** = Cirrus SR20. **3 student rows** (type-rating training, remark "Koulutus
+    TYPE SR20"): 17/04 EFNU 0:50, 22/04 EFNU 1:00, 12/05 EFNU→EFTU 0:51. pic_name=**Stude** (instructor;
+    same Stude as prior DA40/2017 student flights, user-confirmed). Δstudent 2:41 reconciled.
+  - **Two night flights** (Night_Time + night landings): 23/02 **OH-CGX** EFHV local 0:25 night (3 night
+    ldg), 03/03 OH-CAM EFHV local 0:49 night (5 night ldg). Landings this page = **46 day + 8 night = 54**.
+  - Instructing (PIC+Instr): 11/03 OH-CAM 1:12, 12/04 OH-CAM 1:44, 11/05 OH-CTL 1:06 (Δinstr 4:02).
+- **IMG_6011 (pages 9–10, 12/05/2022–10/06/2022) — appended 2026-07-31.** 15 flights, all UTC (`Z`).
+  Δtotal 14:23, Δstudent 2:04, Δinstr 7:22, Δland 66 all exact. PIC **not** cross-checked vs paper (paper
+  column error, below); PIC pinned by total−student = 12:19 (= our row sum).
+  - **SR20 type rating PASSED:** 12/05 EFTU→EFNU 0:59 (student, pic_name Stude, remark "…PASSED"). From
+    **18/05 the SR20 (OH-ESR) is flown PIC** — 18/05 EFNU local 1:45 with **instrument 1:00** (SE-IFR).
+  - **Seaplane student row:** 13/05 OH-CTL Tuusulanjärvi→Hiidenvesi 1:05 (9 ldg), PIC=**Sinervä** →
+    Student_Time, pic_name Sinervä. (Sinervä = the seaplane instructor from Book-2 30/04/2019 & 15/07/2020.)
+  - **Seven OH-CTL seaplane instructing** flights (Tuusulanjärvi/Hiidenvesi/Karhusaari lake circuits):
+    13/05 0:50, 14/05 1:17, 15/05 1:10, 20/05 1:10, 24/05 1:25, 27/05 1:05, 27/05 0:25. Δinstr 7:22.
+  - **Row 5 (15/05 OH-CTL) on-block inferred = 08:24** (book wrote **07:24**, impossible for the logged 1:10
+    from off-block 07:14 — a 60-min book slip; user-confirmed). Off/on recorded 07:14–08:24. Also a 5-min
+    warn on 13/05 OH-CTL (off/on 14:08–15:18 = 1:10 vs logged 1:05; logged authoritative).
+  - **Paper PIC-column slip:** book wrote PIC-this-page **14:17**, but total−student = **12:19** (= our row
+    sum); the book's PIC cell over-adds by 1:58 (same class as prior PIC-column errors). Our 12:19 kept.
+    Effect: our Cumulative_PIC now runs further behind the book's printed PIC column, but is correct.
+  - **Landings all day (66)**, no night this page.
+- **Book-3 landing drift now open & growing (day+night vs book's day-only).** At 10/06/2022 our
+  Cumulative_Landings = **2172** (day+night). The book's printed day-only cumulative is lower by the running
+  night-landing total (3 on 17/12/2021 + 8 on IMG_6010 = 11 so far) plus the ~2-landing IMG_6009 struck-cell
+  slip. Cross-check on per-page Δland (day+night sum) only; do not expect our cumulative to equal the book's.
+
 ## Confirmed corrections
+- **IMG_4953 (closeout, pages 110/111) — row-1 landing & instructor rows (user-verified 2026-07-31).**
+  Row 1 (27/05/2021 OH-CTL Räyskälä→Vääksy) landings read ambiguously as 10; user confirmed **9**
+  (the per-page landing Δ then reconciles to paper's 43; Cumulative_Landings stays = paper's 1909).
+  Instructing rows on this page are **rows 4, 6, 7, 8** (all OH-CTL seaplane) — each logged
+  PIC+Instructor, so Instructor_Time = Total (0:41, 1:23, 1:15, 1:21). Page instructor Δ = 4:40
+  (42:59 → 47:39). Row 2 of IMG_4952 (16/05/2021 OH-CAY) is also PIC+Instructor 0:48.
+  The 25/05/2021 C185 OH-CDK float hops are **PIC, not student** (paper Oppilas column unchanged).
+- **`logbook_tools.py` block-vs-total check softened (2026-07-31).** Hand-logged block times routinely
+  differ from the logged Lentoaika by 1–3 min; the tool used to treat any such gap as a hard PROBLEM
+  that blocked `--append`. Now a gap ≤5 min (`BLOCK_TOL`) prints as a non-blocking WARNING (logged time
+  authoritative); a larger gap still blocks as a likely transcription error. Page-Δ cross-checks
+  (total/PIC/student/landings) remain hard-blocking. Four ≤3-min warnings on the closeout batch
+  (OH-CDK 12:38–13:35=0:57, OH-PDP 15:38–16:57=1:19, OH-CTL 12:14–12:36=0:22, OH-CTL 18:15–19:36=1:21).
 - **IMG_4921 / 04/10/2018 / P28A OH-PDP / EFHF → EFHF / 1:20 / 4 landings — instructor time.**
   This is an *instructing* flight: the paper logs 1:20 under **both** Päällikkö (PIC) and Opettaja
   (instructor). Originally appended with PIC only; corrected on 2026-07-31 to also set

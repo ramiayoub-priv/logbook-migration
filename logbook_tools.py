@@ -54,9 +54,15 @@ def diff_hhmm(off, on):
 def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
-    batch = json.load(open(sys.argv[1]))
+    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    batch = json.load(open(args[0]))
     do_append = '--append' in sys.argv
-    rows = list(csv.reader(open(CSV)))
+    # --csv PATH targets a different logbook (e.g. logbook_3.csv); default Book 2.
+    target = CSV
+    if '--csv' in sys.argv:
+        p = sys.argv[sys.argv.index('--csv') + 1]
+        target = p if os.path.isabs(p) else os.path.join(os.path.dirname(CSV), p)
+    rows = list(csv.reader(open(target)))
     idx = {c: i for i, c in enumerate(rows[0])}
     last = rows[-1]
     ct, cp, cs, ci, csea, cl, cins = (m(last[idx['Cumulative_Total']]),
@@ -64,7 +70,8 @@ def main():
         m(last[idx['Cumulative_Instrument']]), m(last[idx['Cumulative_SEP_Sea']]),
         int(last[idx['Cumulative_Landings']]), m(last[idx['Cumulative_Instructor']]))
 
-    out_lines, problems = [], []
+    out_lines, problems, warnings = [], [], []
+    BLOCK_TOL = 5  # minutes: hand-logged block vs logged Lentoaika routinely differ 1-3 min
     print(f"seed: {last[idx['Date']]} {last[idx['Aircraft_Reg']]}  "
           f"Total {fmt(ct)} PIC {fmt(cp)} Land {cl}\n")
     for page in batch:
@@ -72,10 +79,15 @@ def main():
         print(f"=== {page['img']} ===")
         for f in page['flights']:
             tot = m(f['total'])
-            # sanity: off/on block should equal total
-            if f.get('off') and f.get('on') and diff_hhmm(f['off'], f['on']) != tot:
-                problems.append(f"{page['img']} {f['date']} {f['reg']}: "
-                    f"off/on {f['off']}-{f['on']} = {fmt(diff_hhmm(f['off'],f['on']))} != total {f['total']}")
+            # sanity: off/on block should ≈ total. Small diffs (<=BLOCK_TOL) are
+            # ordinary hand-rounding (logged Lentoaika is authoritative) -> warn only;
+            # a larger gap likely signals a real transcription error -> block.
+            if f.get('off') and f.get('on'):
+                bdiff = diff_hhmm(f['off'], f['on'])
+                if bdiff != tot:
+                    msg = (f"{page['img']} {f['date']} {f['reg']}: off/on {f['off']}-{f['on']} "
+                           f"= {fmt(bdiff)} != total {f['total']}")
+                    (warnings if abs(bdiff - tot) <= BLOCK_TOL else problems).append(msg)
             student = f.get('student', False)
             pic_t = 0 if student else tot
             stu_t = tot if student else 0
@@ -113,6 +125,10 @@ def main():
                 problems.append(f"{page['img']} page Δ{name}: computed {disp} != paper {edisp}")
         print()
 
+    if warnings:
+        print("WARNINGS (block vs total within tolerance; logged time authoritative):")
+        for w in warnings: print("  -", w)
+        print()
     if problems:
         print("PROBLEMS:")
         for p in problems: print("  -", p)
@@ -126,10 +142,10 @@ def main():
           f"(+{len(out_lines)} rows)")
 
     if do_append and not problems:
-        with open(CSV, 'a', newline='') as fh:
+        with open(target, 'a', newline='') as fh:
             w = csv.writer(fh, quoting=csv.QUOTE_ALL)
             for r in out_lines: w.writerow(r)
-        print(f"\nAppended {len(out_lines)} rows to {CSV}")
+        print(f"\nAppended {len(out_lines)} rows to {target}")
 
 if __name__ == '__main__':
     main()

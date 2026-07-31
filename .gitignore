@@ -1,4 +1,5 @@
 # Images — large, kept on local disk only, not in the repo
+*.zip
 *.jpg
 *.jpeg
 *.JPG

@@ -14,8 +14,31 @@ Cumulative_Instrument, Cumulative_SEP_Sea, Cumulative_Landings, Cumulative_Instr
   - **Zulu rows:** when the book writes a time with a `Z`/`z` (UTC), keep the **`Z` suffix** in
     `Off_Block`/`On_Block` (e.g. `07:56Z`). Local rows stay plain `HH:MM`. This is how the app tells
     already-UTC rows apart from local ones. `logbook_tools.py` handles the `Z` suffix.
-- The **first data row** of `logbook_2.csv` is the final row carried over from
-  `logbook_1_final.csv` — the seed for all Book 2 cumulative totals.
+- The **first data row** of each book's CSV is the final row carried over from the previous book's
+  `_final.csv` — the seed for that book's cumulative totals (Book 2 ← Book 1; Book 3 ← Book 2).
+
+## Book 3 — EASA logbook (active, `logbook_3.csv`)
+Book 3 is a **newer EASA-format paper logbook** with a wider layout, but we keep the **same 26-column
+CSV schema**. Photos: `logbook-3/IMG_6007–6037.JPEG` (each = one two-page spread; **rotate CW** to read,
+they're stored sideways). Book pages numbered "Page N of 128".
+
+**EASA columns → our schema mapping:**
+- GENERAL: Date · Dep(place) · **Off-block (UTC)** · Arr(place) · **On-block (UTC)** · Type · Reg · PIC name.
+- FLIGHT TIME: **Total** (written as a *running cumulative* — the per-flight time sits in the
+  SE-VFR/SE-IFR column) · **Night** → `Night_Time` · **SE-VFR / SE-IFR / ME-VFR / ME-IFR** (single vs
+  multi × VFR vs IFR; **SE-IFR → `Instrument_Time`**; ME cols unused so far) · **PIC → `PIC_Time`** ·
+  **Co-pilot** (ignored; none yet) · **Multi-pilot** (none yet) · **Flight Instructor → `Instructor_Time`** ·
+  **Dual (from student appendix) → `Student_Time`** (dual == Oppilas/student).
+- OTHER: Instructor-in-STD (ignored) · **Landings Day / Night** — store the *sum* in `Landings`
+  (night-landing split is inferred later from `Night_Time`, not stored) · Remarks.
+
+**Conventions (locked 2026-07-31):**
+- **Times are UTC → suffix `Z`** on Off/On block, UNLESS an entry is annotated **`LT`** (then plain
+  local). The book is not 100% consistent; **flag suspicious times** (out-of-order/colliding).
+- We continue **our own internally-consistent cumulative series** (seeded from `logbook_2_final.csv`),
+  NOT the EASA book's printed "previous pages" totals. The book prints a per-page **"TOTAL THIS PAGE"**
+  for every column — use those as the offset-independent cross-check (`d_total/d_pic/d_land/d_instr`).
+- Tool: `logbook_tools.py <batch.json> --csv logbook_3.csv [--append]`.
 
 ## Seaplane registrations (count toward Cumulative_SEP_Sea)
 These regs are seaplanes; their `Total_Time` adds to `Cumulative_SEP_Sea`. Pay extra attention:

@@ -3,69 +3,95 @@
 **Read this first every fresh session.** It is the single source of truth for where we are.
 
 ## The project in one paragraph
-We are digitizing a series of paper pilot logbooks into CSV. **Book 1 is complete** →
-`logbook_1_final.csv` (do not edit; it is the finished prior logbook and the seed for Book 2's
-cumulative totals). **Book 2 is in progress** → `logbook_2.csv` — this is the active file we
-extend page by page. More logbooks (Book 3+) will follow after Book 2 is finished.
+We are digitizing a series of paper pilot logbooks into CSV. **Book 1 complete** →
+`logbook_1_final.csv`. **Book 2 complete** → `logbook_2_final.csv` (do not edit; both are finished
+prior logbooks; `logbook_2_final.csv` is the seed for Book 3's cumulatives). **Book 3 is now in
+progress** → `logbook_3.csv` — this is the active file we extend page by page. Book 3 is a **newer
+EASA-format logbook** (different, wider layout) but we keep the **same 26-column CSV schema** so the
+future app ingests all books uniformly.
 
 ## How pages get processed now (IMPORTANT — changed)
 There is **no more ollama**. **Claude transcribes the logbook page images directly** (Read the
-JPG in `logbook-2/IMG_XXXX.jpg`), presents the rows to the user, the **user verifies**, and only
-then do we append to `logbook_2.csv` with recomputed cumulative columns.
-The old per-image files in `logbook-2-csv/` are stale ollama output — treat them as untrusted
-hints at best, not source of truth. See `workflow.md` for the step-by-step.
+JPG in `logbook-3/IMG_XXXX.JPEG`), presents the rows to the user, the **user verifies**, and only
+then do we append to `logbook_3.csv` with recomputed cumulative columns.
+**Book-3 photos are rotated 90°** — rotate clockwise before reading, e.g.
+`python3 -c "from PIL import Image; Image.open('logbook-3/IMG_6007.JPEG').rotate(-90, expand=True).save('/tmp/r.jpg')"`.
+The old per-image files in `logbook-2-csv/` are stale ollama output — untrusted. See `workflow.md`.
 
-## Current checkpoint
-- **Last processed pages:** `IMG_4949/4950/4951.jpg` (book pages 102–107), verified & appended
-  2026-07-31 as a 3-page hybrid batch. 24 flights, **13/10/2020–07/05/2021** (crosses into 2021).
-  Contents: club **OH-PDP P28A** hops (EFHF/EFHV/EFLA), a **07/12/2020 OH-TIL P28A** night flight,
-  a new **DA40 OH-STL** night-IFR flight (11/02/2021: instrument 1:36 + night 1:55), C152 club flying
-  (**OH-COF**, **OH-CRA** at EFNU), a new **C172 OH-COK** at **EFPR**, and an **18/04/2021 float trip
-  to EFIM (Immola)**: two OH-COK ferry legs (UTC) + two **C185 OH-CDK seaplane student** flights
-  (instructor **Matikainen**, SEP-sea class-rating check, "FI.RCL2234").
-  **All page Δ reconciled exactly** (total/PIC/student/landings). Two student flights, no instructing.
-  New: **OH-COK** (C172), **DA40 OH-STL** recurring, airports **EFPR** and **EFIM** (Immola). See drift.md.
-- **Landing drift still CLOSED:** our Cumulative_Landings **= paper's printed count** (1843 at 07/05/2021).
-- **Timezone (this batch):** all rows plain local **except** the two **18/04/2021 OH-COK** ferry legs,
-  which the user confirmed are **UTC → `Z`** (07:25Z→08:38Z EFIM→EFPR, 10:54Z→12:04Z EFPR→EFIM; the
-  book had them in the wrong order with two arrows — reordered by time). C185 float rows stay local.
-- **Last row in `logbook_2.csv`:** `07/05/2021 · P28A · OH-PDP · EFHV → EFHV · 20:05–20:32 ·
-  Total 0:27 · PIC 0:27 · 1 landing`
-- **Cumulative totals at that row:**
-  - Cumulative_Total **772:37**
-  - Cumulative_PIC **622:29**
-  - Cumulative_Student **150:08** (+1:27 this batch: two OH-CDK student flights)
-  - Cumulative_Instrument **65:08** (+1:36 this batch: 11/02/2021 DA40 OH-STL night-IFR)
-  - Cumulative_SEP_Sea **191:59** (+1:27 this batch: OH-CDK 0:59 + 0:28)
-  - Cumulative_Landings **1843** (equals paper's printed count — drift closed)
-  - Cumulative_Instructor **42:11** (unchanged — no instructing this batch)
-- **`logbook_2.csv` has 405 data rows** (+ header).
-- **Workflow note:** user approved a **hybrid-batch** pace (2026-07-31) — transcribe several pages
-  per pass, auto-cross-check each with `logbook_tools.py`, present a report that greenlights clean
-  pages and flags only ambiguous rows for user verification. Not fully autonomous.
-- **Open item:** IMG_4928 rows 6/7 landings entered as 4/1 from a hard-to-read column (page total
-  +21 is certain); if the book shows 1/4 instead, only those two intermediate Cumulative_Landings
-  change — trivial fix.
-- **Cross-check note:** our Cumulative_Student runs ~+0:24 above the paper's written column — the
-  paper under-counted student by 0:27 on IMG_4925 (an arithmetic slip; our value is correct).
-- **PIC vs paper:** our Cumulative_PIC runs **+1:19** ahead of the paper's *corrected* value (pure
-  seed drift). The paper's *written* PIC is a further 1:20 low from an arithmetic slip it flags on
-  IMG_4921 ("pic added +1:20"); our PIC is the more correct figure.
+## Current checkpoint — BOOK 3 IN PROGRESS (EASA logbook)
+- **Book 2 is COMPLETE & finalized** → `logbook_2_final.csv` (421 rows, do not edit; seed for Book 3).
+- **Book 3 started 2026-07-31.** Source photos live in **`logbook-3/IMG_6007–6037.JPEG`** (31 images,
+  extracted from `logbook3_photos.zip`; each image is one two-page EASA spread; **rotate CW to read**).
+  Book pages are numbered "Page N of 128" — order by page number + dates (image numbers ≈ order but
+  confirm). `logbook_3.csv` seeded from `logbook_2_final.csv`'s last row, then extended.
+- **First spread done:** `IMG_6007` (pages 1–2), 15 flights **01/06/2021–29/07/2021**, verified &
+  appended. All UTC (Z). Club/float instructing: **OH-CTL** & **OH-GKT** seaplane hops on the lakes
+  (Tuusulanjärvi, Salonsaari, Kahvisaari/Hillosensalmi) + **OH-PDP/OH-COK/OH-CAY** landplane flights.
+  Instructing rows carry PIC=Instructor. **All 4 page cross-checks reconciled exactly**
+  (Δtotal 12:10, Δpic 12:10, Δinstr 7:11, Δland 57 — read straight off the book's "TOTAL THIS PAGE").
+- **Second spread done:** `IMG_6008` (pages 3–4), 15 flights **29/07/2021–10/09/2021**, verified &
+  appended 2026-07-31. All UTC (Z). Clean page — **all 4 cross-checks exact, zero block warnings**
+  (Δtotal 13:30, Δpic 13:30, Δinstr 2:45, Δland 44). No student/night this page. Instructing rows
+  (OH-CAY, OH-CTL, OH-COK). Two instrument rows (OH-TIL P28A: 1:56 + 1:18). Lake ops on OH-CTL/OH-GKT.
+- **Third spread done:** `IMG_6009` (pages 5–6), 15 flights **20/09/2021–26/12/2021**, verified &
+  appended 2026-07-31. All UTC (Z). Time Δ all exact (Δtotal 13:56, Δpic 12:16, Δstudent 1:40,
+  Δinstr 4:56). **Student row:** 20/09 OH-TIL EFLA→EFIM 1:40, PIC=**Tarhanen**, user was student
+  (IR reval) → Student_Time 1:40 + Instrument 1:40 (user-confirmed). Instructing rows 29/10 OH-PDP +
+  three 30/10 **OH-CAM** (new C172 reg). **First night flight of Book 3:** 17/12 OH-CAM 0:30 night,
+  3 night landings. New reg **OH-CMV** (C152, 26/12). **LANDINGS CONVENTION CHANGED (user 2026-07-31):
+  count ALL landings (day+night)** in Cumulative_Landings → now runs AHEAD of the book's day-only
+  printed count. See drift.md.
+- **Fourth & fifth spreads done:** `IMG_6010` (pages 7–8, 15 flights **10/02/2022–12/05/2022**) and
+  `IMG_6011` (pages 9–10, 15 flights **12/05/2022–10/06/2022**), verified & appended 2026-07-31. All
+  UTC (Z). Both fully reconciled (6010: Δtotal 14:18/Δpic 11:37/Δstu 2:41/Δinstr 4:02/Δland 54; 6011:
+  Δtotal 14:23/Δstu 2:04/Δinstr 7:22/Δland 66). **New type SR20 (OH-ESR)** — Cirrus type-rating
+  training with instructor **Stude** (3 student rows in 6010 + checkride "PASSED" 12/05 in 6011), then
+  flown **PIC from 18/05** (SR20 instrument 1:00). **Seaplane student** row 13/05 OH-CTL with **Sinervä**.
+  **Night flights** 23/02 (OH-CGX, 3 night ldg) & 03/03 (OH-CAM, 5 night ldg). 6011 row 5 (15/05 OH-CTL)
+  on-block **inferred 08:24** (book wrote 07:24, a 60-min slip — user-confirmed). 6011 paper PIC-column
+  slip 14:17 vs correct 12:19 (=total−student; our figure right).
+- **Last row in `logbook_3.csv`:** `10/06/2022 · C172 · OH-CAM · EFHV → EFHV · 17:12Z–17:28Z ·
+  Total 0:16 · PIC 0:16 · 2 landings`
+- **Cumulative totals at that row (our continuous series, seeded from Book 2):**
+  - Cumulative_Total **855:48** · Cumulative_PIC **699:15** · Cumulative_Student **156:33**
+  - Cumulative_Instrument **71:02** · Cumulative_SEP_Sea **227:23**
+  - Cumulative_Landings **2172** (= day+night; runs ahead of book's day-only count — see drift.md)
+  - Cumulative_Instructor **73:55**
+- **`logbook_3.csv` has 75 data rows** (+ header + seed row = 77 lines).
 
-## Next action
-Process **IMG_4952.jpg** then **IMG_4953.jpg** — these are the **last two images of Book 2**
-(only 4952 & 4953 remain in `logbook-2/`; likely the final spread(s), so this is the **closeout
-batch**). Transcribe both, cross-check each with `logbook_tools.py`, and surface only flagged rows
-for the user. If a UTC-logged OH-PIF/OH-GKT/OH-TIL/OH-COK row appears, cross-check Aviatron and mark
-`Z`. Confirm each page by its dates (image numbers aren't chronological).
-- **After Book 2 is complete:** rename/finalize `logbook_2.csv` per the project's Book-1 pattern
-  (`logbook_1_final.csv`) if the user wants, then Book 3 begins with a fresh source set.
-- **Paper-vs-ours drift (at 07/05/2021):** landings MATCH paper's printed count (1843, drift closed
-  17/04/2020). Total runs **+25** ahead of paper (772:12 printed → ours 772:37; seed residue). PIC runs
-  **−27** vs paper's column (paper 622:56). Instrument runs **+4:02** ahead of paper's Mittari (61:06
-  printed; steady seed drift). Instructor runs **+4** ahead (paper 42:07). Student runs **+0:23**
-  ahead of paper's Oppilas column (149:45 printed → ours 150:08; the long-standing IMG_4925 slip).
-  Always cross-check on offset-independent per-page Δ, never absolute totals.
+### Book-3 conventions (locked 2026-07-31 with user)
+- **Same 26-col schema.** EASA→our-schema mapping: **Dual (Oppilas) → Student_Time**;
+  **Single-Engine IFR → Instrument_Time**; **Flight Instructor → Instructor_Time**; **Co-pilot** ignored
+  (none yet); **Multi-engine / Multi-pilot** none yet; **night landings** not stored (inferred later from
+  Night_Time). The book's TOTAL column is a *running cumulative* — the per-flight time is in the
+  SE-VFR / SE-IFR column.
+- **Times are UTC → suffix `Z`** on Off/On block, UNLESS the entry is annotated **`LT`** (then plain
+  local, no Z). The book is **not 100% consistent** — flag anything suspicious (out-of-order or
+  colliding times) to the user. (Book-2 rows stayed local as written; do not retro-convert.)
+- **We continue OUR internally-consistent cumulative series** (seeded from `logbook_2_final.csv`),
+  NOT the EASA book's printed "previous pages" totals. The book's own per-page "TOTAL THIS PAGE"
+  values are gold for cross-checking (offset-independent Δ): feed them as `d_total/d_pic/d_land/d_instr`.
+- **Tooling:** `logbook_tools.py <batch.json> --csv logbook_3.csv [--append]` (new `--csv` flag targets
+  Book 3; defaults to Book 2). Block-vs-total diffs ≤5 min now warn instead of blocking append.
+
+## Next action — Book 3, IMG_6012 (pages 11–12)
+Process **`IMG_6012`** next (continues from 10/06/2022). Rotate **CCW**
+(`Image.open(p).rotate(90, expand=True)`) — for these Book-3 photos `rotate(90)` (CCW) gives the
+upright read, not `rotate(-90)`. Transcribe all rows, cross-check via the book's "TOTAL THIS PAGE"
+using `--csv logbook_3.csv`, and surface flags.
+**Hybrid-batch pace works well:** transcribe 2–3 spreads/pass, tool-reconcile each, present ONE digest
+that greenlights clean pages and surfaces only flagged rows (student/instructing/night/odd-time/landing
+anomalies) for user sign-off before append. Watch for: SR20 OH-ESR (now a PIC type), Stude (SR20 instr),
+Sinervä (seaplane instr), night landings, and the day+night landings convention.
+Then continue IMG_6013…6037 at that pace (each spread is
+~15 flights — sizeable, so 1–2 spreads per pass is plenty).
+- **Paper-vs-ours drift (offsets unchanged from Book-2 close; verified against EASA "previous pages"):**
+  **Landings MATCH** (EASA book's carry = 1909 = ours; now 1966 after IMG_6007). Total runs **+25**
+  ahead of paper (EASA carry 787:06 → ours 787:31). PIC runs **−27** vs paper (EASA carry PIC 637:50 →
+  ours 637:23). Instrument/SE-IFR runs **+4:02** ahead (EASA carry 61:06 → ours 65:08). Instructor: the
+  EASA book carries **48:59** vs ours **47:39** (paper **+1:20**; note this differs in sign from earlier
+  Book-2 estimates — reconcile if it matters). Student/Dual: EASA carry **149:45** vs ours **150:08**
+  (+0:23). Always cross-check on offset-independent per-page Δ ("TOTAL THIS PAGE"), never absolute totals.
 - **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. User pushed master
   (13+ commits) on 2026-07-31; images/HEIC are gitignored (not pushed). Push only when asked.
 
@@ -73,8 +99,9 @@ for the user. If a UTC-logged OH-PIF/OH-GKT/OH-TIL/OH-COK row appears, cross-che
 - **Zulu times:** keep the `Z` suffix in Off/On block (e.g. `07:56Z`) for UTC-logged rows; plain
   `HH:MM` for local. Preserves which rows the future app must NOT re-convert.
 - **IR instructor:** `Autere` (pilot flew as student in OH-PIF for the CB-IR rating).
-- **Batch helper:** `logbook_tools.py <batch.json> [--append]` computes cumulatives + cross-checks
-  each page against the paper's Δtotal/Δpic/Δlandings before writing. Use it for every page.
+- **Batch helper:** `logbook_tools.py <batch.json> --csv logbook_3.csv [--append]` computes cumulatives
+  + cross-checks each page against the paper's Δtotal/Δpic/Δland/Δinstr before writing. Use it for every
+  page. (Omit `--csv` and it targets Book 2. Block-vs-total diffs ≤5 min warn, don't block.)
 
 > Note: the old ollama output in `logbook-2-csv/` shows obvious OCR errors (e.g. a date
 > "41/09/2018" and reg "OK-PDP" in `logbook_IMG_4920.csv`) — exactly why we now transcribe with
