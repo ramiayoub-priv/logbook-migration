@@ -258,6 +258,16 @@ Then continue IMG_6021…6037 at that pace (each spread is
   the row by its neighbours' dates and offer the candidates rather than guessing silently.
 - **A night flight's landings may still be written in the DAY column** (IMG_6020 row 15). If the clock
   times make daylight impossible, they're night landings — say so.
+- **⚠⚠ THE BOOK'S `Z`/UTC MARKING IS UNRELIABLE — proved 2026-08-01 against `laskukierros_export.csv`**
+  (new second electronic cross-reference in the repo; club aircraft only — CTL/CAM/CGX/CAY/COK/CMU/
+  AWB/TIL — **no OH-GKT, no Maule, no PDP/PIF/ESR**; see `reference.md`). **Its times are LOCAL.**
+  Of 82 rows matching ours: **52 are genuinely local (41 of them wrongly carry a `Z` in our CSVs)**
+  and **30 are genuinely UTC (3 missing their `Z`)**. **User decision: document only, do NOT change
+  the CSVs** — paper stays authoritative; full list in `laskukierros_zflags.md`. No total affected.
+  **Practical upshot: keep asking the user about time zones per spread — the book's `Z` is advisory,
+  not evidence.** Also documented: 3 record conflicts (2 dates, 1 registration) — see `drift.md`.
+  **42 laskukierros rows postdate 21/07/2024, so it forward-checks IMG_6026 onward** (club regs only);
+  the first is `21/07/2024 OH-CTL Pulkkilanharju→Tuusula 20:53–21:40 local`, which should open 6026.
 - **⚠ The book's tiny `LT` subscript (first seen IMG_6024) is positive evidence a row is LOCAL — but
   its absence proves nothing** (IMG_6023 has none and is local throughout). **And it corrupts the digit
   it follows:** `20`+`LT` read as `29` on two IMG_6024 rows, each putting the row 9 min out. *When two

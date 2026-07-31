@@ -71,6 +71,27 @@ C185 floatplane: `OH-CDK` (Cessna 185 on floats, seaplane; Saimaa-lakes trip Jun
 - ⚠ **There is no `OH-CGT`.** On IMG_6020 the last letter of `OH-CGX` sometimes looks like a `T`;
   user confirmed all such rows are **`OH-CGX`**.
 
+## laskukierros_export.csv — second electronic cross-reference (NOT the source of truth)
+`laskukierros_export.csv` (repo root, tracked, UTF-8) is an export from the user's account on
+**laskukierros.fi**, a Finnish club booking/billing system. **128 flights, 19/04/2020 → 25/07/2026.**
+Pulled 2026-08-01 from `GET /export/pilotFlights` (the page also exposes `GET /api/v1/flights`);
+it needs the user's session cookie, so **only the user can refresh it** — ask them to re-export
+rather than trying to fetch it. Never touch the site's add/edit/delete endpoints.
+
+- **Coverage is partial — club aircraft only:** `OH-CTL` ×57, `OH-CAM` ×37, `OH-CGX` ×14, `OH-CAY` ×6,
+  `OH-COK`/`OH-CMU`/`OH-AWB` ×4 each, `OH-TIL` ×2. **No `OH-GKT`, no `OH-MIL`, no `OH-PDP`/`OH-PIF`/
+  `OH-ESR`/`OH-CDK`** — the pilot's own aircraft and the Blue Skies fleet are absent. Float rows on
+  OH-GKT and the Maule still need the user.
+- **Columns:** date, reg, type, dep/arr, off-block, takeoff, landing, on-block, airborne & block
+  minutes, **day landings / night landings**, night time, instrument time, PIC/copilot/instructor
+  (`Opettaja`)/student (`Oppilas`) flags, flight type, notes.
+- **⚠ Its times are LOCAL, not UTC** — established 2026-08-01, see `drift.md` for the proof.
+- **Use it for:** confirming a doubtful block time, settling whether a paper row is local or UTC,
+  and checking landing counts. **The paper logbook remains authoritative** (same rule as Aviatron);
+  flag discrepancies to the user, don't silently rewrite.
+- **42 of its rows postdate 21/07/2024**, so it is a *forward* cross-check for the pages still to do
+  (IMG_6026 onward) — but only for the club regs listed above.
+
 ## Aviatron.pdf — electronic cross-reference (NOT the source of truth)
 `Aviatron.pdf` (repo root, tracked) is an electronic-logbook export of the **Blue Skies aviation
 aircraft only**: `OH-PIF` (IR trainer), `OH-GKT` (= re-registered SE-GKT seaplane), `OH-DBS`,

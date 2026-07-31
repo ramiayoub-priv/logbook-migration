@@ -655,6 +655,44 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
   Instrument 65:08 (+4:02), Student 150:08 (+0:23), Instructor 42:11 (+4), Landings 1843 (**exact** —
   drift stays closed).
 
+## ⚠⚠ STANDING: the paper book's `Z` / UTC marking is unreliable (laskukierros cross-check, 2026-08-01)
+The user gave access to **laskukierros.fi** (a club booking/billing system); its export is now
+`laskukierros_export.csv` in the repo — 128 flights 2020–2026, **club aircraft only** (see
+`reference.md` for coverage and how to refresh it).
+
+**Its times are LOCAL.** Proof — three winter rows it logs with **day** landings that would land well
+after dark if the numbers were UTC (Helsinki sunsets in brackets): 16/01/2024 OH-AWB 14:30–15:19,
+1 day ldg [sunset ~15:55]; 04/01/2025 OH-CAM 14:08–15:07, 1 day ldg [~15:32]; 01/01/2026 OH-CMU
+13:54–14:26, 4 day ldg [~15:24]. As UTC each ends 1½–2 h after sunset. It also correctly marks
+12/12/2025 OH-CAM 18:42–19:22 as **3 night** landings. So laskukierros = local, consistently.
+
+**Consequence — the paper's `Z` is wrong roughly half the time, in BOTH directions.** Of **82** rows
+matching ours on date + registration + time:
+- **52 are genuinely local** — 11 stored correctly plain, **41 wrongly carry a `Z`**
+- **30 are genuinely UTC** — 27 stored correctly, **3 are missing their `Z`**
+  (`21/07/2024` OH-CTL 12:39, `25/06/2024` OH-CTL 12:18, `08/04/2021` OH-COK 16:00)
+
+This is **not** a transcription error — we recorded the `Z` the book shows. It confirms mechanically
+what the user has been saying row by row all along ("these are local"), and it means **`Z` flags
+in the CSVs cannot be trusted wherever we took the book at its word.**
+
+**DECISION (user, 2026-08-01): document only — do NOT change the CSVs.** The paper logbook stays
+authoritative. **Full 44-row list: [`laskukierros_zflags.md`](laskukierros_zflags.md).** The future
+normalizing app must treat the `Z` flag as advisory and prefer laskukierros/Aviatron where they cover
+the row. **No cumulative total is affected** — `Z` suffixes don't feed any sum.
+
+### Three record-level conflicts (paper kept, per user — documented only)
+All three match ours exactly on times *and* landings, so they are the same flights:
+| ours | laskukierros | conflict |
+|---|---|---|
+| `24/09/2022` OH-CTL ×2, 10:05–10:44 / 11:33–12:13 | **22/09/2022** | date (2 days) |
+| `12/07/2023` OH-CTL 18:00–19:08, 5 ldg | **18/07/2023** | date |
+| `26/12/2021` **OH-CMV** 09:34Z–10:36Z | **OH-CMU** 11:34–12:36 | registration |
+- The 12/07/2023 row is the one the user called *"an older flight I missed, entered out of order"*
+  (IMG_6018 row 5) — 18/07 would make it a **later** flight, not an earlier one.
+- The 26/12/2021 row is the `OH-CMU`/`OH-CMV` pair again. Note its times reconcile **exactly** as
+  UTC+2, so that row's `Z` is genuinely correct — only the registration is in question.
+
 ## Standing discrepancy — paper landing count (RESOLVED 17/04/2020)
 The paper logbook's **cumulative landing count ran ahead of the true count** for most of Books 1–2
 (at the historical IMG_4910 checkpoint paper showed 1051 vs correct 1050, paper +1). **This closed on
