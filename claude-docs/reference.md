@@ -57,6 +57,18 @@ P28A IR trainer: `OH-PIF` (used for CB-IR instrument training from Apr 2019, ins
 DA40: `OH-STL` (Diamond DA40, appears Apr 2019).
 C185 floatplane: `OH-CDK` (Cessna 185 on floats, seaplane; Saimaa-lakes trip Jun–Jul 2019).
 
+## Aircraft added in Book 3
+- `OH-CAM` (C172), `OH-CMV` (C152) — from IMG_6009.
+- **`SR20` / `OH-ESR`** (Cirrus SR20) — type-rating training Apr–May 2022 (instructor Stude), flown
+  **PIC from 18/05/2022**, routinely IFR on cross-countries.
+- **`OH-MIL`** — **Maule on floats, type written `M6(sea)`; always on floats** (user-confirmed
+  2026-07-31). First appears 24/08/2023 (IMG_6019) on a Sinervä seaplane dual. Counts SEP_Sea.
+- **`OH-AWB`** (C152) and **`OH-CMU`** (C152) — appear Dec 2023 / Mar 2024 at EFHV (IMG_6020).
+  ⚠ **`OH-CMU` and `OH-CMV` are two different aircraft** (user-confirmed) — both C152s, differing only
+  in the last letter. Read that letter carefully.
+- ⚠ **There is no `OH-CGT`.** On IMG_6020 the last letter of `OH-CGX` sometimes looks like a `T`;
+  user confirmed all such rows are **`OH-CGX`**.
+
 ## Aviatron.pdf — electronic cross-reference (NOT the source of truth)
 `Aviatron.pdf` (repo root, tracked) is an electronic-logbook export of the **Blue Skies aviation
 aircraft only**: `OH-PIF` (IR trainer), `OH-GKT` (= re-registered SE-GKT seaplane), `OH-DBS`,
@@ -94,6 +106,7 @@ EFTP (Tampere-Pirkkala), EFRY (Räyskälä — C185 floatplane dep 29/04/2020); 
 — the Aug–Sep 2019 CB-IR cross-countries. **Book 3 adds: EFPO (Pori)** and **ESNU (Umeå, Sweden —
 15/04/2023 SR20 IFR one-way; someone else ferried the aircraft back, so no return leg is logged)**.
 Estonian: **EETN** (Tallinn — 31/12/2019 DA40 day-trip, first non-Nordic field).
+**Also in Book 3: EFVP (Vampula)** — user-confirmed; 08/09/2023 OH-PDP EFHV↔EFVP day-return (IMG_6019).
 Plus lakes for seaplane ops (Tuusulanjärvi, Hiidenvesi, Räyskälä, Gumbostrand, Salonsaari,
 Keilaniemi, Vuosaari, Kelvenne, Kahvisaari).
 Finnish regs are `OH-xxx`. **Flag anything that breaks this pattern** (e.g. `OK-PDP` is almost

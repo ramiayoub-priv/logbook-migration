@@ -253,6 +253,58 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
     Instrument 83:46 (**+4:02**), Student 161:19 (**+0:20**), Instructor 94:30 (**−1:20**).
     **All five deltas held exactly across both spreads** — independent confirmation of the whole batch,
     including the 2:07 reconstruction on IMG_6017 row 12.
+- **IMG_6019 (pages 25–26, 24/08/2023–26/10/2023) — appended 2026-07-31.** **14** flights (one row
+  struck, below), all UTC (`Z`). Image already upright. **All 4 cross-checks exact** (Δtotal 15:04,
+  Δpic 13:42, Δstudent 1:22, Δinstr 1:20). No night this page.
+  - **⚠ STRUCK ROW = DUPLICATE OF AN ALREADY-APPENDED FLIGHT — excluded.** Row 2 reads
+    *07/09/23 Tuusulanjärvi→Tuusulanjärvi, 14:51–16:00, C172(sea) OH-CTL, PIC 1:20, 6 ldg* and is
+    **ruled through across both pages**. It is the same flight as **IMG_6018 row 15** (07/09/2023
+    Tuusulanjärvi local, 1:20, 6 ldg — logged there as 17:51Z–19:11Z). The pilot re-entered it at the
+    top of the new page, then voided it. **Not in `logbook_3.csv`** — do not "recover" it. The page
+    total 15:04 only reconciles with the row excluded.
+  - **The Total column on this page is scribbled illegible; the pilot wrote "\* 15:04 ←" in the left
+    margin pointing at TOTAL THIS PAGE.** That note is the only legible source for the page total, and
+    it is corroborated two ways: our 14-row sum = 15:04, and the book's own SE-VFR 14:04 + SE-IFR 1:00
+    = 15:04. The bottom TOTAL cell is unreadable, but p.28's carry (970:00 = 954:56 + 15:04) confirms it.
+  - **NEW AIRCRAFT OH-MIL — a Maule on floats, type written "M6(sea)" (user: "always on floats").**
+    First OH-MIL flight in any of the three books; it was already in the SEAPLANES list, so SEP_Sea
+    picks it up. Row 1, 24/08/2023 **Tuusulanjärvi → Keilaniemi** (place user-confirmed), 1:22,
+    **STUDENT with Sinervä** (user-confirmed), 7 landings. Fourth Sinervä seaplane dual.
+  - **⚠ THE PILOT STRUCK HIS OWN PIC TOTAL ON THIS PAGE.** The bottom PIC cell reads **810:09 crossed
+    out**, and p.28 carries **807:39** — a deliberate **−2:30** hand correction. User (2026-07-31):
+    *"I was recalculating by hand and corrected something from earlier. I don't remember details."*
+    Our per-page Δpic reconciled **exactly** on both this page and the next (13:42, 10:56), so our
+    row-built PIC is internally sound and was kept. **Effect: the standing PIC drift flips from
+    −1:25 to +1:05.** Unresolved whether the 2:30 was fixing a real over-count that our series also
+    inherited, or an arithmetic slip that only ever lived in the book's column. The book's PIC column
+    has over-added before (IMG_4929 +8 min, IMG_4933, IMG_6011 +1:58), which favours the latter.
+  - Two block warns (logged authoritative): 24/08 OH-MIL 1:24 vs 1:22; 19/10 OH-PDP 0:30 vs 0:33.
+  - **New airport EFVP (Vampula)** — user-confirmed; 08/09 OH-PDP EFHV↔EFVP day-return.
+  - The book's own TOTAL PREVIOUS PAGES cell here reads ~953:54 against the 954:56 that p.24 ended on
+    — a transient carry slip that it corrects by p.28. Cosmetic; nothing propagates.
+  - Landings page-total cell blank again → no paper check; ours sums to **46**. SEP_Sea +2:47 → 274:14.
+- **IMG_6020 (pages 27–28, 26/10/2023–05/03/2024) — appended 2026-07-31.** 15 flights, all UTC (`Z`).
+  **All 3 available cross-checks exact** (Δtotal 10:56, Δpic 10:56, Δinstr 3:59). No dual, no SE-IFR.
+  **Crosses into 2024.** Almost entirely EFHV circuit/local work — the float season is over.
+  - **Three new regs:** **OH-AWB** (C152), **OH-CMU** (C152), plus OH-CGT ruled out (below).
+    **OH-CMU is genuinely distinct from OH-CMV** (C152, first seen 26/12/2021) — user-confirmed, not
+    a misread. Both are C152s; watch the last letter.
+  - **Reg read resolved:** rows 6 & 8 (27/12, 28/12 C172 at EFHV) end in a letter that looks more like
+    **T** than the X on the other rows — user confirms all of them are **OH-CGX**. There is no OH-CGT.
+  - **Row 12 type corrected (user):** the book writes **C172** for the 09/02/2024 OH-AWB night flight,
+    but OH-AWB is a **C152** (as on rows 5/9/10) — *"my mistake."* Stored as C152.
+  - **Two night flights:** 09/02/2024 OH-AWB EFHV local 0:39 night (5 night ldg) and 05/03/2024
+    **OH-CMU** EFHV local 19:32–19:55 **0:23 night**. ⚠ On that last row the book puts its **3 landings
+    in the DAY column**, but the flight is entirely night — user confirms *"night landings, good find."*
+    Under the day+night convention `Landings` = 3 either way, and `Night_Time 0:23` lets the app infer
+    the split. Night page total 1:02 reconciles with the book exactly.
+  - **Instructing (3):** 26/10 OH-CGX 1:40, 29/10 OH-CGX 1:09, 05/03/2024 OH-CGX 1:10. Δinstr 3:59 exact.
+  - Landings page-total cell blank → no paper check; ours sums to **46**.
+  - **Paper-vs-ours drift at 05/03/2024** (book bottoms Total 980:56, PIC 818:35, SE-IFR 80:44,
+    Dual 162:21, Flight-Instructor 101:09): ours Total 982:21 (**+1:25**), PIC 819:40 (**+1:05** —
+    *flipped from −1:25 by the pilot's −2:30 hand correction on p.26*), Instrument 84:46 (**+4:02**),
+    Student 162:41 (**+0:20**), Instructor 99:49 (**−1:20**). Four of five steady; only PIC moved, and
+    by exactly the book's own adjustment.
 - **Book-3 landing drift now open & growing (day+night vs book's day-only).** At 10/06/2022 our
   Cumulative_Landings = **2172** (day+night). The book's printed day-only cumulative is lower by the running
   night-landing total (3 on 17/12/2021 + 8 on IMG_6010 = 11 so far) plus the ~2-landing IMG_6009 struck-cell
