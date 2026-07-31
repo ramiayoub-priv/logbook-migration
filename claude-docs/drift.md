@@ -96,6 +96,29 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
     + cumulative both confirm). User: "I logged flight time, not block time" → widen block symmetrically
     (−9 min start, +9 min end) to 1:00 → recorded **off 07:53Z / on 08:53Z**. Arrival "Astuvansalmi"
     (user-supplied; handwriting read as "Aslonos"). OH-CDK counts SEP_Sea.
+- **IMG_6013 (pages 13–14, 21/07/2022–04/09/2022) — appended 2026-07-31.** 15 flights, all UTC (`Z`).
+  Original image **already UPRIGHT — no rotation** (like 6012). No night this page.
+  - **⚠ 1:00 book slip at the TARHANEN student row (10/08 OH-PIF EFLA local).** The flight is **1:55**
+    (Student 1:55 + Instrument 1:55, pic_name=**Tarhanen** — another IR-reval, same instructor/pattern as
+    the 20/09/2021 OH-TIL row). Three cells agree on 1:55: on-block 13:20→15:15 (overwritten), SE-IFR
+    column 1:55, Dual column 1:55. But the **running Total column wrote 875:28** (implies 0:55) — a 1:00
+    undercount that propagated into the book's printed page totals. So the book's printed **TOTAL THIS
+    PAGE 13:49 → should be 14:49**, printed **PIC 11:54 → 12:54**, printed **SE-VFR 11:54 → 12:54**, and
+    every book cumulative from this row forward is **1:00 low**. Directly-summed columns (SE-IFR 1:55,
+    Dual 1:55, Flight-Instructor 2:17) are correct. We fed the **corrected** Δtotal 14:49 / Δpic 12:54 to
+    the cross-check (all 5 Δ then exact). **The book's own SE-IFR total went 69:01→70:56, i.e. it credited
+    the full 1:55 there — confirming the running-Total column, not the flight, is the error.**
+  - **Missing landing on the Tarhanen row counted as 1** (user-instructed; the landings cell was blank).
+    Page day-landings = 28 written + 1 = **29** (no night). Δland 29 exact.
+  - **Row 7 (07/08 OH-CTL Tuusula) on-block inferred = 17:10** (written "12:10" is impossible before
+    off-block 16:04; 16:04→17:10 = 1:06 = logged & cumulative Δ). Seaplane instructing (Instructor 1:06).
+  - **Instructing (2):** 01/08 & 07/08 OH-CTL Tuusula seaplane locals, Instructor 1:11 + 1:06 = 2:17, 6 ldg each.
+  - **Row 15 date = 04/09/2022** (user-corrected; book digits read as "04/07/22", chronologically out of
+    order after the 24/09 rows). EFHV→EFLA OH-PDP 0:40.
+  - **Place-name reads (user-confirmed):** "Leukolws" = **Leikonvesi** (Saimaa float, rows 2–3);
+    24/09 round-trip is **Tuusula ↔ Hiidenvesi** (seaplane lake, OH-CTL floatplane), read initially as "Hitanpää".
+  - **Lapland floatplane trip:** 23/08 OH-CTL Inari→Kemijärvi→Sodankylä (2:05 + 2:06), SEP_Sea.
+  - SEP_Sea this page +9:31 (OH-CDK ×3 + OH-CTL ×6) → 240:24.
 - **Book-3 landing drift now open & growing (day+night vs book's day-only).** At 10/06/2022 our
   Cumulative_Landings = **2172** (day+night). The book's printed day-only cumulative is lower by the running
   night-landing total (3 on 17/12/2021 + 8 on IMG_6010 = 11 so far) plus the ~2-landing IMG_6009 struck-cell

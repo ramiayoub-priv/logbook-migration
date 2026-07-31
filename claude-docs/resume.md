@@ -58,14 +58,25 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
   Three instrument rows (SR20 OH-ESR: 30/06 0:30, 06/07 0:44 + 0:47 — EFNU↔EFTU Turku). New reg
   **OH-CAM** already seen; SR20 OH-ESR now routine PIC. Seaplanes: OH-CTL ×2 + **OH-CDK C185 floatplane**
   (21/07 Papinluoto→Astuvansalmi, Saimaa). Two inferred rows — see drift.md (17/07 on-block; 21/07 block).
-- **Last row in `logbook_3.csv`:** `21/07/2022 · C185 · OH-CDK · Papinluoto → Astuvansalmi ·
-  07:53Z–08:53Z · Total 1:00 · PIC 1:00 · 1 landing`
+- **Seventh spread done:** `IMG_6013` (pages 13–14), 15 flights **21/07/2022–04/09/2022**, verified &
+  appended 2026-07-31. All UTC (Z). Image **already UPRIGHT — no rotation** (like 6012). No night this page.
+  **All 5 cross-checks exact — but only after correcting a 1:00 book slip** (Δtotal 14:49, Δpic 12:54,
+  Δstudent 1:55, Δinstr 2:17, Δland 29). **⚠ TARHANEN student row (10/08 OH-PIF EFLA local) = 1:55**
+  (Student 1:55 + Instrument 1:55, pic_name=Tarhanen, another IR-reval): the book's running-Total column
+  undercounted it by 1:00 (wrote 875:28), so the book's printed page/cumulative TOTAL & PIC are 1:00 low
+  from here on; directly-summed cols (SE-IFR, Dual, Instructor) are correct. See drift.md. Missing landing
+  on that row counted as **1** (user). **Row 7 (07/08 OH-CTL)** on-block inferred **17:10** (book's "12:10"
+  impossible). **Instructing:** 01/08 & 07/08 OH-CTL Tuusula seaplane (Instr 1:11+1:06). **Lapland floatplane
+  trip** 23/08 OH-CTL Inari→Kemijärvi→Sodankylä. **User-corrected reads:** Leikonvesi (float), Tuusula↔Hiidenvesi
+  (24/09), row-15 date **04/09/2022** (book digits looked like 04/07).
+- **Last row in `logbook_3.csv`:** `04/09/2022 · P28A · OH-PDP · EFHV → EFLA ·
+  10:55Z–11:35Z · Total 0:40 · PIC 0:40 · 1 landing`
 - **Cumulative totals at that row (our continuous series, seeded from Book 2):**
-  - Cumulative_Total **868:45** · Cumulative_PIC **711:50** · Cumulative_Student **156:55**
-  - Cumulative_Instrument **73:03** · Cumulative_SEP_Sea **230:53**
-  - Cumulative_Landings **2205** (= day+night; runs ahead of book's day-only count — see drift.md)
-  - Cumulative_Instructor **75:15**
-- **`logbook_3.csv` has 90 data rows** (+ header + seed row = 92 lines).
+  - Cumulative_Total **883:34** · Cumulative_PIC **724:44** · Cumulative_Student **158:50**
+  - Cumulative_Instrument **74:58** · Cumulative_SEP_Sea **240:24**
+  - Cumulative_Landings **2234** (= day+night; runs ahead of book's day-only count — see drift.md)
+  - Cumulative_Instructor **77:32**
+- **`logbook_3.csv` has 105 data rows** (+ header + seed row = 107 lines).
 
 ### Book-3 conventions (locked 2026-07-31 with user)
 - **Same 26-col schema.** EASA→our-schema mapping: **Dual (Oppilas) → Student_Time**;
@@ -82,27 +93,29 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
 - **Tooling:** `logbook_tools.py <batch.json> --csv logbook_3.csv [--append]` (new `--csv` flag targets
   Book 3; defaults to Book 2). Block-vs-total diffs ≤5 min now warn instead of blocking append.
 
-## Next action — Book 3, IMG_6013 (pages 13–14)
-Process **`IMG_6013`** next (continues from 21/07/2022). **Check orientation first** — image
-orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, but **6012 was already
-upright** in the original (no rotation). Quickest check: `Image.open(p).resize((1024,768))` and eyeball
+## Next action — Book 3, IMG_6014 (pages 15–16)
+Process **`IMG_6014`** next (continues from 04/09/2022). **Check orientation first** — image
+orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, but **6012 and 6013 were
+already upright** in the original (no rotation). Quickest check: `Image.open(p).resize((1024,768))` and eyeball
 which way is up; then crop the two pages at high res (the original is ~2048×1536). Transcribe all rows,
 cross-check via the book's "TOTAL THIS PAGE" using `--csv logbook_3.csv`, and surface flags.
 **Hybrid-batch pace works well:** transcribe 2–3 spreads/pass, tool-reconcile each, present ONE digest
 that greenlights clean pages and surfaces only flagged rows (student/instructing/night/odd-time/landing
 anomalies) for user sign-off before append. Watch for: SR20 OH-ESR (now a PIC type), Stude (SR20 instr),
 Sinervä + **Salo** (instructors), night landings, and the day+night landings convention.
-Then continue IMG_6013…6037 at that pace (each spread is
+Then continue IMG_6014…6037 at that pace (each spread is
 ~15 flights — sizeable, so 1–2 spreads per pass is plenty).
-- **Paper-vs-ours drift, refreshed at end of page 12 (21/07/2022 boundary; EASA "TOTAL" bottom-of-page):**
-  book Total **868:20** vs ours **868:45** (**+0:25**); book PIC **714:15** vs ours **711:50** (**−2:25** —
-  widened by the IMG_6011 paper PIC-column slip, our value is correct); book SE-IFR **69:01** vs our
-  Instrument **73:03** (**+4:02**); book Dual **156:32** vs our Student **156:55** (**+0:23**); book
-  Flight-Instructor **76:35** vs ours **75:15** (**−1:20**). Landings: ours **2205** (day+night) runs ahead
+- **Paper-vs-ours drift, refreshed at end of page 14 (04/09/2022 boundary; EASA "TOTAL" bottom-of-page):**
+  book Total **882:09** vs ours **883:34** (**+1:25** — widened +1:00 by the IMG_6013 row-9 running-Total
+  slip, our value correct); book PIC **726:09** vs ours **724:44** (**−1:25**); book SE-IFR **70:56** vs our
+  Instrument **74:58** (**+4:02**, steady); book Dual **158:27** vs our Student **158:50** (**+0:23**, steady);
+  book Flight-Instructor **78:52** vs ours **77:32** (**−1:20**, steady). The three steady deltas confirm our
+  transcription; only Total/PIC moved ±1:00 (book's slip). Landings: ours **2234** (day+night) runs ahead
   of the book's day-only cumulative (see drift.md). **Always cross-check on offset-independent per-page Δ
-  ("TOTAL THIS PAGE"), never absolute totals.**
+  ("TOTAL THIS PAGE"), never absolute totals — and note the book's Total column is itself 1:00 low from p.14 on.**
 - **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. master is pushed &
-  up-to-date through IMG_6012 (`40618a4`) as of 2026-07-31; images/HEIC/zip are gitignored (not pushed).
+  up-to-date through IMG_6012 (`40618a4`) as of 2026-07-31; IMG_6013 appended locally (not yet committed);
+  images/HEIC/zip are gitignored (not pushed).
   Push only when asked.
 
 ## Conventions locked in this session
