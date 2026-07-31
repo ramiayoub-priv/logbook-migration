@@ -18,10 +18,17 @@ Work **one page at a time, with the user**. Never batch-process future pages.
 5. **Append & recompute.** Append verified rows to `logbook_2.csv` and recompute the cumulative
    columns from the last existing row (per-image cumulative values, if any, are placeholders).
 
-## PIC vs Student default
-- **Default: every appended row is PIC time.**
-- Treat a row as **student time only when the user explicitly** gives the row and says it is
-  student time, plus the non-self PIC name. Never infer student time from blanks or names.
+## Flight role classification (PIC / Student / Instructor)
+Three cases — read the paper's Päällikkö (PIC) / Oppilas (Student) / Opettaja (Instructor) columns:
+- **Normal flight (default):** PIC time only. `PIC_Time = Total_Time`, `pic_name = self`.
+- **Pilot is the STUDENT** (e.g. IR training, dual received): `Student_Time = Total_Time`,
+  `PIC_Time` blank, `pic_name = the instructor's name`. Feeds `Cumulative_Student`. Often marked
+  with Zulu times. Do NOT infer this — the user must confirm the row and give the instructor name.
+- **Pilot is the INSTRUCTOR** (instructing a student): the flight is logged as PIC **and**
+  Instructor simultaneously — `PIC_Time = Instructor_Time = Total_Time`, `pic_name = self`. Feeds
+  both `Cumulative_PIC` and `Cumulative_Instructor`. Confirm with the user.
+- **Never infer** Student or Instructor time from blanks or names. Default to PIC unless the user
+  explicitly says otherwise (with the row number and the other pilot's name).
 
 ## Cumulative recompute rules
 Seed each run from the **last row already in `logbook_2.csv`**, then per new row:

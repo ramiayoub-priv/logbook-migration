@@ -8,6 +8,13 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
   `logbook_2.csv`. Do not "recover" it. The paper's own running total skips it (538:19 → 539:04).
 
 ## Confirmed corrections
+- **IMG_4921 / 04/10/2018 / P28A OH-PDP / EFHF → EFHF / 1:20 / 4 landings — instructor time.**
+  This is an *instructing* flight: the paper logs 1:20 under **both** Päällikkö (PIC) and Opettaja
+  (instructor). Originally appended with PIC only; corrected on 2026-07-31 to also set
+  `Instructor_Time = 1:20`, bumping `Cumulative_Instructor` 7:57 → **9:17** on that row and all rows
+  after. PIC/Total/Student/SEP/Landings unchanged. Convention confirmed by the next page's carry
+  (instructor 9:17). This is the pilot's first *instructing* flight in Book 2.
+
 - **IMG_4905 / 28/06/2017 / P28A OH-PDP / EFHF → EFHF:** correct total is **00:37**, not 00:36.
   Cumulative Total and PIC corrected +00:01 from that row onward.
 - **IMG_4908 / 02/09/2017 / C172 OH-CTL / VEHMERSALMI → HIRVENSALMI:** correct total is **01:04**,

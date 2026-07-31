@@ -26,17 +26,17 @@ hints at best, not source of truth. See `workflow.md` for the step-by-step.
   - Cumulative_Instrument **3:12**
   - Cumulative_SEP_Sea **128:09**
   - Cumulative_Landings **1298**
-  - Cumulative_Instructor **7:57**
+  - Cumulative_Instructor **9:17**  ← corrected 2026-07-31 (was 7:57; see drift.md)
 - **`logbook_2.csv` has 184 data rows** (+ header).
-- **PIC vs paper:** our Cumulative_PIC runs **+2:39** ahead of the paper's written value (old +1:19
-  seed drift plus the 1:20 the paper omitted on IMG_4921). Consistent, carries forward.
-- **PIC vs paper:** our Cumulative_PIC runs **+2:39** ahead of the paper's written value (old +1:19
-  seed drift plus the 1:20 the paper omitted on IMG_4921). Consistent, carries forward.
+- **PIC vs paper:** our Cumulative_PIC runs **+1:19** ahead of the paper's *corrected* value (pure
+  seed drift). The paper's *written* PIC is a further 1:20 low from an arithmetic slip it flags on
+  IMG_4921 ("pic added +1:20"); our PIC is the more correct figure.
 
 ## Next action
-Identify and process the next page after 20/01/2019. Confirm the correct next image with the user
-before transcribing — image file numbers are NOT in chronological order, so always verify the page
-by its dates, not its filename.
+Process **IMG_4924.jpg** (pages 52/53) — the training section starts here: IR-training flights
+where the pilot is the **student** (Student_Time + pic_name = instructor, PIC blank), instructing
+flights (PIC **and** Instructor both filled), Zulu times, and strike-throughs. Do these **one page
+at a time** with explicit user classification; batching resumes once pages are clean PIC.
 
 > Note: the old ollama output in `logbook-2-csv/` shows obvious OCR errors (e.g. a date
 > "41/09/2018" and reg "OK-PDP" in `logbook_IMG_4920.csv`) — exactly why we now transcribe with
