@@ -80,6 +80,22 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
     sum); the book's PIC cell over-adds by 1:58 (same class as prior PIC-column errors). Our 12:19 kept.
     Effect: our Cumulative_PIC now runs further behind the book's printed PIC column, but is correct.
   - **Landings all day (66)**, no night this page.
+- **IMG_6012 (pages 11–12, 10/06/2022–21/07/2022) — appended 2026-07-31.** 15 flights, all UTC (`Z`).
+  **All 5 Δ exact** (Δtotal 12:57, Δpic 12:35, Δstudent 0:22, Δinstr 1:20, Δland 33). No night this page.
+  - **Original image was already UPRIGHT — no rotation** (6007–6011 needed CCW rotate(90); Book-3
+    orientation is inconsistent, check each image).
+  - **Instructing:** 22/06 OH-CTL seaplane Tuusulanjärvi local 1:20 (Instructor 1:20, PIC 1:20, 6 ldg).
+  - **Student row:** 05/07 OH-TIL P28A EFTP local 0:22, pic_name=**Salo** (new instructor name), Dual 0:22
+    → Student_Time. Δstudent 0:22.
+  - **Three instrument (SE-IFR) rows, SR20 OH-ESR now routine PIC:** 30/06 EFNU local 2:10 (instr 0:30),
+    06/07 EFNU→EFTU 0:44 (instr 0:44), 06/07 EFTU→EFNU 0:47 (instr 0:47). Turku (EFTU) day-trips.
+  - **Row 14 (17/07 OH-PDP EFHV local) on-block inferred = 18:36** (written digit smudged; 18:01→18:36 =
+    0:35 = logged time & cumulative Δ). No user action needed — unambiguous from the math.
+  - **Row 15 (21/07 OH-CDK C185 floatplane, Papinluoto→Astuvansalmi, Saimaa) block inferred (user-approved
+    one-time exception):** book's block cells 08:02–08:44 = 0:42 but logged flight time = **1:00** (SE-VFR
+    + cumulative both confirm). User: "I logged flight time, not block time" → widen block symmetrically
+    (−9 min start, +9 min end) to 1:00 → recorded **off 07:53Z / on 08:53Z**. Arrival "Astuvansalmi"
+    (user-supplied; handwriting read as "Aslonos"). OH-CDK counts SEP_Sea.
 - **Book-3 landing drift now open & growing (day+night vs book's day-only).** At 10/06/2022 our
   Cumulative_Landings = **2172** (day+night). The book's printed day-only cumulative is lower by the running
   night-landing total (3 on 17/12/2021 + 8 on IMG_6010 = 11 so far) plus the ~2-landing IMG_6009 struck-cell
