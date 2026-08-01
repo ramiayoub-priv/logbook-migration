@@ -1,0 +1,64 @@
+# Logbook backend.
+#
+# The coverage bar is CLAUDE.md rule 0.6 and is enforced here, not by good
+# intentions: >=80% overall, 100% on the calculation core.
+
+GO      ?= go
+BIN     := dist/logbook-server
+PKG     := ./...
+
+# Packages where a bug means a wrong legal record. These must be at 100%.
+CORE    := internal/hhmm internal/timeutil internal/stats
+
+MIN_TOTAL := 80
+
+.PHONY: all
+all: test build
+
+.PHONY: test
+test:
+	$(GO) test -race $(PKG)
+
+.PHONY: cover
+cover:
+	@$(GO) test -coverprofile=coverage.out $(PKG) >/dev/null
+	@$(GO) tool cover -func=coverage.out | tail -1
+	@total=$$($(GO) tool cover -func=coverage.out | tail -1 | grep -oE '[0-9]+\.[0-9]+' ); \
+	 pass=$$(echo "$$total >= $(MIN_TOTAL)" | bc -l); \
+	 if [ "$$pass" != "1" ]; then \
+	   echo "FAIL: total coverage $$total%% is below the $(MIN_TOTAL)%% bar"; exit 1; \
+	 fi
+	@echo "OK: total coverage meets the $(MIN_TOTAL)% bar"
+
+# Each core package must be at exactly 100%. Checked per package so that a
+# well-covered package cannot mask a thin one behind a healthy average.
+.PHONY: cover-core
+cover-core:
+	@fail=0; \
+	for p in $(CORE); do \
+	  if ! ls $$p/*.go >/dev/null 2>&1; then echo "SKIP $$p (not written yet)"; continue; fi; \
+	  pct=$$($(GO) test -cover ./$$p 2>/dev/null | grep -oE 'coverage: [0-9.]+' | grep -oE '[0-9.]+'); \
+	  if [ "$$pct" = "100.0" ]; then echo "OK   $$p 100.0%"; \
+	  else echo "FAIL $$p $${pct:-no}% (calculation core must be 100%)"; fail=1; fi; \
+	done; \
+	exit $$fail
+
+.PHONY: check
+check: vet test cover cover-core
+
+.PHONY: vet
+vet:
+	$(GO) vet $(PKG)
+
+# Cross-compiled for the deploy target. CGO_ENABLED=0 is what makes the result
+# a static binary needing no toolchain, libc or Go install on the server --
+# modernc.org/sqlite is pure Go precisely so this works.
+.PHONY: build
+build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+	  $(GO) build -trimpath -ldflags="-s -w" -o $(BIN) ./cmd/server
+	@ls -lh $(BIN)
+
+.PHONY: clean
+clean:
+	rm -rf dist coverage.out
