@@ -1,0 +1,358 @@
+[
+ {
+  "img": "IMG_6028",
+  "paper": {
+   "d_total": "13:50",
+   "d_pic": "13:50",
+   "d_instr": "2:32"
+  },
+  "flights": [
+   {
+    "date": "18/09/2024",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "14:41Z",
+    "on": "15:20Z",
+    "total": "0:39",
+    "land": 5
+   },
+   {
+    "date": "20/09/2024",
+    "type": "C172",
+    "reg": "OH-GKT",
+    "dep": "Kahvisaari",
+    "arr": "Lietsaari",
+    "off": "08:36Z",
+    "on": "09:20Z",
+    "total": "0:44",
+    "land": 4,
+    "instructor": "0:44"
+   },
+   {
+    "date": "20/09/2024",
+    "type": "C172",
+    "reg": "OH-GKT",
+    "dep": "Lietsaari",
+    "arr": "Kahvisaari",
+    "off": "09:35Z",
+    "on": "10:18Z",
+    "total": "0:43",
+    "land": 4,
+    "instructor": "0:43"
+   },
+   {
+    "date": "20/09/2024",
+    "type": "C172",
+    "reg": "OH-GKT",
+    "dep": "Kahvisaari",
+    "arr": "Tuusulanjärvi",
+    "off": "11:15Z",
+    "on": "11:55Z",
+    "total": "0:40",
+    "land": 2
+   },
+   {
+    "date": "20/09/2024",
+    "type": "C172",
+    "reg": "OH-GKT",
+    "dep": "Tuusulanjärvi",
+    "arr": "Kahvisaari",
+    "off": "15:33Z",
+    "on": "16:11Z",
+    "total": "0:38",
+    "land": 1
+   },
+   {
+    "date": "30/09/2024",
+    "type": "C172",
+    "reg": "OH-GKT",
+    "dep": "Kahvisaari",
+    "arr": "Kahvisaari",
+    "off": "13:52Z",
+    "on": "14:58Z",
+    "total": "1:06",
+    "land": 10
+   },
+   {
+    "date": "16/10/2024",
+    "type": "C172",
+    "reg": "OH-GKT",
+    "dep": "Kahvisaari",
+    "arr": "Kahvisaari",
+    "off": "10:13Z",
+    "on": "11:25Z",
+    "total": "1:12",
+    "land": 5
+   },
+   {
+    "date": "17/10/2024",
+    "type": "C172",
+    "reg": "OH-CAM",
+    "dep": "EFHV",
+    "arr": "EFNU",
+    "off": "08:35Z",
+    "on": "09:04Z",
+    "total": "0:29",
+    "land": 1
+   },
+   {
+    "date": "17/10/2024",
+    "type": "C172",
+    "reg": "OH-CAM",
+    "dep": "EFNU",
+    "arr": "EFJO",
+    "off": "09:15Z",
+    "on": "11:21Z",
+    "total": "2:06",
+    "land": 1
+   },
+   {
+    "date": "17/10/2024",
+    "type": "C172",
+    "reg": "OH-CAM",
+    "dep": "EFJO",
+    "arr": "EFHV",
+    "off": "12:00Z",
+    "on": "14:35Z",
+    "total": "2:35",
+    "land": 1
+   },
+   {
+    "date": "28/10/2024",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "10:11Z",
+    "on": "11:16Z",
+    "total": "1:05",
+    "land": 5,
+    "instructor": "1:05"
+   },
+   {
+    "date": "28/10/2024",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "11:36Z",
+    "on": "12:00Z",
+    "total": "0:24",
+    "land": 4
+   },
+   {
+    "date": "23/11/2024",
+    "type": "SR20",
+    "reg": "OH-ESR",
+    "dep": "EFNU",
+    "arr": "EFNU",
+    "off": "11:00Z",
+    "on": "11:25Z",
+    "total": "0:25",
+    "land": 1
+   },
+   {
+    "date": "10/12/2024",
+    "type": "C172",
+    "reg": "OH-CAM",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "10:55",
+    "on": "11:41",
+    "total": "0:46",
+    "land": 3
+   },
+   {
+    "date": "04/01/2025",
+    "type": "C172",
+    "reg": "OH-CAM",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "13:27",
+    "on": "13:45",
+    "total": "0:18",
+    "land": 1
+   }
+  ]
+ },
+ {
+  "img": "IMG_6029",
+  "paper": {
+   "d_total": "17:14",
+   "d_pic": "17:14"
+  },
+  "flights": [
+   {
+    "date": "04/01/2025",
+    "type": "C172",
+    "reg": "OH-CAM",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "14:08",
+    "on": "15:07",
+    "total": "0:59",
+    "land": 1
+   },
+   {
+    "date": "12/01/2025",
+    "type": "SR20",
+    "reg": "OH-ESR",
+    "dep": "EFNU",
+    "arr": "ESMG",
+    "off": "07:00",
+    "on": "09:37",
+    "total": "2:37",
+    "instrument": "2:37",
+    "land": 1
+   },
+   {
+    "date": "04/02/2025",
+    "type": "C152",
+    "reg": "OH-CMU",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "12:05",
+    "on": "13:02",
+    "total": "0:57",
+    "land": 5
+   },
+   {
+    "date": "07/03/2025",
+    "type": "SR20",
+    "reg": "OH-ESR",
+    "dep": "EHGG",
+    "arr": "EDWF",
+    "off": "15:26",
+    "on": "16:11",
+    "total": "0:45",
+    "land": 2
+   },
+   {
+    "date": "08/03/2025",
+    "type": "SR20",
+    "reg": "OH-ESR",
+    "dep": "ESMG",
+    "arr": "EFNU",
+    "off": "13:45",
+    "on": "16:44",
+    "total": "2:59",
+    "instrument": "2:59",
+    "land": 1
+   },
+   {
+    "date": "18/03/2025",
+    "type": "C172",
+    "reg": "OH-CAY",
+    "dep": "EFHV",
+    "arr": "EFRY",
+    "off": "14:40",
+    "on": "15:16",
+    "total": "0:36",
+    "land": 1
+   },
+   {
+    "date": "18/03/2025",
+    "type": "C172",
+    "reg": "OH-CAY",
+    "dep": "EFRY",
+    "arr": "EFHV",
+    "off": "15:46",
+    "on": "16:10",
+    "total": "0:24",
+    "land": 1
+   },
+   {
+    "date": "21/03/2025",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "16:03",
+    "on": "16:19",
+    "total": "0:16",
+    "land": 3
+   },
+   {
+    "date": "23/03/2025",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFRY",
+    "off": "15:18",
+    "on": "15:45",
+    "total": "0:27",
+    "land": 1
+   },
+   {
+    "date": "23/03/2025",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFRY",
+    "arr": "EFHV",
+    "off": "16:03",
+    "on": "16:37",
+    "total": "0:34",
+    "land": 1
+   },
+   {
+    "date": "26/03/2025",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "17:13",
+    "on": "18:06",
+    "total": "0:53",
+    "land": 4
+   },
+   {
+    "date": "01/04/2025",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "18:37",
+    "on": "19:14",
+    "total": "0:37",
+    "land": 4
+   },
+   {
+    "date": "02/04/2025",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "17:45",
+    "on": "18:35",
+    "total": "0:50",
+    "land": 1
+   },
+   {
+    "date": "15/04/2025",
+    "type": "SR20",
+    "reg": "OH-ESR",
+    "dep": "EFNU",
+    "arr": "ESNU",
+    "off": "09:21",
+    "on": "11:33",
+    "total": "2:12",
+    "instrument": "2:12",
+    "land": 1
+   },
+   {
+    "date": "15/04/2025",
+    "type": "SR20",
+    "reg": "OH-ESR",
+    "dep": "ESNU",
+    "arr": "EFNU",
+    "off": "13:50",
+    "on": "15:58",
+    "total": "2:08",
+    "instrument": "2:08",
+    "land": 1
+   }
+  ]
+ }
+]

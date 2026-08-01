@@ -71,34 +71,47 @@ C185 floatplane: `OH-CDK` (Cessna 185 on floats, seaplane; Saimaa-lakes trip Jun
 - ⚠ **There is no `OH-CGT`.** On IMG_6020 the last letter of `OH-CGX` sometimes looks like a `T`;
   user confirmed all such rows are **`OH-CGX`**.
 
-## laskukierros_export.csv — second electronic cross-reference (NOT the source of truth)
-`laskukierros_export.csv` (repo root, tracked, UTF-8) is an export from the user's account on
-**laskukierros.fi**, a Finnish club booking/billing system. **128 flights, 19/04/2020 → 25/07/2026.**
-Pulled 2026-08-01 from `GET /export/pilotFlights` (the page also exposes `GET /api/v1/flights`);
-it needs the user's session cookie, so **only the user can refresh it** — ask them to re-export
-rather than trying to fetch it. Never touch the site's add/edit/delete endpoints.
+## laskukierros — second electronic cross-reference (NOT the source of truth)
+**Canonical files (repo root, tracked): `laskukierros_flights.json` + `laskukierros_flights.csv`.**
+**228 flights, 19/04/2020 → 25/07/2026** (2026 included: 13 rows, last 25/07/2026). Pulled
+2026-08-01 from **`GET /api/v1/flights`** on laskukierros.fi, a Finnish club booking/billing system.
+`laskukierros_to_csv.py` regenerates the CSV from the JSON — the JSON is the raw dump, edit neither
+by hand. Never touch the site's add/edit/delete endpoints; GET only.
 
-- **Coverage is partial — club aircraft only:** `OH-CTL` ×57, `OH-CAM` ×37, `OH-CGX` ×14, `OH-CAY` ×6,
-  `OH-COK`/`OH-CMU`/`OH-AWB` ×4 each, `OH-TIL` ×2. **No `OH-GKT`, no `OH-MIL`, no `OH-PDP`/`OH-PIF`/
-  `OH-ESR`/`OH-CDK`** — the pilot's own aircraft and the Blue Skies fleet are absent. Float rows on
-  OH-GKT and the Maule still need the user.
-- **Columns:** date, reg, type, dep/arr, off-block, takeoff, landing, on-block, airborne & block
-  minutes, **day landings / night landings**, night time, instrument time, PIC/copilot/instructor
-  (`Opettaja`)/student (`Oppilas`) flags, flight type, notes.
-- **⚠ Its times are LOCAL, not UTC** — established 2026-08-01, see `drift.md` for the proof.
+⚠ **`laskukierros_export.csv` (128 rows) is SUPERSEDED — do not use it for coverage questions.**
+It is the older `GET /export/pilotFlights` dump and is kept only because `laskukierros_zflags.md`
+was computed from it. **It returns only flights where the user is the PRIMARY pilot**, so all
+**100** flights he *instructed* — filed under the pupil's account — are missing from it. That is the
+whole 128-vs-228 gap, and it is why 06.08.2024 and 14.08.2024 appeared "absent" during IMG_6026/6027.
+It is also **UTF-16** as served (the committed copy was converted to UTF-8).
+
+**Fetching it again:** needs the user's `PHPSESSID` cookie, so ask them for it; then
+`curl -H "Cookie: PHPSESSID=…" https://laskukierros.fi/api/v1/flights`. Never commit the cookie.
+
+- **Coverage: club aircraft only.** **No `OH-GKT`, no `OH-MIL`, no `OH-PDP`/`OH-PIF`/`OH-ESR`/
+  `OH-CDK`** — the pilot's own aircraft and the Blue Skies fleet are absent, so float rows on OH-GKT
+  and the Maule still need the user. Within the club fleet the 228-row dump is *good* coverage
+  (e.g. 71 rows postdate 19/09/2024: `OH-CTL` ×46, `OH-CAM` ×17, `OH-CAY` ×4, `OH-CMU` ×2,
+  `OH-CGX`/`OH-TIL` ×1).
+- **`laskukierros_flights.csv` columns:** `date, reg, model, dep, arr, block_start, block_stop,
+  takeoff, landing, block_min, air_min, ldg_day, ldg_night, night_min, ifr_min, rami_role,
+  other_name, other_role, func_*, flight_type, notes, id`.
+- **⚠ Times are LOCAL, not UTC**, despite the `+00:00` the API stamps on every timestamp. Proved
+  against the paper: 20/08/2024 `block_start 18:50` == paper `15:50Z`. See `drift.md`.
+- **`rami_role`** is the useful column: `pilot` (128), `instructor` (97), `copilot` (3).
+  **`other_name`** gives the counterpart — on instructing rows that is the **pupil**, which is how we
+  now recover pupil names without asking the user (Nirkkonen, Puhakka, Romanov-Chernigovsky,
+  Järvenpää, Korkiakoski, …; 104 rows carry a name).
+- ⚠ **The `func_*` flags describe the PRIMARY pilot, not the user.** On an instructing row the
+  primary pilot is the *student*, so `func_student=true` even though our pilot flew as instructor.
+  **Never map `func_dual`/`func_student` straight onto our `Student_Time`** — read `rami_role`.
 - **Use it for:** confirming a doubtful block time, settling whether a paper row is local or UTC,
-  and checking landing counts. **The paper logbook remains authoritative** (same rule as Aviatron);
-  flag discrepancies to the user, don't silently rewrite.
-- **42 of its rows postdate 21/07/2024**, so it is a *forward* cross-check for the pages still to do
-  (IMG_6026 onward) — but only for the club regs listed above.
-- ⚠⚠ **INCOMPLETE — absence proves nothing.** Established 2026-08-01 on IMG_6026/6027: the file has
-  **zero rows** for 06.08.2024 and 14.08.2024 although both days flew (the user pasted full records
-  from the live site). It holds **7** rows across Jul–Sep 2024 where the paper has ~20 OH-CTL legs,
-  and the 20/08 Hiidenvesi **return** leg is missing while the outbound is present. Never conclude a
-  flight didn't happen, or that a paper row is wrong, because this file lacks it.
-- ⚠ **It never carries names.** `Opettaja`/`Oppilas` are a `1`/`0` flag in all 128 rows. **The live
-  laskukierros view shows instructor + pupil names and per-leg takeoff/landing times** — a fuller
-  re-export from there would cover far more of Book 3. Ask the user for one.
+  checking landing counts, and naming the pupil on an instructing row. **The paper logbook remains
+  authoritative** (same rule as Aviatron); flag discrepancies to the user, don't silently rewrite.
+- **71 of its rows postdate 19/09/2024**, so it forward-cross-checks everything still to do
+  (IMG_6028 onward) — club regs only.
+- ⚠ A few rows are junk: e.g. `2026-05-16` Kabböle→Kabböle has `00:00-00:00`, `block_min 0`. Sanity
+  check before leaning on a row.
 
 ## Aviatron.pdf — electronic cross-reference (NOT the source of truth)
 `Aviatron.pdf` (repo root, tracked) is an electronic-logbook export of the **Blue Skies aviation
@@ -156,6 +169,11 @@ EFTP (Tampere-Pirkkala), EFRY (Räyskälä — C185 floatplane dep 29/04/2020); 
 Estonian: **EETN** (Tallinn — 31/12/2019 DA40 day-trip, first non-Nordic field).
 **Also in Book 3: EFVP (Vampula)** — user-confirmed; 08/09/2023 OH-PDP EFHV↔EFVP day-return (IMG_6019).
 **EFIK (Kiikala)** — 29/04/2024 SR20 dual round-trip with Stude (IMG_6021).
+**IMG_6029 (Jan–Apr 2025) adds three foreign fields, all SR20 OH-ESR:** **ESMG** (Feringe/Ljungby,
+Sweden — the aircraft wintered there, flown out 12/01/2025 and back 08/03/2025), **EHGG**
+(Groningen Eelde, NL) and **EDWF** (Leer-Papenburg, DE). ⚠ The 07/03/2025 `EHGG→EDWF` leg does not
+connect to the ESMG legs either side: **it was a two-pilot ferry and he logged only his own legs**
+(user-confirmed). EFJO (Joensuu) also appears in Book 3 (17/10/2024 OH-CAM day-return).
 **Book 3 float season 2024 adds: Lieso, Lietsaari** (Päijänne/Vääksy area, OH-GKT — all three names
 user-confirmed 2026-08-01) and **Padasjoki** (Päijänne, IMG_6023), **Pulkkilanharju** (Päijänne,
 IMG_6024) and **Mäntyharju** (IMG_6025).

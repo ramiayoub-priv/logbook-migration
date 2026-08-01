@@ -1,0 +1,229 @@
+date,reg,model,dep,arr,block_start,block_stop,takeoff,landing,block_min,air_min,ldg_day,ldg_night,night_min,ifr_min,rami_role,other_name,other_role,func_pic,func_copilot,func_dual,func_instructor,func_student,flight_type,notes,id
+2020-04-19,OH-CAY,C172,EFRY,EFHV,17:31,18:00,17:38,17:58,29,20,1,0,0,0,pilot,,,True,False,False,False,False,,,21746
+2020-04-19,OH-CGX,C172,EFHV,EFHV,18:51,19:10,18:59,19:08,19,9,1,0,0,0,pilot,,,True,False,False,False,False,,,21749
+2021-04-08,OH-COK,Cessna C172N,EFPR,EFPR,19:00,20:16,19:07,20:14,76,67,3,0,0,0,pilot,,,True,False,False,False,False,,,28943
+2021-04-18,OH-COK,Cessna C172N,EFPR,EFIM,07:25,08:38,07:34,08:34,73,60,1,0,0,0,pilot,,,True,False,False,False,False,,,29159
+2021-04-18,OH-COK,Cessna C172N,EFIM,EFPR,10:54,12:04,10:58,12:02,70,64,1,0,0,0,pilot,,,True,False,False,False,False,,,29160
+2021-05-27,OH-CTL,C172M,Vääksy,Räyskälä,17:25,18:31,17:28,18:25,66,57,9,0,0,0,pilot,,,True,False,False,False,False,KOU,"Opettajan kertauskoululento ja kerhotarkkari, Sinervä opettajana",30472
+2021-05-30,OH-CTL,C172M,Räyskälä,Loppijärvi,12:14,12:35,12:22,12:32,21,10,1,0,0,0,pilot,,,True,False,False,False,False,MAT,,30473
+2021-05-30,OH-CTL,C172M,Loppijärvi,Tuusulanjärvi,14:14,14:44,14:16,14:33,30,17,1,0,0,0,pilot,,,True,False,False,False,False,SII,,30476
+2021-06-08,OH-CTL,C172M,Tuusula,Tuusula,12:42,13:32,12:47,13:27,50,40,6,0,0,0,copilot,Ilkka Joukanen,pilot,True,True,False,False,False,LASKUTETTAVA,Ramia ei voinut merkata opettajaksi,30847
+2021-08-01,OH-CTL,C172M,Tuusula,Tuusula,19:29,20:34,19:38,20:31,65,53,6,0,0,0,instructor,Henri Ylinen,pilot,False,False,True,False,True,VAPAA,,33618
+2021-08-22,OH-CTL,C172M,Tuusula,Vääksy,18:38,19:36,18:44,19:34,58,50,2,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,35996
+2021-09-10,OH-CTL,C172M,Tuusula,Sandö,18:00,18:50,18:07,18:43,50,36,3,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,35997
+2021-09-10,OH-CTL,C172M,Sandö,Tuusula,18:54,19:40,19:00,19:26,46,26,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,35998
+2021-10-13,OH-CTL,C172M,Tuusula,Hiidenvesi,11:59,12:46,12:10,12:42,47,32,3,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,35999
+2021-10-13,OH-CTL,C172M,Hiidenvesi,Tuusula,13:30,14:10,13:33,14:06,40,33,3,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,36000
+2021-10-30,OH-CAM,C172,EFHV,EFPR,11:54,12:59,12:02,12:57,65,55,1,0,0,0,pilot,,,True,False,False,True,False,KOU,,36117
+2021-10-30,OH-CAM,C172,EFPR,EFHV,12:59,14:31,13:01,14:29,92,88,5,0,0,0,pilot,,,True,False,False,True,False,KOU,,36118
+2021-10-30,OH-CAM,C172,EFHV,EFHV,14:46,15:35,14:59,15:32,49,33,5,0,0,0,pilot,,,True,False,False,True,False,KOU,,36119
+2021-12-17,OH-CAM,C172,EFHV,EFHV,17:57,18:27,18:07,18:24,30,17,0,3,30,0,pilot,,,True,False,False,False,False,HAR,,36435
+2021-12-26,OH-CMU,C152,EFHV,EFHV,11:34,12:36,11:40,12:34,62,54,6,0,0,0,pilot,,,True,False,False,False,False,HAR,,36447
+2022-02-10,OH-CAM,C172,EFHV,EFHV,11:05,11:40,11:17,11:37,35,20,4,0,0,0,pilot,,,True,False,False,False,False,HAR,,36610
+2022-02-10,OH-CAM,C172,EFHV,EFHV,11:57,12:36,12:04,12:33,39,29,2,0,0,0,pilot,,,True,False,False,False,False,HAR,,36611
+2022-02-23,OH-CGX,C172,EFHV,EFHV,20:30,20:55,20:35,20:52,25,17,0,3,17,0,pilot,,,True,False,False,False,False,HAR,,36730
+2022-03-03,OH-CAM,C172,EFHV,EFHV,19:05,19:54,19:17,19:50,49,33,0,5,33,0,pilot,,,True,False,False,False,False,HAR,,36830
+2022-04-11,OH-COK,Cessna C172N,EFHV,EFHV,13:26,15:14,13:33,15:08,108,95,6,0,0,0,pilot,,,True,False,False,False,False,,,37406
+2022-04-16,OH-CAM,C172,EFHV,EFHV,17:30,19:12,17:37,19:09,102,92,3,0,0,0,pilot,,,True,False,False,False,False,MAT,,37407
+2022-05-10,OH-CTL,C172M,Särkijärvi,Tuusula,19:50,20:30,19:54,20:27,40,33,4,0,0,0,pilot,,,True,False,False,False,False,VAPAA,,37946
+2022-05-11,OH-CTL,C172M,Tuusula,Tuusula,16:15,17:18,16:24,17:15,63,51,5,0,0,0,instructor,Ilkka Joukanen,pilot,True,False,False,False,False,LASKUTETTAVA,,37983
+2022-05-13,OH-CTL,C172M,Tuusula,Hiidenvesi,14:09,15:13,14:18,15:13,64,55,9,0,0,0,instructor,Mikko Sinervä,pilot,True,False,False,False,False,VAPAA,Opettajan kerhotarkkari,38001
+2022-05-13,OH-CTL,C172M,Hiidenvesi,Tuusula,15:17,16:07,15:18,16:04,50,46,9,0,0,0,pilot,,,False,False,True,False,True,VAPAA,"Opettajan kerhotarkkari Oppilas Rami Ayoub, Opettaja Mikko Sinervä",38100
+2022-05-14,OH-CTL,C172M,Tuusula,Tuusula,10:40,11:57,10:50,11:50,77,60,7,0,0,0,instructor,Ilkka Korkiakoski,pilot,False,False,True,False,True,LASKUTETTAVA,Kevättarkkari Ramin kanssa,38012
+2022-05-15,OH-CTL,C172M,Tuusula,Tuusula,10:14,11:24,10:22,11:18,70,56,6,0,0,0,instructor,Stefan Vikström,pilot,True,False,False,False,False,LASKUTETTAVA,2 laskua Kytäjärvellä 3 laskua Loppijärvellä 1 lasku Tuusulanjärvi,38037
+2022-05-22,OH-CAM,C172,EFHV,EFHV,08:52,09:29,08:59,09:26,37,27,2,0,0,0,pilot,,,True,False,False,False,False,HAR,,38335
+2022-05-23,OH-CAM,C172,EFHV,EFNU,17:19,17:59,17:25,17:55,40,30,1,0,0,0,pilot,,,True,False,False,False,False,MAT,,38356
+2022-05-23,OH-CAM,C172,EFNU,EFHV,18:30,18:54,18:33,18:52,24,19,1,0,0,0,pilot,,,True,False,False,False,False,MAT,,38358
+2022-05-24,OH-CTL,C172M,Tuusula,Tuusula,18:25,19:50,18:40,19:43,85,63,5,0,0,0,instructor,Heikki Salo,pilot,False,True,False,False,False,VAPAA,,38417
+2022-05-27,OH-CTL,C172M,Björnsö,Tuusula,21:30,21:55,21:31,21:44,25,13,1,0,0,0,instructor,Harald Storgårds,pilot,False,False,True,False,True,LASKUTETTAVA,,38466
+2022-05-27,OH-CTL,C172M,Björnsö,Tuusula,21:30,21:55,21:31,21:44,25,13,1,0,0,0,instructor,Harald Storgårds,pilot,False,False,True,False,True,LASKUTETTAVA,,38467
+2022-05-30,OH-CTL,C172M,Tuusula,Tuusula,18:00,19:15,18:08,19:05,75,57,5,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,38530
+2022-06-10,OH-CAM,C172,EFHV,EFHV,17:12,17:28,17:15,17:26,16,11,2,0,0,0,pilot,,,True,False,False,False,False,HAR,,38792
+2022-06-10,OH-CAM,C172,EFHV,EFHV,17:55,19:03,17:59,19:00,68,61,1,0,0,0,pilot,,,True,False,False,False,False,HAR,,38793
+2022-06-20,OH-CGX,C172,EFHV,EFNU,17:24,17:52,17:30,17:50,28,20,1,0,0,0,pilot,,,True,False,False,False,False,MAT,,39157
+2022-06-20,OH-CGX,C172,EFNU,EFHV,18:08,18:33,18:12,18:31,25,19,1,0,0,0,pilot,,,True,False,False,False,False,MAT,,39158
+2022-06-23,OH-CTL,C172M,Tuusula,Tuusula,15:20,16:35,15:35,16:30,75,55,6,0,0,0,instructor,Harry Karlsson,pilot,True,False,False,False,False,VAPAA,7:51 lentämättä 2020 paketista 7:51 - 0:55=6:56 jäljellä,39257
+2022-07-04,OH-CTL,C172M,Tuusula,Tuusula,19:35,20:45,19:40,20:35,70,55,6,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,39811
+2022-07-05,OH-TIL,Piper PA-28-161,EFTP,EFTP,20:06,20:28,20:11,20:25,22,14,3,0,0,0,pilot,Leo Salo,instructor,False,False,True,False,True,KOULU,,39849
+2022-08-01,OH-CTL,C172M,Tuusula,Tuusula,10:44,11:55,10:52,11:52,71,60,6,0,0,0,instructor,Petri Kere,pilot,False,True,False,False,False,LASKUTETTAVA,Opettaja Rami Ayoub,40788
+2022-08-07,OH-CTL,C172M,Tuusula,Tuusula,19:04,20:10,19:11,20:06,66,55,6,0,0,0,instructor,Thomas Hansson,pilot,False,True,False,False,False,VAPAA,Kevättarkkari Ramin kanssa,41025
+2022-08-23,OH-CTL,C172M,Inari,Kemijärvi,13:30,15:35,13:35,15:31,125,116,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,41949
+2022-08-23,OH-CTL,C172M,Kemijärvi,Sotkamo,17:03,19:09,17:05,19:04,126,119,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,41950
+2022-09-22,OH-CTL,C172M,Tuusula,Hiidenpirtti,10:03,10:44,10:14,10:38,41,24,2,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,42582
+2022-09-22,OH-CTL,C172M,Hiidenpirtti,Tuusula,11:33,12:13,11:35,12:03,40,28,2,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,42583
+2022-10-12,OH-CTL,C172M,Tuusula,EFRY,12:43,13:35,12:53,13:31,52,38,3,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,43148
+2022-10-19,OH-CAY,C172,EFHV,EFHV,00:00,00:00,15:28,16:25,0,57,5,0,0,0,instructor,Jorma Harju,pilot,False,True,False,False,False,KOU,,43151
+2022-10-19,OH-CAY,C172,EFHV,EFHV,12:48,13:56,12:56,13:54,68,58,4,0,0,0,instructor,Mikko Sinervä,pilot,False,False,True,False,True,KOU,Kertauskoululento,43132
+2022-10-19,OH-CAY,C172,EFHV,EFHV,14:18,15:04,14:23,15:01,46,38,4,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,43149
+2022-12-14,OH-CGX,C172,EFHV,EFHV,10:40,11:40,10:51,11:37,60,46,5,0,0,0,pilot,,,True,False,False,False,False,HAR,,43542
+2023-01-01,OH-CAM,C172,EFHV,EFHV,11:40,12:32,11:50,12:29,52,39,3,0,0,0,pilot,,,True,False,False,False,False,HAR,,43623
+2023-01-20,OH-CAM,C172,EFHV,EFHV,11:04,14:06,11:10,14:04,182,174,6,0,0,0,pilot,,,True,False,False,False,False,MAT,,43718
+2023-03-10,OH-CGX,C172,EFHV,EFHV,19:17,19:54,19:25,19:52,37,27,0,2,0,0,pilot,,,True,False,False,False,False,HAR,,44050
+2023-04-02,OH-CAM,C172,EFHV,EFHV,11:20,13:26,11:28,13:24,126,116,3,0,0,0,pilot,,,True,False,False,False,False,MAT,,44320
+2023-04-03,OH-CAM,C172,EFHV,EFHV,18:51,19:39,19:00,19:36,48,36,2,0,0,0,pilot,,,True,False,False,False,False,HAR,,44354
+2023-04-04,OH-CAM,C172,EFHV,EFHV,17:07,17:35,17:12,17:32,28,20,4,0,0,0,pilot,,,True,False,False,False,False,HAR,,44367
+2023-05-05,OH-CTL,C172M,Tuusula,Kabböle,18:30,19:37,18:35,19:33,67,58,4,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,45152
+2023-05-06,OH-CTL,C172M,Kabböle,Kabböle,11:40,12:30,11:47,12:24,50,37,8,0,0,0,instructor,Heikki Salo,pilot,False,False,True,False,True,VAPAA,,46011
+2023-05-06,OH-CTL,C172M,Kabböle,Kabböle,14:17,15:05,14:26,15:01,48,35,7,0,0,0,instructor,Pasi Koho,pilot,False,False,True,False,True,LASKUTETTAVA,,45395
+2023-05-06,OH-CTL,C172M,Kabböle,Kabböle,15:32,16:15,15:35,16:12,43,37,9,0,0,0,instructor,Thomas Hansson,pilot,True,False,False,False,False,LASKUTETTAVA,Kerhon kevättarkkari,45126
+2023-05-06,OH-CTL,C172M,Kabböle,Kabböle,17:28,18:08,17:31,18:05,40,34,5,0,0,0,instructor,tuomas pöyry,pilot,False,False,True,False,True,LASKUTETTAVA,Kerhotarkkari,45146
+2023-05-07,OH-CTL,C172M,Kabböle,Kabböle,14:27,15:40,14:33,15:37,73,64,7,0,0,0,instructor,Harald Storgårds,pilot,False,False,True,False,True,LASKUTETTAVA,,45156
+2023-05-07,OH-CTL,C172M,Kabböle,Laajasalo,16:44,17:25,16:47,17:18,41,31,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,45153
+2023-05-12,OH-CTL,C172M,Laajasalo,Laajasalo,09:35,10:27,09:49,10:26,52,37,11,0,0,0,instructor,Mikko Sinervä,pilot,False,False,True,False,True,VAPAA,,45393
+2023-05-12,OH-CTL,C172M,Laajasalo,Laajasalo,10:29,11:03,10:30,10:56,34,26,12,0,0,0,pilot,Mikko Sinervä,instructor,False,False,True,False,True,LASKUTETTAVA,,45398
+2023-05-19,OH-CTL,C172M,Tuusula,Anttola,13:47,15:15,13:52,15:09,88,77,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,45661
+2023-05-19,OH-CTL,C172M,Anttola,Leikonvesi,16:56,17:30,17:01,17:27,34,26,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,45662
+2023-05-21,OH-CTL,C172M,Leikonvesi,Siltasaari,10:20,11:40,10:26,11:30,80,64,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,45664
+2023-05-21,OH-CTL,C172M,Siltasaari,Tuusulanjärvi,12:33,13:40,12:40,13:25,67,45,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,45665
+2023-05-24,OH-CTL,C172M,Tuusula,Tuusula,15:37,17:00,15:48,16:55,83,67,7,0,0,0,instructor,Ilkka Korkiakoski,pilot,False,False,True,False,True,LASKUTETTAVA,SEP (SEA) kertauskoululento,46092
+2023-06-06,OH-CTL,C172M,Tuusula,Pellinki,18:30,19:25,18:39,19:21,55,42,3,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,46149
+2023-06-06,OH-CTL,C172M,Pellinki,Tuusula,19:59,20:35,20:03,20:28,36,25,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,46150
+2023-06-14,OH-CTL,C172M,Tuusula,Halsholmen,10:03,10:48,10:11,10:44,45,33,5,0,0,0,instructor,Stefan Vikström,pilot,False,True,False,False,False,LASKUTETTAVA,,46375
+2023-06-14,OH-CTL,C172M,Halsholmen,Tuusula,10:50,11:18,10:54,11:12,28,18,1,0,0,0,instructor,Stefan Vikström,pilot,False,True,False,False,False,LASKUTETTAVA,,46376
+2023-06-19,OH-CTL,C172M,Tuusula,Tuusula,13:48,15:19,13:54,15:04,91,70,9,0,0,0,instructor,Ilkka Joukanen,pilot,False,True,False,False,False,LASKUTETTAVA,,46647
+2023-06-20,OH-CTL,C172M,Tuusula,Tuusula,16:08,17:44,16:31,17:29,96,58,5,0,0,0,instructor,Henri Ylinen,pilot,False,False,True,False,True,LASKUTETTAVA,,46687
+2023-06-29,OH-CAY,C172,EFHV,EFHV,11:45,12:47,11:52,12:43,62,51,4,0,0,0,instructor,Petri Kere,pilot,False,False,True,False,True,HAR,,47081
+2023-06-29,OH-CAY,C172,EFHV,EFHV,13:06,13:31,13:10,13:28,25,18,3,0,0,0,pilot,,,True,False,False,False,False,HAR,,47113
+2023-07-18,OH-CTL,C172M,Tuusula,Tuusula,18:00,19:08,18:13,19:04,68,51,5,0,0,0,pilot,Zack Bloom,copilot,False,False,False,True,False,LASKUTETTAVA,Lasku Zack Bloomille,48645
+2023-08-05,OH-CTL,C172M,Tuusula,Kahvisaari,11:10,12:30,11:18,12:24,80,66,5,0,0,0,pilot,Zack Bloom,copilot,True,False,False,False,False,LASKUTETTAVA,,48646
+2023-08-19,OH-CTL,C172M,Ranua,Viitasaari,11:58,14:21,12:07,14:13,143,126,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,49069
+2023-08-19,OH-CTL,C172M,Kahvisaari,Tuusulanjärvi,18:00,18:37,18:05,18:33,37,28,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,49070
+2023-08-20,OH-CTL,C172M,Tuuulanjärvi,Tuusulanjärvi,19:47,20:47,19:53,20:31,60,38,5,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,49071
+2023-09-04,OH-CTL,C172M,Tuusula,Kahvisaari,11:25,12:15,11:43,12:08,50,25,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,49437
+2023-09-04,OH-CTL,C172M,Kahvisaari,Tuusula,16:53,17:35,16:56,17:27,42,31,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,49438
+2023-09-07,OH-CTL,C172M,Tuusula,Tuusula,17:51,19:11,18:04,19:00,80,56,6,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,49439
+2023-09-18,OH-CTL,C172M,Tuusula,Tuusula,16:13,17:38,16:23,17:17,85,54,5,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,49833
+2023-10-26,OH-CGX,C172,EFHV,EFHV,08:55,10:01,09:03,09:58,66,55,6,0,0,0,pilot,,,True,False,False,False,False,HAR,,50581
+2023-10-26,OH-CGX,C172,EFHV,EFHV,10:25,12:05,10:41,12:00,100,79,5,0,0,0,pilot,,,True,False,False,False,False,HAR,,50582
+2023-10-29,OH-CGX,C172,efhv,efhv,12:31,13:40,12:40,13:38,69,58,5,0,0,0,pilot,,,True,False,False,False,False,HAR,,50628
+2023-12-17,OH-AWB,C152,EFHV,EFHV,12:27,12:55,12:37,12:51,28,14,3,0,0,0,pilot,,,True,False,False,False,False,HAR,,50848
+2023-12-27,OH-CGX,C172,EFHV,EFHV,12:22,12:37,12:30,12:35,15,5,1,0,0,0,pilot,,,True,False,False,False,False,HAR,,50896
+2023-12-27,OH-CGX,C172,EFHV,EFHV,12:45,13:05,12:53,13:03,20,10,1,0,0,0,pilot,,,True,False,False,False,False,HAR,,50897
+2023-12-28,OH-CGX,C172,EFHV,EFHV,11:34,12:24,11:40,12:22,50,42,3,0,0,0,pilot,,,True,False,False,False,False,HAR,,50898
+2024-01-16,OH-AWB,C152,EFHV,EFHV,14:30,15:19,14:36,15:17,49,41,1,0,0,0,pilot,,,True,False,False,False,False,HAR,,50993
+2024-02-08,OH-AWB,C152,EFHV,EFHV,08:15,08:49,08:22,08:47,34,25,6,0,,0,pilot,,,True,False,False,False,False,HAR,,51108
+2024-02-09,OH-AWB,C152,EFHV,EFHV,20:16,20:55,20:22,20:53,39,31,0,5,31,0,pilot,,,True,False,False,False,False,HAR,,51106
+2024-03-05,OH-CGX,C172,EFHV,EFHV,10:54,12:04,11:01,12:02,70,61,4,0,0,0,instructor,Jorma Harju,pilot,False,False,False,False,True,KOU,,51213
+2024-03-05,OH-CGX,C172,EFHV,EFHV,12:13,12:39,12:17,12:37,26,20,4,0,0,0,pilot,,,True,False,False,False,False,HAR,,51270
+2024-03-05,OH-CMU,C152,EFHV,EFHV,19:32,19:55,19:36,19:52,23,16,0,3,0,0,pilot,,,True,False,False,False,False,HAR,,51271
+2024-03-28,OH-CAM,C172,EFHV,EFHV,16:47,17:37,16:54,17:31,50,37,3,0,0,0,pilot,,,True,False,False,False,False,HAR,,51408
+2024-04-30,OH-CAM,C172,EFTP,EFHV,16:39,17:40,16:44,17:36,61,52,2,0,0,25,pilot,,,True,False,False,False,False,HAR,,51892
+2024-05-05,OH-CAY,C172,EFHV,EFHV,10:00,11:07,10:12,11:05,67,53,4,0,0,0,instructor,Petri Kere,pilot,False,False,True,False,False,HAR,,52055
+2024-06-17,OH-CTL,C172M,Tuusula,Tuusula,04:44,06:01,04:55,05:53,77,58,4,0,0,0,instructor,Harry Karlsson,pilot,True,False,False,False,False,LASKUTETTAVA,Kevätkertaus 2024,53657
+2024-06-17,OH-CTL,C172M,Tuusula,Tuusula,09:53,11:15,10:04,11:10,82,66,4,0,0,0,instructor,Mika Järvenpää,pilot,False,False,False,False,True,LASKUTETTAVA,Koululento Aviaattori DTO,54385
+2024-06-17,OH-CTL,C172M,Tuusula,Tuusula,14:02,15:02,14:10,14:56,60,46,6,0,0,0,instructor,Stefan Vikström,pilot,False,False,False,False,True,VAPAA,4 x TGL Hirvijärvi 1 x TGL Kytäjärvi,53670
+2024-06-17,OH-CTL,C172M,Tuusula,Tuusula,16:17,17:33,16:25,17:25,76,60,5,0,0,0,instructor,Ignaty Romanov-Chernigovsky,pilot,False,False,True,False,True,LASKUTETTAVA,,56427
+2024-06-18,OH-CTL,C172M,Tuusula,Tuusula,12:39,13:55,12:51,13:49,76,58,6,0,0,0,instructor,Thomas Hansson,pilot,False,False,False,False,True,LASKUTETTAVA,"Kerhon ""kevättarkkari""",53786
+2024-06-18,OH-CTL,C172M,Tuusula,Tuusula,14:29,15:42,14:40,15:36,73,56,5,0,0,0,instructor,Heikki Salo,pilot,False,False,False,False,True,VAPAA,,53820
+2024-06-18,OH-CTL,C172M,Tuusula,Tuusula,16:16,17:22,16:24,17:16,66,52,5,0,0,0,instructor,Ilkka Korkiakoski,pilot,False,False,True,True,False,LASKUTETTAVA,Kevättarkkari,54111
+2024-06-18,OH-CTL,C172M,Tuusula,Hiidenvesi,18:55,19:55,19:06,19:50,60,44,5,0,0,0,instructor,Ignaty Romanov-Chernigovsky,pilot,False,False,True,False,True,LASKUTETTAVA,Aviaattori DTO,54080
+2024-06-18,OH-CTL,C172M,Hiidenvesi,Tuusula,20:17,21:20,20:27,21:12,63,45,5,0,0,0,instructor,Mika Järvenpää,pilot,False,False,False,False,True,LASKUTETTAVA,Koululento Aviaattori DTO,54386
+2024-06-25,OH-CTL,C172M,Tuusula,Kahvisaari,15:18,15:58,15:25,15:53,40,28,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,54101
+2024-06-25,OH-CTL,C172M,Kahvisaari,Tuusula,17:20,18:03,17:26,17:58,43,32,3,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,54102
+2024-06-27,OH-CTL,C172M,Tuusula,Pellinki,16:05,17:22,16:20,17:19,77,59,7,0,0,0,instructor,Mika Järvenpää,pilot,False,False,False,False,True,LASKUTETTAVA,Koululento Aviaattori DTO,54387
+2024-06-27,OH-CTL,C172M,Pellinki,Tuusula,18:21,19:38,18:28,19:33,77,65,6,0,0,0,instructor,Mika Järvenpää,pilot,False,False,False,False,True,LASKUTETTAVA,Koululento Aviaattori DTO,54388
+2024-07-01,OH-CTL,C172M,Tuusula,Tuusula,16:20,17:50,16:30,17:45,90,75,9,0,0,0,instructor,Ignaty Romanov-Chernigovsky,pilot,False,False,True,False,True,LASKUTETTAVA,,56428
+2024-07-02,OH-CTL,C172M,Tuusula,Tuusula,13:00,14:25,13:10,14:20,85,70,9,0,0,0,instructor,Mika Järvenpää,pilot,False,False,False,False,True,LASKUTETTAVA,Koululento Aviaattori DTO,54734
+2024-07-02,OH-CTL,C172M,Tuusula,Tuusula,14:20,16:15,14:30,16:08,115,98,7,0,0,0,instructor,Ignaty Romanov-Chernigovsky,pilot,False,False,True,False,True,LASKUTETTAVA,,56430
+2024-07-02,OH-CTL,C172M,Tuusula,Tuusula,15:16,16:26,15:23,16:21,70,58,6,0,0,0,instructor,tuomas pöyry,pilot,False,False,True,False,True,LASKUTETTAVA,Kerhotarkkari,54506
+2024-07-02,OH-CTL,C172M,Tuusula,Tuusula,20:25,21:50,20:35,21:03,85,28,6,0,0,0,instructor,Mika Järvenpää,pilot,False,False,False,False,True,LASKUTETTAVA,Koululento Aviaattori DTO,54735
+2024-07-05,OH-CTL,C172M,Tuusula,Pulkkilanharju,17:16,18:00,17:25,17:58,44,33,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,54580
+2024-07-05,OH-CTL,C172M,Pulkkilanharju,Pulkkilanharju,18:03,18:50,18:06,18:45,47,39,6,0,0,0,instructor,Mika Järvenpää,pilot,False,False,False,False,True,LASKUTETTAVA,Koululento Aviaattori DTO,54736
+2024-07-05,OH-CTL,C172M,Pulkkilanharju,Lietsaari,18:58,19:15,19:02,19:12,17,10,1,0,0,0,instructor,Mika Järvenpää,pilot,False,False,False,False,True,LASKUTETTAVA,Koululento Aviaattori DTO,54737
+2024-07-05,OH-CTL,C172M,Lietsaari,Kahvisaari,19:53,20:35,19:58,20:30,42,32,7,0,0,0,instructor,Mika Järvenpää,pilot,False,False,False,False,True,LASKUTETTAVA,Koululento Aviaattori DTO,54738
+2024-07-05,OH-CTL,C172M,Kahvisaari,Tuusula,21:11,21:50,21:14,21:46,39,32,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,54581
+2024-07-08,OH-CTL,C172M,Tuusula,Hiidenvesi,17:32,19:00,17:40,18:55,88,75,9,0,0,0,instructor,Mika Järvenpää,pilot,False,False,False,False,True,LASKUTETTAVA,Koululento Aviaattori DTO,54739
+2024-07-08,OH-CTL,C172M,Hiidenvesi,Hiidenvesi,20:27,20:50,20:36,20:48,23,12,4,0,0,0,instructor,Mika Järvenpää,pilot,False,False,False,False,True,LASKUTETTAVA,Koululento Aviaattori DTO,54740
+2024-07-08,OH-CTL,C172M,Hiidenvesi,Tuusula,20:51,21:16,20:53,21:14,25,21,2,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,54606
+2024-07-15,OH-CTL,C172M,Tuusula,Pellinki,16:30,17:20,16:38,17:15,50,37,8,0,0,0,instructor,Ignaty Romanov-Chernigovsky,pilot,False,False,True,False,True,LASKUTETTAVA,,56431
+2024-07-15,OH-CTL,C172M,Pellinki,Tuusula,17:57,18:45,18:01,18:39,48,38,12,0,0,0,instructor,Ignaty Romanov-Chernigovsky,pilot,False,False,True,False,True,LASKUTETTAVA,,56432
+2024-07-16,OH-CTL,C172M,Tuusula,Tuusula,11:15,12:30,11:27,12:27,75,60,8,0,0,0,instructor,Tommi Nirkkonen,pilot,False,False,False,False,True,kou,,55350
+2024-07-21,OH-CTL,C172M,Pulkkilanharju,Lietsaari,13:45,14:10,13:49,14:08,25,19,8,0,0,0,instructor,Ignaty Romanov-Chernigovsky,pilot,False,False,True,False,True,LASKUTETTAVA,,56433
+2024-07-21,OH-CTL,C172M,Lietsaari,Pulkkilanharju,15:05,15:25,15:10,15:23,20,13,2,0,0,0,instructor,Ignaty Romanov-Chernigovsky,pilot,False,False,True,False,True,LASKUTETTAVA,,56435
+2024-07-21,OH-CTL,C172M,Tuusula,Pulkkilanharju,15:39,16:36,15:45,16:35,57,50,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,55341
+2024-07-21,OH-CTL,C172M,Pulkkilanharju,Vaaksy,16:38,17:10,16:43,17:03,32,20,3,0,0,0,instructor,Ignaty Romanov-Chernigovsky,pilot,False,False,True,False,True,LASKUTETTAVA,,56436
+2024-07-21,OH-CTL,C172M,Pulkkilanharju,Tuusula,20:53,21:40,20:58,21:32,47,34,1,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,55342
+2024-07-22,OH-CTL,C172M,Tuusula,Tuusula,10:10,11:40,10:17,11:32,90,75,6,0,0,0,instructor,Tommi Nirkkonen,pilot,False,False,False,False,True,kou,,55352
+2024-07-28,OH-CTL,C172M,Tuusula,Tuusula,10:19,12:00,10:37,11:50,101,73,5,0,0,0,instructor,Tommi Nirkkonen,pilot,False,False,False,False,True,LASKUTETTAVA,,55714
+2024-08-06,OH-CTL,C172M,Tuusula,Tuusula,13:27,14:57,13:42,14:44,90,62,4,0,0,0,instructor,Tommi Nirkkonen,pilot,False,False,False,False,True,LASKUTETTAVA,,56127
+2024-08-06,OH-CTL,C172M,Tuusula,Tuusula,14:22,15:36,14:29,15:29,74,60,6,0,0,0,instructor,Ignaty Romanov-Chernigovsky,pilot,False,False,True,False,True,LASKUTETTAVA,,56437
+2024-08-06,OH-CTL,C172M,Tuusula,Haikko,19:16,19:53,19:26,19:48,37,22,1,0,0,0,instructor,Tommi Nirkkonen,pilot,False,False,False,False,True,LASKUTETTAVA,,56135
+2024-08-06,OH-CTL,C172M,Haikko,Tuusula,20:11,21:00,20:17,20:48,49,31,2,0,0,0,instructor,Tommi Nirkkonen,pilot,False,False,False,False,True,LASKUTETTAVA,,56136
+2024-08-07,OH-CTL,C172M,Tuusula,Tuusula,11:29,12:42,11:37,12:34,73,57,4,0,0,0,instructor,Ignaty Romanov-Chernigovsky,pilot,False,False,True,False,True,LASKUTETTAVA,,56438
+2024-08-07,OH-CTL,C172M,Tuusula,Pellinki,16:45,17:25,16:52,17:19,40,27,1,0,0,0,instructor,Tommi Nirkkonen,pilot,False,False,False,False,True,LASKUTETTAVA,,56189
+2024-08-07,OH-CTL,C172M,Pellinki,Tuusula,18:07,18:55,18:19,18:48,48,29,3,0,0,0,instructor,Tommi Nirkkonen,pilot,False,False,False,False,True,LASKUTETTAVA,,56190
+2024-08-14,OH-CTL,C172M,Tuusula,Tuusula,18:35,19:50,18:43,19:44,75,61,6,0,0,0,instructor,Ilkka Korkiakoski,pilot,False,False,True,False,False,LASKUTETTAVA,,56465
+2024-08-15,OH-CTL,C172M,Tuusula,Tuusula,13:30,14:35,13:39,14:29,65,50,12,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,58110
+2024-08-20,OH-CTL,C172M,Tuusula,Hiidenvesi,18:50,19:30,18:58,19:25,40,27,2,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,57012
+2024-08-20,OH-CTL,C172M,Hiidenvesi,Tuusula,19:59,20:55,20:11,20:50,56,39,3,0,0,0,instructor,Tommi Nirkkonen,pilot,False,False,False,False,True,LASKUTETTAVA,,56798
+2024-10-17,OH-CAM,C172,EFHV,EFNU,11:35,12:04,11:39,12:01,29,22,1,0,0,0,pilot,,,True,False,False,False,False,MAT,,58457
+2024-10-17,OH-CAM,C172,EFNU,EFJO,12:15,14:21,12:19,14:19,126,120,1,0,0,0,pilot,,,True,False,False,False,False,MAT,,58458
+2024-10-17,OH-CAM,C172,EFJO,EFHV,15:00,17:35,15:07,17:32,155,145,1,0,0,0,pilot,,,True,False,False,False,False,MAT,,58459
+2024-12-10,OH-CAM,C172,EFHV,EFHV,10:55,11:41,11:05,11:39,46,34,3,0,0,0,pilot,,,True,False,False,False,False,HAR,,58996
+2025-01-04,OH-CAM,C172,EFHV,EFHV,13:27,13:45,13:37,13:42,18,5,1,0,0,0,pilot,,,True,False,False,False,False,HAR,,59119
+2025-01-04,OH-CAM,C172,EFHV,EFHV,14:08,15:07,14:15,15:06,59,51,1,0,0,0,pilot,,,True,False,False,False,False,MAT,,59120
+2025-02-04,OH-CMU,C152,EFHV,EFHV,12:05,13:02,12:14,13:00,57,46,5,0,0,0,pilot,,,True,False,False,False,False,HAR,,59210
+2025-03-18,OH-CAY,C172,EFHV,EFRY,14:40,15:16,14:46,15:14,36,28,2,0,0,0,pilot,,,True,False,False,False,False,MAT,,59493
+2025-03-18,OH-CAY,C172,EFRY,EFHV,15:46,16:10,15:50,16:07,24,17,1,0,0,0,pilot,,,True,False,False,False,False,MAT,,59494
+2025-04-29,OH-CAM,C172,EFHV,EFHV,13:18,14:26,13:26,14:19,68,53,1,0,0,45,pilot,,,True,False,False,False,False,MAT,,60286
+2025-04-29,OH-CAM,C172,EFHV,EFHV,17:40,18:23,17:44,18:20,43,36,1,0,0,15,pilot,,,True,False,False,False,False,MAT,,60287
+2025-05-11,OH-CAY,C172,EFHV,EFHV,09:00,09:38,09:05,09:35,38,30,4,0,0,0,pilot,,,True,False,False,False,False,HAR,,60704
+2025-05-18,OH-CTL,C172M,Räyskälä,Tuusula,16:50,17:35,16:57,17:31,45,34,3,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,60848
+2025-05-19,OH-CTL,C172M,Hirvijärvi,Tuusula,11:17,11:55,11:20,11:49,38,29,4,0,0,0,pilot,,,True,False,False,True,False,LASKUTETTAVA,,60849
+2025-05-19,OH-CTL,C172M,Tuusula,Tuusula,18:29,19:45,18:38,19:38,76,60,8,0,0,0,instructor,Heikki Salo,pilot,False,False,False,False,True,VAPAA,,61850
+2025-05-24,OH-CTL,C172M,Tuusula,Tuusula,11:05,12:15,11:14,12:08,70,54,5,0,0,0,instructor,Harald Storgårds,pilot,False,False,False,False,True,VAPAA,,61104
+2025-05-25,OH-CTL,C172M,Tuusula,Hiidenvesi,11:09,11:55,11:22,11:51,46,29,1,0,0,0,instructor,Tommi Nirkkonen,pilot,True,False,False,False,False,LASKUTETTAVA,,61208
+2025-05-25,OH-CTL,C172M,Hiidenvesi,Lohjajärvi,12:35,13:25,12:46,13:09,50,23,4,0,0,0,instructor,Tommi Nirkkonen,pilot,True,False,False,False,False,LASKUTETTAVA,,61209
+2025-05-25,OH-CTL,C172M,Lohjajärvi,Tuusulanjärvi,13:52,14:31,13:59,14:27,39,28,1,0,0,0,instructor,Tommi Nirkkonen,pilot,True,False,False,False,False,LASKUTETTAVA,,61210
+2025-05-28,OH-CAM,C172,EFHV,EFMA,15:38,17:50,15:43,17:47,132,124,1,0,0,120,pilot,,,True,False,False,False,False,MAT,,61228
+2025-05-29,OH-CTL,C172M,Tuusula,Pellinki,16:15,16:51,16:21,16:50,36,29,3,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,61254
+2025-05-29,OH-CTL,C172M,Pellinki,Tuusula,17:07,17:38,17:10,17:34,31,24,2,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,61255
+2025-05-29,OH-CTL,C172M,Tuusula,Hvesi,17:55,18:35,18:05,18:31,40,26,1,0,0,0,copilot,Tommi Nirkkonen,pilot,True,False,False,False,False,LASKUTETTAVA,,61252
+2025-05-29,OH-CTL,C172M,Hvesi,Tuusula,19:54,20:35,20:08,20:31,41,23,1,0,0,0,copilot,Tommi Nirkkonen,pilot,True,False,False,False,False,LASKUTETTAVA,,61253
+2025-05-30,OH-CTL,C172M,Tuusulanjärvi,Loppijärvi,12:40,13:19,12:49,13:17,39,28,1,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,61311
+2025-05-30,OH-CTL,C172M,Loppijärvi,Tuusulanjärvi,13:20,13:55,13:25,13:50,35,25,2,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,61312
+2025-06-01,OH-CTL,C172M,Tuusulanärvi,Kytäjärvi,18:16,18:45,18:26,18:44,29,18,1,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,61397
+2025-06-01,OH-CTL,C172M,Kytäjärvi,Tuusulanjärvi,18:45,19:36,18:48,19:28,51,40,5,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,61398
+2025-06-03,OH-CTL,C172M,Tuusulanjärvi,Tuusulanjärvi,20:05,21:35,20:16,21:31,90,75,10,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,61459
+2025-06-05,OH-CTL,C172M,Tuusulanjärvi,Haikko,17:38,18:25,17:47,18:22,47,35,4,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,61603
+2025-06-05,OH-CTL,C172M,Haikko,Tuusulanjärvi,18:44,19:34,18:47,19:31,50,44,5,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,61604
+2025-06-08,OH-CTL,C172M,Tuusula,Hiidenvesi,12:45,13:25,12:51,13:18,40,27,2,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,61866
+2025-06-08,OH-CTL,C172M,Hiidenvesi,Tuusula,14:10,14:50,14:20,14:46,40,26,3,0,0,0,pilot,,,True,False,False,False,False,LASKUTETTAVA,,61867
+2025-06-16,OH-CAY,C172,EFHV,EFHV,18:36,19:43,18:45,19:41,67,56,5,0,0,0,instructor,Petri Kere,pilot,False,False,True,False,False,HAR,,62036
+2025-06-24,OH-CTL,C172M,Tuusula,Tuusula,19:00,19:39,19:20,19:29,39,9,1,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,62282
+2025-07-01,OH-CGX,C172,EFHV,EFHV,12:53,13:30,13:00,13:27,37,27,4,0,0,0,pilot,,,True,False,False,False,False,HAR,,62515
+2025-07-01,OH-CTL,C172M,Tuusula,Hiidenvesi,17:26,18:40,17:35,18:33,74,58,6,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,62555
+2025-07-01,OH-CTL,C172M,Hiidenvesi,Tuusula,19:36,20:27,19:53,20:23,51,30,4,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,62556
+2025-07-02,OH-CAM,C172,EFHV,EFJO,09:37,11:45,09:43,11:40,128,117,1,0,0,0,pilot,,,True,False,False,False,False,MAT,,62601
+2025-07-02,OH-CAM,C172,EFJO,EFNU,13:19,15:45,13:20,15:42,146,142,1,0,0,0,pilot,,,True,False,False,False,False,MAT,,62602
+2025-07-02,OH-CAM,C172,EFNU,EFHV,15:50,16:15,15:54,16:13,25,19,1,0,0,0,pilot,,,True,False,False,False,False,MAT,,62603
+2025-07-03,OH-CTL,C172M,Tuusula,Haikko,12:39,13:25,12:53,13:23,46,30,2,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,62685
+2025-07-03,OH-CTL,C172M,Haikko,Pellinki,13:47,14:05,13:48,14:00,18,12,1,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,62686
+2025-07-03,OH-CTL,C172M,Pellinki,Tuusula,14:15,14:55,14:17,14:47,40,30,2,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,62687
+2025-07-07,OH-CTL,C172M,Tuusula,Tuusula,15:00,15:55,15:07,15:48,55,41,4,0,0,0,instructor,Ilkka Joukanen,pilot,False,False,False,False,True,LASKUTETTAVA,,63661
+2025-07-14,OH-CTL,C172M,Tuusula,Tuusula,10:09,11:47,10:27,11:29,98,62,6,0,0,0,instructor,Petri Kere,pilot,False,False,True,False,False,LASKUTETTAVA,,63122
+2025-07-21,OH-CTL,C172M,Tuusula,Loppijärvi,11:01,11:40,11:07,11:39,39,32,3,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,63639
+2025-07-21,OH-CTL,C172M,Loppijärvi,Tuusula,11:40,12:15,11:41,12:07,35,26,4,0,0,0,instructor,Pekka Puhakka,pilot,False,False,False,False,True,LASKUTETTAVA,,63640
+2025-07-24,OH-CTL,C172M,Tuusula,Tuusula,18:06,19:20,18:18,19:16,74,58,6,0,0,0,instructor,Petri Kere,pilot,False,False,True,False,False,LASKUTETTAVA,,63775
+2025-09-08,OH-CTL,C172M,Inkoo,Tuusj,17:20,18:05,17:23,18:01,45,38,1,0,0,0,instructor,Tommi Nirkkonen,pilot,True,False,,False,False,LASKUTETTAVA,,65472
+2025-09-10,OH-CTL,C172M,Tuusula,Vuolenkoski,11:07,12:00,11:14,11:53,53,39,1,0,0,0,pilot,,,True,False,,False,False,LASKUTETTAVA,,65575
+2025-09-10,OH-CTL,C172M,Vuolenkoski,Tuusula,14:24,15:20,14:35,15:13,56,38,1,0,0,0,pilot,,,True,False,,False,False,LASKUTETTAVA,,65576
+2025-09-19,OH-CTL,C172M,Tuusula,Pyhäjärvi,14:58,15:55,15:10,15:49,57,39,1,0,0,0,pilot,,,True,False,,False,False,LASKUTETTAVA,,66065
+2025-09-19,OH-CTL,C172M,Kahvisaari,Tuusula,17:40,18:15,17:44,18:12,35,28,1,0,0,0,pilot,,,True,False,,False,False,LASKUTETTAVA,,66066
+2025-09-28,OH-CTL,C172M,Tuusula,Tuusula,11:02,12:10,11:11,12:00,68,49,6,0,0,0,pilot,,,True,False,,False,False,LASKUTETTAVA,,66274
+2025-09-30,OH-CTL,C172M,Tuusula,EFRY,15:02,15:42,15:13,15:39,40,26,1,0,0,0,pilot,,,True,False,,False,False,LASKUTETTAVA,,66399
+2025-10-20,OH-CAM,C172,EFHV,EFHV,12:52,13:46,12:57,13:45,54,48,2,0,0,0,pilot,,,True,False,,False,False,HAR,,66895
+2025-12-12,OH-CAM,C172,EFHV,EFHV,18:42,19:22,18:50,19:21,40,31,0,3,0,0,pilot,,,True,False,,False,False,MAT,,67180
+2026-01-01,OH-CMU,C152,EFHV,EFHV,13:54,14:26,14:00,14:24,32,24,4,0,0,0,pilot,,,True,False,,False,False,HAR,,67265
+2026-01-26,OH-CAM,C172,EFHV,EFHV,12:50,14:02,12:59,14:00,72,61,3,0,0,0,pilot,,,True,False,,False,False,HAR,,67312
+2026-04-12,OH-CAM,C172,EFHV,EFHV,09:58,12:10,10:10,12:08,132,118,3,0,0,0,pilot,,,True,False,,False,False,MAT,,68154
+2026-05-15,OH-CTL,C172M,EFRY,Tuusula,16:36,17:16,16:43,17:10,40,27,2,0,0,0,pilot,,,True,False,,False,False,LASKUTETTAVA,,69061
+2026-05-16,OH-CTL,C172M,Kabböle,Kabböle ,00:00,00:00,19:35,19:52,0,17,3,0,0,0,instructor,Toivo Huovinen,pilot,False,False,,False,True,LASKUTETTAVA,,69226
+2026-05-16,OH-CTL,C172M,Tuusula,Kabböle,17:20,18:15,17:25,18:10,55,45,6,0,0,0,instructor,Tommi Nirkkonen,pilot,False,False,,False,True,VAPAA,,69255
+2026-05-17,OH-CTL,C172M,Kabböle,Kabböle,10:00,10:58,10:08,10:48,58,40,4,0,0,0,instructor,Harry Karlsson,pilot,True,False,,False,False,VAPAA,Kevätkertaus 2026,69257
+2026-05-17,OH-CTL,C172M,Kabböle,Kabböle,15:26,16:10,15:33,16:05,44,32,6,0,0,0,instructor,Thomas Hansson,pilot,False,False,,False,True,LASKUTETTAVA,Kerhon kevättarkkari,69170
+2026-05-18,OH-CTL,C172M,Tuusula,Tuusula,16:49,18:17,17:00,18:13,88,73,7,0,0,0,instructor,Mikko Sinervä,pilot,True,False,,False,True,VAPAA,Opekertaus,69211
+2026-06-23,OH-CTL,C172M,Tuusula,Tuusula,13:35,14:48,13:41,14:41,73,60,9,0,0,0,instructor,Pekka Puhakka,pilot,False,False,,False,True,LASKUTETTAVA,,70537
+2026-06-23,OH-CTL,C172M,Karhusaari,Pellinki,16:24,16:52,16:32,16:47,28,15,1,0,0,0,instructor,Pekka Puhakka,pilot,False,False,,False,True,LASKUTETTAVA,,70538
+2026-06-29,OH-CAM,C172,EFHV,EFHV,19:02,19:30,19:12,19:28,28,16,1,0,0,0,pilot,,,True,False,,False,False,HAR,,70897
+2026-07-25,OH-TIL,Piper PA-28-161,EFTP,EFTP,06:56,08:04,07:05,07:58,68,53,3,0,0,68,pilot,,,True,False,,False,False,HARJOITUS,,72256

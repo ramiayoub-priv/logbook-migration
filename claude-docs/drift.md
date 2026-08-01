@@ -448,12 +448,21 @@ Both spreads **sideways** (CCW `rotate(90)`), no `LT` subscripts anywhere. **All
   (20/08 outbound `19:25→19:30`; 06/08 leg 3 `19:48→19:53`). **So when a row is short by ~5 min and the
   cells look clean, suspect on-block = landing time and add the taxi — don't hunt for a mangled digit.**
 
-### ⚠ `laskukierros_export.csv` is INCOMPLETE — do not read "absent" as "didn't happen"
-The committed export has **zero rows** for 06.08.2024 and 14.08.2024, yet the user pasted full
-records for both from the live source. Across Jul–Sep 2024 it holds **7** rows where the paper has
-~20 OH-CTL legs. It also **never carries instructor/pupil names** — the `Opettaja`/`Oppilas` columns
-are a `1`/`0` flag in all 128 rows — while the live view shows names *and* per-leg takeoff/landing
-times. **A fuller re-export is worth requesting before the next batch.**
+### ⚠ `laskukierros_export.csv` was INCOMPLETE — root cause found, superseded 2026-08-01
+During this batch the committed export showed **zero rows** for 06.08.2024 and 14.08.2024 although
+both days flew, and held only **7** rows across Jul–Sep 2024 where the paper has ~20 OH-CTL legs.
+
+**Root cause:** `GET /export/pilotFlights` returns only flights where the user is the **primary
+pilot**. Every flight he *instructed* is filed under the **pupil's** account (`pilotName` = pupil,
+`pilotTwoName` = "Rami Ayoub", `pilotTwoRole` = `instructor`) and is therefore absent. That is the
+entire 128-vs-228 gap — **100 instructing rows were missing**, which is precisely the float-season
+material Book 3 is full of.
+
+**Fixed:** `GET /api/v1/flights` (same session cookie) returns all **228**, 19/04/2020 → 25/07/2026.
+Saved as **`laskukierros_flights.json`** with **`laskukierros_flights.csv`** derived by
+`laskukierros_to_csv.py`. All four 06/08 legs, the 14/08 flight and **both** 20/08 legs are present
+and match the paper exactly. `laskukierros_export.csv` is kept only because `laskukierros_zflags.md`
+was computed from it — **do not use it for coverage questions.**
 
 ### Record conflicts this batch (paper kept — documented only)
 | ours (paper) | electronic record | conflict |
@@ -465,6 +474,62 @@ times. **A fuller re-export is worth requesting before the next batch.**
 - That last one only *looks* like a zone mismatch: as local it would **overlap the preceding leg**
   (`13:27→14:57`) in the same aeroplane. The club-system row is the one entered in UTC by mistake;
   the paper's `14:22Z` is right and the whole 06/08 chain is UTC.
+
+## IMG_6028/6029 batch (pages 43–46, 18/09/2024–15/04/2025) — appended 2026-08-01
+Both spreads **sideways** (CCW `rotate(90)`), no `LT` subscripts. **All five cross-checks exact**
+(6028: Δtotal **13:50** / Δpic 13:50 / Δinstr **2:32**; 6029: Δtotal **17:14** = SE-VFR 7:18 +
+SE-IFR 9:56 / Δpic 17:14). Landings cells blank on both → ours sum **48** and **28**.
+On 6028 every running-Total cell chains perfectly for the first time in a while — no column slip.
+**The float season ends on p.43 and the whole batch is landplane/IFR work**; 6029 has **no
+instructor time and no dual at all**, the first such spread in Book 3.
+
+- **⚠⚠ THE `Z`/LOCAL SWITCH HAPPENS *INSIDE* IMG_6028 — pinned from both sides by club records.**
+  - 17/10/2024 (rows 8–10, OH-CAM): club logs `11:35 / 12:15 / 15:00` local; book writes
+    `08:35 / 09:15 / 12:00` → book is **UTC** (EEST, +3).
+  - 10/12/2024 (row 14) and 04/01/2025 (row 15), same aircraft: book times match the club's
+    **local** times digit-for-digit (`10:55–11:41`, `13:27–13:45`) → book is **LOCAL**.
+
+  So the pilot stopped writing Zulu somewhere between 17/10 and 10/12/2024. **Rows 11–13
+  (28/10 ×2 OH-PDP, 23/11 OH-ESR) sit inside that gap with no electronic record**; user reviewed and
+  confirmed "otherwise correct", so they are stored **`Z`**. That boundary is the one soft spot in
+  this batch — revisit if a record for those three dates ever turns up.
+- **IMG_6029 is entirely LOCAL** (no `Z` on any row). Four rows are club-confirmed to the minute:
+  04/01 OH-CAM `14:08–15:07`, 04/02 OH-CMU `12:05–13:02`, and both 18/03 OH-CAY legs.
+- **Row 1's date was scribbled over — user confirms `18/09/2024`.** Two overwritten day digits, read
+  variously as 26/28. It cannot be 19/09 (he was flying OH-GKT around Vääksy/Kahvisaari all that
+  afternoon — see p.42) and 20/09 collides with row 5. P28A OH-PDP EFHV local 14:41–15:20, 5 ldg.
+- **⚠ Registration: 04/02/2025 is `OH-CMU`, not OH-CMV.** I first read the last letter as a V; the
+  club record for that exact slot (EFHV 12:05–13:02, C152, 5 ldg) says **OH-CMU**, and a high-res
+  re-crop shows an open-topped U. *Both regs are real C152s — always confirm the last letter against
+  the club file when the flight is in a club aircraft.*
+- **The Netherlands/Germany leg is genuine, not a transcription error.** 07/03/2025 SR20 **OH-ESR
+  EHGG→EDWF** (Groningen→Leer) 0:45 sits between EFNU→ESMG (12/01) and ESMG→EFNU (08/03) with no
+  connecting legs. User: *"we were 2 pilots so I only logged my legs in my book."* **Expect
+  geographically disconnected rows on multi-pilot ferry trips — don't treat them as errors.**
+- **New airports:** **ESMG** (Feringe/Ljungby, Sweden — the SR20's winter stop, 12/01→08/03),
+  **EHGG** (Groningen Eelde), **EDWF** (Leer-Papenburg). ESNU (Umeå) and EFJO (Joensuu) already known.
+- **Instructing (3, all on 6028):** 20/09 OH-GKT Kahvisaari↔Lietsaari 0:44 + 0:43 and 28/10 OH-PDP
+  EFHV local 1:05 → Δinstr 2:32 exact. Note rows 6 & 7 (30/09 and 16/10 Kahvisaari locals, **10 and
+  5 landings**) look like float instruction but carry **no FI time** — the 2:32 page total confirms
+  the book logs them PIC-only. Left as written.
+- **Record conflict, paper kept:** 18/03/2025 OH-CAY EFHV→EFRY — book **1 landing**, club record
+  **2**. One-landing difference, no time effect.
+
+### Two inferred block cells on IMG_6028 (logged flight time authoritative)
+| row | book cells | stored | basis |
+|---|---|---|---|
+| r3 · 20/09 Lietsaari→Kahvisaari 0:43 | `09:35 → 10:11` (= 0:36) | on-block **10:18** | logged 0:43 + page total; outbound leg was 0:44. User-approved |
+| r5 · 20/09 Tuusulanjärvi→Kahvisaari 0:38 | `15:33 → 16:??` (minutes overwritten) | on-block **16:11** | only value consistent with 0:38 and the column total |
+| r9 · 17/10 EFNU→EFJO 2:06 | `09:15 → ??:21` (hour digit overwritten) | on-block **11:21** | **club record** `12:15–14:21` local −3h |
+- Row 3 is the **fourth on-block error in a row** across recent spreads (all three IMG_6026/6027
+  corrections were on-block too). *Keep leading with the on-block candidate.*
+
+### Paper-vs-ours drift at 15/04/2025 (end of p.46) — all five steady
+Book bottoms: Total **1102:32**, PIC **937:37**, SE-IFR **98:00**, Dual **164:55**,
+Flight-Instructor **149:30**. Ours: Total **1103:57** (**+1:25**), PIC **938:42** (**+1:05**),
+Instrument **102:02** (**+4:02**), Student **165:15** (**+0:20**), Instructor **148:07** (**−1:23**).
+**No delta moved across IMG_6028 or IMG_6029** — independent confirmation of both spreads, including
+the three inferred block cells and the 18/09 date.
 
 ## Confirmed corrections
 - **IMG_4953 (closeout, pages 110/111) — row-1 landing & instructor rows (user-verified 2026-07-31).**
