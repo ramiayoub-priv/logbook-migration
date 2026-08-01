@@ -38,31 +38,71 @@ deployed. No API and no frontend yet.**
   `internal/store` (SQLite schema + verified import, 85%), `cmd/logbookctl` (the operator CLI).
   **All 1293 flights import and verify.** `make check` is green at 94.5% overall.
 
+### What exists in `app/backend/` — the whole map
+```
+cmd/logbookctl/      the operator CLI: `import` and `verify`. A separate binary from the
+                     server on purpose, so a destructive op on a legal record can never be
+                     reached over HTTP.
+internal/hhmm/       H:MM <-> integer minutes. Durations are minutes everywhere inside the
+                     app; H:MM is parsed at the edges only.            [core, 100%]
+internal/timeutil/   THE single UTC-conversion authority. Do not re-implement time
+                     conversion anywhere else (rule 0.4). Handles the Z suffix, the
+                     midnight roll, and both DST edges.                [core, 100%]
+internal/csvbook/    CSV -> domain records + the audit. Pure, no database. Skips the seed
+                     rows, derives sea/land, reconciles all seven Cumulative_* series row
+                     by row, emits Discrepancy values.                 [core, 100%]
+internal/store/      schema.sql (embedded) + the verified import + read queries.  [85%]
+internal/stats/      DOES NOT EXIST YET. The aggregations for the statistics page.
+                     Already listed in the Makefile's CORE, so it prints SKIP today and
+                     will be held to 100% the moment it exists.
+```
+`make cover-core` enforces 100% on everything marked `[core]`. That list is the code where a
+bug means a wrong legal record. `internal/store` is held to the 80% bar, not 100%, because it
+is I/O.
+
 ### How to run things
 ```bash
 export PATH=$HOME/.local/go/bin:$PATH   # Go 1.26 lives here; the system had none
 cd app/backend
 make check      # vet + race tests + both coverage gates. This is the bar.
-make build      # cross-compiled static binaries into dist/
+make build      # cross-compiled static binaries into dist/ (builds every cmd/*)
 
 # Import the CSVs. -dry-run reports and writes nothing; use it first.
 go run ./cmd/logbookctl import -dry-run -csv ../..
 go run ./cmd/logbookctl import -db /tmp/logbook.db -csv ../.. -note "why"
 go run ./cmd/logbookctl verify -db /tmp/logbook.db -csv ../..
 ```
-The server's own Go is 1.13 and irrelevant — we cross-compile (`CGO_ENABLED=0`).
+The server's own Go is 1.13 and irrelevant — we cross-compile (`CGO_ENABLED=0`). The one
+dependency outside the stdlib is `modernc.org/sqlite` (pure Go, no CGO — that is what makes
+the single static binary possible). Keep it that way (rule §0.3).
 
-**The import is idempotent, backs up first, and refuses to commit on any checksum mismatch.** Re-run
-it freely. There is no committed database — it is generated, and `app/.gitignore` keeps `*.db` and
-`*.bak` out of the repo.
+**The import is idempotent, backs up first (`VACUUM INTO`), and refuses to commit on any checksum
+mismatch.** Re-run it freely. **There is no committed database** — it is generated, and
+`app/.gitignore` keeps `*.db` and `*.bak` out of the repo. Nothing you need is only in a database
+file; rebuild it from the CSVs in one command.
 
 ### The numbers the import produces — memorise these
 ```
 flights 1293 | total 1219:35 | pic 1053:03 | dual 166:32 | instrument 107:14
 night 16:47  | instructor 189:41 | seaplane 407:39 | landings 3439 | aircraft 39
 ```
-Asserted in `internal/csvbook/realdata_test.go`. **If one of them ever changes, the import is wrong
-until proven otherwise — do not adjust the expectation to make the test pass.**
+Asserted in `internal/csvbook/realdata_test.go`, along with the exact count of each of the eight
+discrepancy kinds. **If one of them changes unexpectedly, the import is wrong until proven otherwise —
+do not adjust the expectation to make the test pass.**
+
+⚠ **The one legitimate reason for those tests to fail: `logbook_3.csv` is still growing.** The
+migration effort (`claude-docs/`) appends flights to it page by page, and Book 3 is **not finished**.
+When it grows, `realdata_test.go` fails — that is the test doing its job, not a regression. The
+correct response is:
+
+1. Run `go run ./cmd/logbookctl import -dry-run -csv ../..` and read the report.
+2. Confirm the new totals are the *expected* deltas for the rows that were appended — `drift.md`
+   records a per-page Δ for every batch, so cross-check against that, not against a feeling.
+3. Only then update the constants, **in the same commit as the CSV change**, with the delta stated
+   in the commit message.
+
+Never update a constant first and reconcile afterwards. The whole value of these tests is that they
+fail before anyone notices a wrong total.
 
 ### ⏸ THREE THINGS ARE WAITING ON THE OWNER — ask about these first
 All three were found by the importer on 2026-08-01 and are logged in `claude-docs/drift.md`
@@ -81,12 +121,23 @@ All three were found by the importer on 2026-08-01 and are logged in `claude-doc
 ### Next task: #4, the API + authentication
 Read **`docs/security.md`** first — the threat model, the Argon2id/session design and the
 default-deny router are all specified there, and the `users`/`sessions` tables already exist in
-`schema.sql`. Rule §0.3 governs: **default deny, no secrets in the repo, stdlib only.**
+`schema.sql` (declared, no logic behind them yet). Rule §0.3 governs: **default deny, no secrets in
+the repo, stdlib only.** Argon2id means `golang.org/x/crypto/argon2` — the one dependency worth
+adding, and it must be justified in this file when you do.
 
-Everything the API needs to read is already in `internal/store`: `Flights()`, `Aircraft()`,
-`Discrepancies()`, `Verify()`. What is *not* written yet is `internal/stats` — the aggregations for
-the statistics page. `make cover-core` already lists it and prints `SKIP`, so it will be held to 100%
-the moment it exists. Cumulatives are computed there from `seq`, never stored (rule §0.5).
+Everything the API needs to read already exists in `internal/store`: `Flights()`, `Aircraft()`,
+`Discrepancies()`, `CountFlights()`, `Verify()`. Two things are missing:
+
+- **`internal/stats`** — the aggregations for the statistics page, and the cumulative computation the
+  EASA PDF needs. Computed from `seq`, never stored (rule §0.5). Held to 100%.
+- **`cmd/server`** — does not exist. `make build` picks it up automatically once it does.
+
+The API lives under **`/logbook/api/`**, not `/api/` — that path on `ayoub.fi` is already taken by a
+stale transit proxy.
+
+**The `discrepancies` table is already populated** (56 rows) and is what the frontend's "needs review"
+list reads. It is rewritten on every import, so an item that gets resolved in the CSV simply
+disappears — there is no second place to update.
 
 ### Open questions awaiting the owner
 - Is the `kraken-predictor-python-2` container on `:8000` still wanted? Publicly exposed, up 2 years,
@@ -110,6 +161,13 @@ the moment it exists. Cumulatives are computed there from `seq`, never stored (r
 - **`/api/` on `ayoub.fi` is already taken** by a stale transit proxy, which is why our API lives at
   `/logbook/api/`.
 - **Port 22 is under constant attack** (fail2ban: 50,264 bans). Never risk it.
+
+### Where the reasoning lives
+Do not re-derive these — they are argued out in the Decision Log below (§5), all dated 2026-08-01:
+stack choice · cumulatives computed not stored · the time model · the EASA PDF covering all three
+books · the landings day/night gap · the server security findings · Go's `time.Date` DST behaviour ·
+**the two-verifications design** · **sea/land from the registration** · **the derived aircraft list**
+· **the three open source-data problems**.
 
 ---
 
@@ -141,7 +199,7 @@ day · landings night.
 | Layer | Choice | Why |
 |---|---|---|
 | Backend | Go, stdlib `net/http` | Single static binary; deploy is rsync + restart. Tiny dependency tree. |
-| DB | SQLite (`modernc.org/sqlite`, pure Go) | No CGO ⇒ trivial cross-compile. One file; backup = copy it. 1295 rows is nothing. |
+| DB | SQLite (`modernc.org/sqlite`, pure Go) | No CGO ⇒ trivial cross-compile. One file; backup = `VACUUM INTO`. 1293 rows is nothing. |
 | Time | embedded `tzdata` | Behaviour must not depend on the server's zoneinfo. |
 | PDF | `go-pdf/fpdf` | Absolute positioning, which a fixed 15-row EASA grid needs. Headless Chrome would cost 300 MB+. |
 | Frontend | React + TS + Vite | Builds to static files. Node is build-time only, never on the server. |
@@ -157,7 +215,8 @@ day · landings night.
 | 5 | Four frontend pages (mobile-first) | not started |
 | 6 | Three PDF exports (EASA clone + table + stats) | not started |
 | 7 | PWA + deploy to `ayoub.fi/logbook` | not started |
-| 8 | Backfill landings day/night for the 22 night rows | not started |
+| 8 | Backfill landings day/night for the 22 night rows | not started — the 22 rows are already flagged `landings_unverified` in the DB and listed by `logbookctl import`. `claude-docs/drift.md` has the analysis: 17 rows are full-night and certain (50 landings); **9 of the 59 night landings are estimates** from five partial-night rows, and two exact sources exist on paper but were never read. |
+| 9 | Rule on the three open source-data problems | **blocked on the owner** — see the ⏸ block at the top of this file |
 
 ---
 
