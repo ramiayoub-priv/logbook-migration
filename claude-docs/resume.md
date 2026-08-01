@@ -504,10 +504,8 @@ OH-PDP/SR20), with occasional night flights. Float seasons so far: **2025** 18/0
   **Always cross-check on offset-independent per-page Δ ("TOTAL THIS PAGE"), never absolute totals — and
   note the book's Total column is itself 1:00 low from p.14 on.**
 - **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. **All Book-3 work through
-  IMG_6037 is committed at `dcfef29` (2026-08-01).** ⚠ The push of that commit was **blocked by the
-  permission classifier** in the session that made it — the user was asked to run `git push origin
-  master` themselves. **Check `git log origin/master..HEAD` at the start of the next session**; if
-  `dcfef29` is still unpushed, remind them.
+  IMG_6037 is committed AND pushed at `3acb6a7` (2026-08-01)** — master is clean and up to date with
+  origin. Images/HEIC/zip stay gitignored. Push only when asked.
   Images/HEIC/zip are gitignored (not pushed). Git identity is now set repo-locally
   (`Rami Ayoub <rami.ayoub@gmail.com>`) — it was missing and blocked a commit.
   Push only when asked.
