@@ -32,12 +32,28 @@
 >   night is **18:42** vs our Books 1+2 **12:44** — the whole gap is inherited. Book 3 reconciles
 >   exactly: 18:42 + our 4:03 = **22:45**. So the missing night time is in the **old paper books'
 >   night column**, not in Book 3 and not in the addition.
->   **The user then read the paper night column back** (see `drift.md`): the paper is internally
->   exact (11:58 before 26.01.2015 + nine listed rows 6:44 = 18:42), five of its rows already match
->   ours, **`01/02/2015` OH-CAV 0:37 has been applied** (night now **17:24**), and the remaining
->   **5:21 accounts for itself exactly** as three open questions — `25.02.2015` OH-KAM 0:10 (which of
->   two legs), `26.01.2015` (**paper has two rows, our CSV has one — probably a missed flight**), and
->   **4:03 that our CSV is short before 26.01.2015, with 2014 carrying zero night in ours**.
+>   **The user then read the paper night column back and photographed seven Book-1 spreads**
+>   (pp. 34/35, 36/37, 38/39, 48/49, 50/51, 70/71, 74/75 — the first Book-1 images in the project).
+>   The book's `Yölentoaika` `Siirto` figures chain continuously, which turns it into a page-by-page
+>   ledger; full table in `drift.md`. Night **16:47 → 19:42**, and **our running night now equals the
+>   paper's `Siirto` at every checkpoint through 30/11/2013**.
+>   - ✳️ Applied: **21.01.2013 OH-CTM 1:17** (line 111), **15.09.2014 OH-CMO 0:51** (line 237),
+>     **01.02.2015 OH-CAV 0:37** (line 250), **25.02.2015 OH-KAM 0:10** (line 253, the later leg).
+>   - ✳️ **⚠ A night value was on the WRONG ROW:** the `0:24` belongs to **09/11/2012 OH-CWB**
+>     (line 107), not 15/11/2012 OH-KAS (line 108). Moved; total unchanged. *First known one-row
+>     slip — suspect it when a night value sits on a row whose clock times make no sense.*
+>   - ✅ **`26.01.2015` was a DATE ERROR, not a missing flight** — line 249 read `28/01/2015`; the
+>     paper says `26.1`. Fixed. Page 74/75 cross-checks exactly (`Cumulative_Total` 264:27 and
+>     landings 571 both equal the paper), so no Book-1 flight is missing.
+>   - ⏸ **3:03 left: 1:55 in pages 52–69** (Mar–Aug 2014, not yet photographed — night runs 9:12 at
+>     p.51 to 11:07 at p.71) **+ 1:08 on p.74/75** where the user's dictation and the photograph
+>     disagree about which rows carry `0:30` and `0:38` (no total affected either way).
+>   - **⚠ The p.62 day/night landing split (59/3335) is now out of date** — recompute it once the
+>     night column closes.
+>   - **Reading method for Book-1/2 pages:** `Yölentoaika` = night, `Kokonaisaika` = running total,
+>     `Päällikkö` = PIC, `Oppilas` = student, `Opettaja` = instructor, `Siirto` = carried forward.
+>     Values straddle the dotted row separators and the photos are taken at an angle — **pin a row by
+>     `Kokonaisaika`, and pair the night entry with the `Päällikkö` value on its visual line.**
 > - **NEW, ✅ FIXED — line 102 of `logbook_2_final.csv` read `OK-PDP`**, a one-off OCR typo for
 >   `OH-PDP` (would have created a phantom aircraft in the app). User: **any `OK-` reg in these books
 >   is a typo for `OH-`.** Also: **`SE-GKT` (Book 1) and `OH-GKT` are the same airframe**

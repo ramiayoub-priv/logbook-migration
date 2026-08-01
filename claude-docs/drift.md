@@ -141,29 +141,100 @@ total **0:37**) now carries `Night_Time 0:37` — an exact date+registration+dur
 paper, and a full-night row (night == total), so there is nothing to apportion. **Night_Time carries
 no cumulative column, so no `Cumulative_*` value moved.** Our night total goes **16:47 → 17:24**.
 
-#### ⏸ Still open — and the remaining 5:21 accounts for itself exactly
-`22:45 − 17:24 = 5:21`, and the three open questions below sum to **1:08 + 0:10 + 4:03 = 5:21**.
-Nothing else is missing; these three are the whole of it.
+#### 📷 Book 1, pages 74/75 photographed (user, 2026-08-01) — the 2015 rows are now settled
+The first Book-1 page image in the project. **The whole spread cross-checks against our CSV exactly**,
+which is the important result: paper `Kokonaisaika` runs **258:00 → 264:27** and our
+`Cumulative_Total` at line 254 is **264:27**; paper landings **563 → 571** and ours is **571**. All
+eight rows match on registration, off/on-block and duration. **So no flight was missed** —
+`Cumulative_PIC` is the only column off, by the pre-existing **+0:03**.
 
-**A. `25.02.2015` OH-KAM 0:10 — which leg?** We hold **two** DA40 OH-KAM rows that day, a there-and-back
-to EFUT, neither with night time: **line 252** `EFHF→EFUT 16:16–17:03 (0:47)` and **line 253**
-`EFUT→EFHF 17:06–17:56 (0:50)`. The paper's 0:10 is a partial-night value and belongs to one of them.
-**Which row does the book put it on?** (Its 1 landing then becomes a night landing.)
+Column names for future Book-1/2 pages: `Lentoaika Kokonaisaika` = running total ·
+`Mittariaika Ilma-aluksella` = instrument · **`Yölentoaika` = night** · `Päällikkö` = PIC ·
+`Oppilas` = student · `Opettaja` = instructor · `Laskujen lukumäärä` = landings · `Siirto` = carried
+forward. ⚠ **The pilot writes each value straddling the dotted row separator, and the page is
+photographed at an angle** — align a value to its row by the `Kokonaisaika` running total, and pair
+`Yölentoaika` with the `Päällikkö` entry on the same visual line.
 
-**B. `26.01.2015` — the paper has two rows, our CSV has one.** Paper: **OH-CMO 0:38** and
-**OH-STL 0:30**. Our CSV holds a single 26/01/2015 row — **line 248**, DA40 **OH-STL**,
-EFHF local, **11:17–11:55**, total **0:38**, 1 landing. So our one row carries the *registration* of
-the paper's STL entry but the *duration* of its CMO entry, and the nearest OH-CMO flights are
-20/12/2014 and 28/01/2015. **This most likely means a whole flight was missed in transcription** —
-if so it is the first known missing row in Books 1–2 and it moves `Cumulative_Total` and every series
-downstream of it. ⚠ **Do not patch this from inference — it needs the page.** Worth 1:08 of the gap.
+- ✅ **`26.01.2015` is a DATE ERROR, not a missing flight — FIXED.** The paper's third row reads
+  **`26.1 C172 CMO EFHF EFHF 14:57 15:44 0:47`**; our line 249 had **`28/01/2015`**. Same aircraft,
+  same times, same duration, and the row already sat in the right place in book order. Corrected to
+  **26/01/2015**; no cumulative and no ordering moved. *(This is what made it look like the paper had
+  two 26.1 rows and we had one — we had both all along, one misdated.)*
+- ✳️ **`25.02.2015` night `0:10` APPLIED to line 253** (`EFUT→EFHF 17:06–17:56`, 0:50) — the later
+  leg, per the user, and the photo pairs the `0 10` with that row's `0 50` PIC entry.
+- ✅ **`01.02.2015` night `0:37` on line 250 confirmed by the photo** (`0 37` in `Yölentoaika`,
+  `0 37` in `Päällikkö`, cumulative 260:22 → 260:59). Already applied.
+- Minor, no action: the left page's `Lentoaika` cell for the 1.2 CAV row looks like **`0 39`**, but
+  the block pair (17:21–17:58), the `Päällikkö` cell and the running total all give **0:37**. Our
+  value is right.
 
-**C. The remaining 4:03 lies before 26.01.2015 — and almost certainly in 2014.** Paper says 11:58
-before that date; ours is **7:55**. Our night sub-totals run: end of 2011 **0:50**, end of 2012
-**5:29**, end of 2013 **7:55**, **end of 2014 still 7:55 — our CSV has no night time anywhere in
-2014.** A full calendar year with zero night entries, in a stretch where he flew night regularly
-either side of it, is where 4:03 most plausibly went. **Best next read: the book's night column
-across 2014**, or its night cumulative at any 2014 page boundary, which bisects it immediately.
+#### 📷 Six more Book-1 spreads photographed (user, 2026-08-01) — the night ledger is now closed to one page range
+The user photographed every Book-1 spread carrying night time back to the **5:05** checkpoint (the
+end of the 2011–12 night rating). **The `Siirto`/bottom-line `Yölentoaika` figures chain continuously
+across all of them**, which turns the night column into a page-by-page ledger:
+
+| paper pp. | `Siirto` night | page end | Δ | row(s) the book puts it on | status |
+|---|---|---|---|---|---|
+| 34/35 | 5:05 | 5:29 | 0:24 | **09.11.2012 OH-CWB** (0:56, PIC 0:56) | ✳️ **MOVED** — was on the wrong row |
+| 36/37 | 5:29 | 6:46 | **1:17** | **21.01.2013 OH-CTM** (1:17, full night) | ✳️ **APPLIED** line 111 |
+| 38/39 | 6:46 | 7:06 | 0:20 | 25.03.2013 OH-CTH | ✅ already ours |
+| 48/49 | 7:06 | 8:12 | 1:06 | 06.11.2013 OH-TIL 0:36 + 11.11.2013 OH-COF 0:30 | ✅ already ours |
+| 50/51 | 8:12 | 9:12 | 1:00 | 14.12.2013 OH-COF (full night) | ✅ already ours |
+| **52–69** | **9:12** | **11:07** | **1:55** | **not photographed** | ⏸ **THE ONLY GAP LEFT** |
+| 70/71 | 11:07 | 11:58 | **0:51** | **15.09.2014 OH-CMO** EFLA→EFHF (0:51, full night) | ✳️ **APPLIED** line 237 |
+| 74/75 | 11:58 | 13:53 | 1:55 | 0:30 + 0:38 (**item D**) + 0:37 ✅ + 0:10 ✳️ | ⏸ D open |
+
+**Our running night now equals the paper's `Siirto` at every checkpoint through 30/11/2013**
+(5:29, 6:46, 7:06, 8:12 — all exact). Night total **16:47 → 19:42**.
+
+- ✳️ **⚠ `0:24` WAS ON THE WRONG ROW — MOVED.** Page 35 puts the `0 24` beside the `Päällikkö 0 56`
+  entry on the row whose `Kokonaisaika` is **117:55** — that is **09.11.2012 OH-CWB EFHF local
+  16:20–17:16 (0:56)**, our **line 107**. We had it on **line 108** (15.11.2012 OH-KAS, 14:38–15:42,
+  1:04). Both rows' cumulative totals match the paper (117:55 / 118:59), so the rows themselves are
+  right — only the night value was one row out. **Night moved 108 → 107; the total is unchanged.**
+  *This is the first known case of a value transcribed onto the neighbouring row. When a night value
+  sits on a row whose clock times make no sense, suspect a one-row slip before anything else.*
+- ✳️ **21.01.2013 OH-CTM** EFHF local 18:41–19:58, **1:17, full night** → line 111 (`Kokonaisaika`
+  122:22, matches ours exactly).
+- ✳️ **15.09.2014 OH-CMO** EFLA→EFHF 20:27–21:18, **0:51, full night** → line 237 (`Kokonaisaika`
+  249:59, matches). ⚠ Note this is a **student** row in our CSV (`Student_Time 0:51`,
+  pic_name Martevuo) — only the night cell was added, nothing else touched.
+- Minor, no action: p.51 writes the 14.12.2013 OH-COF block as **17:09–18:09**; ours says
+  **17:07–18:07**. Duration 1:00 either way and no total moves.
+
+#### ⏸ Still open — the remaining 3:03
+`22:45 − 19:42 = 3:03` = **1:08 (item D) + 1:55 (pages 52–69)**. Nothing else is missing.
+
+**E. 📄 PAGES 52–69 ARE THE LAST GAP — 1:55 of night, between `25.02.2014` and `30.08.2014`.**
+Page 51 ends at night **9:12** (25.02.2014) and page 71 carries **11:07** in (before 30.08.2014), so
+the book records **1:55** of night somewhere in between and our CSV has **none** — our 2014 night is
+still zero outside the 15.09 row above. **Photographing the spreads covering Mar–Aug 2014 closes the
+whole item.** Read it the same way: the `Yölentoaika` entry pairs with the `Päällikkö` value on its
+visual line, and `Kokonaisaika` pins the row.
+
+**D. ⚠ Which rows carry the `0:30` and the `0:38`? — a genuine conflict, unresolved.**
+The page's night column contributes **1:55** (`Yölentoaika` 11:58 → 13:53), made of four entries:
+**0:30, 0:38, 0:37, 0:10**. Two are settled (0:37 → 1.2 CAV, 0:10 → 25.2 leg 2). The other two are
+read differently by the two sources we have:
+
+| | `0:30` | `0:38` |
+|---|---|---|
+| **user's dictation** | 26.1 **STL** (line 248, 0:38 flight) | 26.1 **CMO** (line 249, 0:47 flight) |
+| **the photograph** | **5.1 KAM** (line 247, 0:57 flight) | 26.1 **STL** (line 248, 0:38 flight) |
+
+Both readings sum to 1:55, so the page total cannot discriminate. The photo reading pairs `0 30`
+on the same visual line as the `0 57` PIC entry (the 5.1 flight) and leaves the 26.1 CMO row's night
+cell empty. **Not applied. The user's own read of the book decides.**
+
+⚠ **The six later spreads have since validated that same-line pairing method on eight independent
+rows** — every already-confirmed value (0:20, 0:36, 0:30, 1:00, 0:37, 0:10) landed on the right row,
+and on page 35 it **caught a real error in our CSV** that nothing else had (the 0:24 sitting one row
+low). That does not overrule the user, but it is why the photo reading is worth a second look here.
+
+**Neither reading changes any total** — the page contributes 1:55 of night either way, so this
+affects only *which two rows* carry it, and hence which two landings count as night.
+
+**C. RESOLVED** — superseded by the six-spread ledger above; what was 4:03 is now item E's 1:55.
 
 **Knock-on for the p.62 landing split.** Every row that gains night time turns its landings into
 night landings, so the inked **59 night / 3335 day** moves. `Cumulative_Landings` (the sum) is
@@ -1381,9 +1452,17 @@ Across all three books there are **22 rows with night time**. **17 are full-nigh
 so the night portion is at the *end* and each row's **final** landing is certainly night; how many
 earlier ones fall after night onset is not recoverable from the CSV:
 
+> ⚠⚠ **THIS TABLE AND THE 59/3335 SPLIT ARE BOTH OUT OF DATE as of 2026-08-01** — the night
+> investigation at the top of this file has since **moved one value onto a different row and added
+> four more night rows**, and item E (1:55 across pages 52–69) is still open. **Recompute the whole
+> split once the night column is closed; do not rely on the figures below.** In particular
+> `15/11/2012 OH-KAS` is **no longer a night row at all** — its 0:24 belongs to `09/11/2012 OH-CWB`
+> (1 landing, partial night), which changes this table's first line and the estimate built on it.
+
 | date | reg | off–on | total / night | ldg | night ldg | basis |
 |---|---|---|---|---|---|---|
-| 15/11/2012 | OH-KAS | 14:38–15:42 | 1:04 / 0:24 | 5 | **2** | night = last 24 of 64 min; ~13 min/circuit |
+| ~~15/11/2012~~ | ~~OH-KAS~~ | ~~14:38–15:42~~ | **superseded** | ~~5~~ | ~~2~~ | night moved to 09/11/2012 OH-CWB (1 ldg) |
+| 09/11/2012 | OH-CWB | 16:20–17:16 | 0:56 / 0:24 | 1 | **1** | single landing, at the end — certain |
 | 25/03/2013 | OH-CTH | 18:50–20:03 | 1:13 / 0:20 | 1 | **1** | single landing, at the end — certain |
 | 11/11/2013 | OH-COF | 17:00–18:00 | 1:00 / 0:30 | 4 | **2** | night = exactly the second half |
 | 26/03/2020 | OH-STL | 16:35–18:38 | 2:03 / 0:50 | 3 | **1** | night = last 40%; only the final landing is safe |
