@@ -113,10 +113,13 @@ nothing else — the CSRF check doing its job. This cost real time on 2026-08-01
 ⚠ **`go test` caches.** After the CSVs change, a green `make check` proves nothing until you have
 run `go test -count=1 ./...` — this exact trap hid five real failures on 2026-08-01.
 
-⚠ **Run the thing before calling a task done.** A green suite has now twice missed what thirty
-seconds of running found: the `createuser -db` bug in Task 4, and in Task 5/6 the broken PDF column
-headers, the clipped totals labels, the date fields overflowing a phone, and the aircraft relink
-lost on re-import. None of those were visible from the tests.
+⚠ **Run the thing before calling a task done.** A green suite has now three times missed what
+thirty seconds of running found: the `createuser -db` bug in Task 4; in Task 5/6 the broken PDF
+column headers, the clipped totals labels, the date fields overflowing a phone, and the aircraft
+relink lost on re-import; and on 2026-08-01 **the new-flight form asking for `09:15Z` in a field
+whose keyboard has no colon key** — untypeable on a phone, invisible to 43 passing tests, a browser
+run at 390px, and a live end-to-end flight entry, because all of those type with a desktop keyboard
+or programmatically. **On a mobile form, test the keyboard, not just the field.**
 
 **There is no committed database** — it is generated, and `app/.gitignore` keeps `*.db` and `*.bak`
 out of the repo. Nothing you need is only in a database file; rebuild it from the CSVs in one
@@ -171,6 +174,8 @@ POST   /logout             private  revokes this session, clears the cookie
 GET    /me                 private  {user_id, username}
 GET    /flights   ?from&to private  {flights:[...], count} in seq order
 POST   /flights            private  a hand-entered flight -> 201; 400 with per-field errors; 409 duplicate
+                                    times are "HH:MM" (Helsinki local) or "HH:MMZ" (UTC)
+                                    takeoff/landing are OPTIONAL, but all-or-nothing as a pair
 GET    /aircraft           private  the derived seed list for the new-flight form
 GET    /stats     ?from&to private  {summary:{...}, range}
 GET    /discrepancies      private  the "needs review" list, 61 rows today
@@ -195,6 +200,13 @@ the backend binds `127.0.0.1:9002`, so no firewall change is needed at any step.
 **`rami` has no passwordless sudo on the box.** Every privileged step is a command the *owner* runs;
 a session cannot do it unattended. Read-only survey over SSH works fine with the existing key.
 
+**The site is LIVE**: `https://ayoub.fi/logbook` answers 200, the API answers 200 on `/health` and
+401 unauthenticated, and all seven of the owner's other sites still answer 200. The owner ran
+`install-apache.sh` and created an account.
+
+⚠ **But the deployment is BEHIND the repo.** The box is running the pre-2026-08-01-evening binary
+and a **1293-flight database**. Both are staged and waiting on one command — see below.
+
 ✅ **Done and verified live:**
 - `logbook` system user; `/opt/logbook`, `/var/lib/logbook` (0750), `/var/www/logbook`.
 - The static binary at `/opt/logbook/logbook-server`, cross-compiled `CGO_ENABLED=0`.
@@ -204,15 +216,30 @@ a session cannot do it unattended. Read-only survey over SSH works fine with the
 - The frontend build rsynced to `/var/www/logbook/` (`rami` owns it, so no sudo), assets carrying
   the `/logbook/` base.
 
-⏳ **Not done — `ayoub.fi/logbook` is 404 until these land:**
-1. **The database on the box is STALE.** It predates the 28/08/2025 late entries, so it holds 1293
-   flights, not 1296. Rebuild (`logbookctl import` + `verify`), rsync, restart. It must be replaced
-   *before* the app is reachable, and `install-backend.sh` deliberately **refuses to overwrite an
-   existing database** — move it aside consciously.
-2. **Apache.** `a2enmod headers` (it is available but off — the `sw.js` no-cache rule needs it), then
-   the additive block from `docs/deploy.md`, `apache2ctl configtest`, `systemctl reload apache2`.
-3. **No user account exists yet** (`users` reports none). Create it interactively; the password must
-   never pass through a chat session or a file.
+✅ **Apache** — `a2enmod headers` plus the additive block from `docs/deploy.md`, configtest, reload.
+✅ **The account** — created interactively with `createuser`. The password has never been in a file
+or a chat session and must stay that way.
+
+⏳ **THE ONE COMMAND STILL OUTSTANDING** — the owner must run it; there is no passwordless sudo:
+
+```bash
+ssh -t rami@ayoub.fi 'sudo /home/rami/logbook-deploy/update.sh'
+# then, from the dev machine (no sudo -- rami owns the web root):
+rsync -a --delete app/frontend/dist/ rami@ayoub.fi:/var/www/logbook/
+```
+
+`update.sh` installs the new binary (keeping `.prev` for rollback), backs the database up to
+`/var/lib/logbook/backups/`, **re-imports** the corrected CSVs, verifies by a separate code path,
+restarts, and re-checks the other six sites. **The startup log line must read `flights=1296`.**
+
+⚠ **Re-import, never a file swap.** The `users` and `sessions` tables live in the same SQLite file,
+so replacing it would delete the owner's account. The importer's `DELETE` is scoped to `aircraft`,
+`discrepancies` and `flights WHERE source_book <> 0`, inside one transaction that rolls back on any
+checksum mismatch — so users, sessions and app-entered flights all survive.
+
+⚠ **The binary and the frontend must land together.** The reworked form sends `takeoff`/`landing`;
+Go's JSON decoder ignores unknown fields, so the *old* binary would accept the flight and **silently
+drop two of its times**. Shipping the pair together is what prevents that.
 
 ⚠ **`docs/deploy.md` said `ProxyPass /logbook/api/ → 127.0.0.1:9002/api/` and that was WRONG** — the
 server mounts routes at the full public path (`basePath = "/logbook/api"`), so the backend 404s
@@ -331,6 +358,50 @@ day · landings night.
 ---
 
 ## 5. Decision Log
+
+### 2026-08-01 — The form asked for a format the phone's keyboard cannot type
+
+Reported from the field, and the sharpest lesson in the project so far: **a flight could not be
+entered on the phone at all.** The clock fields asked for `09:15Z` with `inputMode="numeric"`, and an
+iOS number pad has no colon key. The required format was untypeable on the only device this app
+exists for. 43 frontend tests, a browser run at 390px and a live end-to-end flight entry all passed
+over it, because every one of them typed into the field programmatically or on a desktop keyboard.
+**Testing a form without testing its keyboard tests half the form.** The duration fields — PIC, dual,
+night, instrument, instructor — had the identical defect and had not been noticed yet.
+
+Clock fields become native `<input type="time">`. The interesting part is what that costs: a native
+picker yields `HH:MM` and cannot carry the `Z`, and the `Z` is load-bearing under rule §0.4 — it is
+the whole distinction between UTC and Helsinki local, and dropping it would make every hand-entered
+time silently ambiguous. So **the zone becomes a control** — a UTC / Helsinki-local toggle over the
+whole Times card, defaulting to UTC — instead of punctuation the pilot has to remember. That is
+better than the old field even ignoring the keyboard: the zone is now always visible rather than
+implied by a character at the end of a string. The wire format is unchanged and the server's single
+conversion authority is untouched; the form composes `HH:MM` or `HH:MMZ` at submit.
+
+Durations stay free text, because a duration is a judgement about the flight rather than a reading
+off a clock, but move to `inputMode="text"` so the keyboard can produce a colon.
+
+**Total time is now derived and read-only**, at the owner's instruction — and it is still *sent*, so
+the server continues to require the total to be stated rather than inventing it (the Task 5b entry
+below argues why that server rule stands). The form is simply what states it now. **The cost, stated
+plainly: a flight whose total differs from its block clock can no longer be typed into the app.**
+That is 1 row in 479 (`08/09/2025`, itself a flagged discrepancy), and the importer can still record
+it — so the capability is narrowed, not lost.
+
+Takeoff and landing are new, **optional**, and folded behind a disclosure because most rows in the
+paper books have none; air time derives from them the same way. Almost nothing was needed underneath:
+the schema, `csvbook.Flight` and `store.AddFlight` already carried `takeoff_utc`/`landing_utc` — only
+`entry.Draft` did not accept them.
+
+`entry.validateAirborneTimes` mirrors the block pair deliberately: optional **as a pair**, refusing
+half a pair while naming the missing half, converting through `timeutil.BlockPair` so the midnight
+roll and the DST refusal behave identically, and **refusing an airborne time longer than the block
+time** — an aeroplane cannot be airborne longer than it is off blocks, and storing that would create
+a flight whose own parts contradict each other.
+
+One implementation note worth keeping: the derived figure is a read-only `<input>`, not an
+`<output>`. `<output>` carries an implicit ARIA role of `status`, which collided with the page's
+saved-flight live region and made the "flight logged" assertion ambiguous. The test caught it.
 
 ### 2026-08-01 — Three flights were missing, and the frozen totals were unfrozen once to add them
 
