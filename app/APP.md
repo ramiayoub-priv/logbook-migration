@@ -84,7 +84,7 @@ file; rebuild it from the CSVs in one command.
 ### The numbers the import produces — memorise these
 ```
 flights 1293 | total 1219:35 | pic 1053:03 | dual 166:32 | instrument 107:14
-night 16:47  | instructor 189:41 | seaplane 407:39 | landings 3439 | aircraft 39
+night 20:50  | instructor 189:41 | seaplane 407:39 | landings 3439 | aircraft 38
 ```
 Asserted in `internal/csvbook/realdata_test.go`, along with the exact count of each of the eight
 discrepancy kinds. **If one of them changes unexpectedly, the import is wrong until proven otherwise —
@@ -104,19 +104,35 @@ correct response is:
 Never update a constant first and reconcile afterwards. The whole value of these tests is that they
 fail before anyone notices a wrong total.
 
-### ⏸ THREE THINGS ARE WAITING ON THE OWNER — ask about these first
-All three were found by the importer on 2026-08-01 and are logged in `claude-docs/drift.md`
-(top of file) and `docs/data-model.md`. Nothing has been corrected.
+### ⏸ TWO THINGS ARE STILL WAITING ON THE OWNER — ask about these first
+Found by the importer on 2026-08-01 and logged in `claude-docs/drift.md` (top of file) and
+`docs/data-model.md`. **The owner ruled on the rest the same day; see "Resolved" below.**
 
 1. **`logbook_1_final.csv` line 28** (28/09/2011, OH-COF): `Instrument_Time` **1:21** on a flight
-   whose total is **1:12** — more instrument time than flight time. The cumulative column advances by
-   1:12, so `1:21` is almost certainly a transposition. **This is why our instrument total is 107:14
-   while `Cumulative_Instrument` ends at 107:05.**
-2. **`logbook_2_final.csv` lines 83–90** are dated `DD.MM.YYYY`. Read day-first; six of the eight
-   prove it themselves. ⚠ The two `04.05.2018` rows cannot be settled from the cell — **check the
-   paper**, or they may be a month out.
-3. **Night time: our 16:47 vs the paper's inked 22:45** at p.62 — a 5:58 gap. `drift.md` records
-   22:45 as "supplied but not read back", i.e. never reconciled. Every other p.62 figure was.
+   whose total is **1:12** — more instrument time than flight time. The 9 minutes sit entirely inside
+   Book 1 (its column sums 3:21, its own cumulative says 3:12; Books 2–3 chain off 3:12 exactly), and
+   the preceding instrument lesson on the same aircraft logs instrument == the whole flight, so
+   **1:12** is the reading. **This is why our instrument total is 107:14 while
+   `Cumulative_Instrument` ends at 107:05 — the app computes from rows, so until it is fixed the app
+   and the paper cannot agree.** Fixing it moves no total: every cumulative already reflects 1:12.
+2. **`logbook_2_final.csv` lines 89–90** (`04.05.2018` ×2) — dated `DD.MM.YYYY`. Read day-first; six
+   of the eight dotted rows prove it themselves. ⚠ These two cannot be settled from the cell, and
+   **no electronic source can reach them** (Aviatron holds zero OH-PDP rows; the club file starts
+   19/04/2020). **Needs the paper**, or they may be a month out. Row order only — no total moves.
+
+#### ✅ Resolved 2026-08-01 (owner ruled; all verified, tests updated)
+- **Night time is no longer 5:58 out.** `22:45` was never a mis-add — the gap was inherited from
+  Books 1–2 (the EASA book carried **18:42** in against our 12:44). The owner read the paper's
+  `Yölentoaika` column back and photographed seven Book-1 spreads, whose `Siirto` figures chain into
+  a page-by-page ledger. Six night values were added and one moved onto its correct row.
+  **Night 16:47 → 20:50**, matching the paper's `Siirto` at every checkpoint through 30/11/2013.
+  ⏸ **1:55 remains, all of it in pages 52–69 (Mar–Aug 2014, not yet photographed)** — that is a
+  migration task, not an app one. See `drift.md` item E.
+- **`OK-PDP` → `OH-PDP`** (book 2 line 102) — a transcription typo that was seeding a phantom
+  one-flight aircraft. Aircraft count **39 → 38**. Owner: any `OK-` reg in these books is `OH-`.
+- **`28/01/2015` → `26/01/2015`** (book 1 line 249) — a date error, confirmed against the page.
+- ⚠ **The p.62 day/night landing split (59 night / 3335 day) is now STALE** and must be recomputed
+  once the night column closes. `Cumulative_Landings` is unaffected — only the split.
 
 ### Next task: #4, the API + authentication
 Read **`docs/security.md`** first — the threat model, the Argon2id/session design and the
@@ -244,6 +260,8 @@ with no line number is not actionable.
 
 **Result: 1293 flights, 39 aircraft, 56 discrepancies, all nine checksums matching.** Exactly one
 cumulative break survives across 1293 rows and seven series.
+*(Figures as of this entry. After the 2026-08-01 owner rulings they are **38 aircraft, 61
+discrepancies** — see the task board above; the single cumulative break is unchanged.)*
 
 ### 2026-08-01 — Sea/land comes from the registration, and it is verified rather than assumed
 
@@ -282,6 +300,10 @@ The reconciliation swept all 1293 rows and found three things nobody had logged.
    flagged for a look at the paper.
 3. **Night time 16:47 (ours) vs 22:45 (inked at p.62)** — a 5:58 gap on the one p.62 figure that
    `drift.md` records as never having been read back.
+   **Update, same day: resolved down to 1:55.** The importer's job here was only to surface the gap;
+   the owner then read the paper's night column back and photographed seven Book-1 spreads, which
+   turned it into a page-by-page ledger. Night is now **20:50** and the residual is one unphotographed
+   page range. *The flag was worth raising precisely because nobody had ever compared that column.*
 
 The dotted dates are the interesting judgement call. Refusing would have blocked 1291 sound rows over
 a separator; silently normalising would have hidden a real inconsistency. Accepting with a loud,

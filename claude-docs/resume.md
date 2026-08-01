@@ -13,8 +13,9 @@
 > **The migration is still the way flights get digitized; the app does not replace it.**
 >
 > ⚠ **As of 2026-08-01 the app's importer reads all three CSVs and reconciles all seven
-> `Cumulative_*` series row by row.** It found **three previously unlogged problems** in the source
-> data — a bad `Instrument_Time` at `logbook_1_final.csv` line 28, eight `DD.MM.YYYY` dates at
+> `Cumulative_*` series row by row.** *(The paragraph below is the state **as first found**; the
+> block after it records what was then resolved. Read both.)* It found **three previously unlogged
+> problems** in the source data — a bad `Instrument_Time` at `logbook_1_final.csv` line 28, eight `DD.MM.YYYY` dates at
 > `logbook_2_final.csv` lines 83–90, and a 5:58 gap between our night time (16:47) and the paper's
 > inked 22:45. **All are open and waiting on the user**; see the block at the top of
 > `drift.md`. Nothing has been corrected.
@@ -35,7 +36,7 @@
 >   **The user then read the paper night column back and photographed seven Book-1 spreads**
 >   (pp. 34/35, 36/37, 38/39, 48/49, 50/51, 70/71, 74/75 — the first Book-1 images in the project).
 >   The book's `Yölentoaika` `Siirto` figures chain continuously, which turns it into a page-by-page
->   ledger; full table in `drift.md`. Night **16:47 → 19:42**, and **our running night now equals the
+>   ledger; full table in `drift.md`. Night **16:47 → 20:50**, and **our running night now equals the
 >   paper's `Siirto` at every checkpoint through 30/11/2013**.
 >   - ✳️ Applied: **21.01.2013 OH-CTM 1:17** (line 111), **15.09.2014 OH-CMO 0:51** (line 237),
 >     **01.02.2015 OH-CAV 0:37** (line 250), **25.02.2015 OH-KAM 0:10** (line 253, the later leg).
@@ -445,7 +446,22 @@ PIC 1040:26 · FI 185:50 · Dual 166:32 · Day ldg 3335 · Night ldg 59** (night
 SE-IFR +4:02, Dual +0:20, FI −1:23) was corrected by hand. **Do not re-apply them.** Full
 decomposition + the ⚠ **9-of-59 inferred night landings** in `drift.md`.
 
-## Next action — ⏸ THE CSV IS AHEAD OF THE PAPER. Waiting on the user.
+## Next action — TWO THINGS, BOTH WAITING ON THE USER
+
+**1. ⏸ NIGHT COLUMN: photograph Book-1 pages 52–69 (Mar–Aug 2014).** This is the live, actionable
+item — everything else in the night reconciliation is closed. The book's `Yölentoaika` runs **9:12**
+at the bottom of p.51 (25.02.2014) to **11:07** at p.71's `Siirto` (before 30.08.2014), so it records
+**1:55** of night in that range and our CSV has none. Reading those spreads closes the night column
+completely. Method, ledger and the two remaining CSV questions are at the **top of `drift.md`**.
+Read each page the same way: **`Kokonaisaika` pins the row; the `Yölentoaika` entry pairs with the
+`Päällikkö` value on its visual line.** ⚠ **Never infer night from clock times or sunset** — the
+book's night column is the only authority (user, 2026-08-01).
+
+Two one-cell CSV questions are also still unruled — `logbook_1_final.csv` line 28
+(`Instrument_Time` 1:21 → 1:12) and `logbook_2_final.csv` lines 89–90 (the two `04.05.2018` dates).
+Both are in `drift.md`; neither moves a total.
+
+**2. ⏸ THE CSV IS AHEAD OF THE PAPER (Book 3).**
 **Every photographed spread is transcribed** (`IMG_6007`–`IMG_6037`, pages 1–62) **and the CSV now runs
 15 flights *ahead* of the book** (the missing-flights batch above, 12/06/2026–30/07/2026). The user is
 writing those 15 onto paper — 1 row closes page 62, 14 open pages 63–64 — and **rewriting the book's
@@ -627,5 +643,15 @@ OH-PDP/SR20), with occasional night flights. Float seasons so far: **2025** 18/0
 > Claude and verify.
 
 ## Known open items
+- **Night column: 1:55 outstanding, in Book-1 pages 52–69** (Mar–Aug 2014, not yet photographed).
+  See "Next action" above and `drift.md` item E. Everything else in the night column is reconciled.
+- **`logbook_1_final.csv` line 28** — `Instrument_Time` 1:21 on a 1:12 flight; recommended fix 1:12,
+  moves no total, but the app cannot agree with the paper on instrument time until it is made.
+- **`logbook_2_final.csv` lines 89–90** — the two `04.05.2018` dates; needs the paper.
+- **⚠ The p.62 day/night landing split (59 night / 3335 day) is STALE** — it was computed from the
+  night rows before the 2026-08-01 reconciliation. Recompute once the night column closes;
+  `Cumulative_Landings` (the sum) is unaffected, only the split.
+- **⚠ `SE-GKT` (Book 1, 2015–16) and `OH-GKT` are the same airframe** re-registered — never treat
+  them as two aircraft.
 - Landings drift: the paper book's cumulative landing count has historically run ahead of the
   true count. Cross-check landing sums when in doubt. See `drift.md`.

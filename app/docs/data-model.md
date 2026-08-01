@@ -175,7 +175,9 @@ The importer surfaces these and **never auto-fixes them** (rule §0.2). Every on
 `discrepancies` table and printed by `logbookctl import`, with a book and line number so it is
 traceable to a paper page.
 
-**56 discrepancies over 1293 flights, in eight kinds.** The counts are asserted in
+**61 discrepancies over 1293 flights, in eight kinds** (56 when first written; the 2026-08-01
+night reconciliation added six night rows, which each raise a `landings_unverified` flag, and
+fixing `OK-PDP` removed one `registration_format`). The counts are asserted in
 `internal/csvbook/realdata_test.go`, so a new occurrence in a future Book 3 batch becomes a failing
 test rather than something that slips through.
 
@@ -202,25 +204,37 @@ Notes on the individual items:
   transcription batch. Read day-first, which six of the eight prove on their own (day > 12) and which
   the chronological bracket 15/03 → … → 07/05 confirms. **The two `04.05.2018` rows (89, 90) cannot be
   settled from the cell alone** and are flagged `CONFIRM AGAINST THE PAPER`.
-- **`OK-PDP`** (1 row) — almost certainly a typo for `OH-PDP`; `claude-docs/reference.md` already
-  flags it.
+- ~~**`OK-PDP`** (1 row)~~ — **fixed 2026-08-01.** It was a transcription typo for `OH-PDP` and was
+  seeding a phantom one-flight aircraft; the owner ruled that any `OK-` registration in these books
+  is `OH-`. Aircraft count dropped 39 → 38.
 - **Type `C192`** (4 rows) — almost certainly `C172`. The flight keeps the type as written; the
   derived `aircraft` row takes the most-flown type, so `OH-CTL` and `OH-GKT` are seeded `C172`.
 - **`OH-CMU` typed as both `C152` (×2) and `C172` (×1)** — reference.md warns `OH-CMU` and `OH-CMV`
   are genuinely different aircraft whose registrations differ only in the last letter, so this needs
   the user's eye rather than a guess.
 - **`SE-GKT` → `OH-GKT`** — the same airframe re-registered. Two `aircraft` rows, linked via `notes`.
-- **22 rows with `Night_Time`** — day/night landing split unverified (Task 8).
+- **28 rows with `Night_Time`** (was 22 before the 2026-08-01 night reconciliation) — day/night
+  landing split unverified (Task 8). ⚠ **The split inked at p.62 (59 night / 3335 day) is now
+  stale and must be recomputed**; `Cumulative_Landings` is unaffected, only the split.
 
-### Night time: the CSV and the paper disagree — open, NEW
+### Night time: reconciled against the paper 2026-08-01 — 1:55 still open
 
-The `Night_Time` column sums to **16:47** across all three books. The paper book was inked with
-**22:45** at page 62 on 2026-08-01. `claude-docs/drift.md` records that figure as *"supplied but not
-read back"* — it was never reconciled against our numbers. The gap is **5:58**.
+The `Night_Time` column summed to **16:47** across all three books against **22:45** inked at page 62
+— a **5:58** gap `claude-docs/drift.md` had recorded as *"supplied but not read back"*.
 
-This is a migration question about the paper, not an import question: the import's job is fidelity to
-the CSV, and it reports 16:47 because that is what the rows say. Raised with the owner 2026-08-01;
-tracked in `claude-docs/drift.md`.
+**Resolved down to 1:55 the same day.** The gap was entirely inherited from Books 1–2: the EASA book
+carried **18:42** into Book 3 against our 12:44, and Book 3 itself reconciled exactly
+(18:42 + 4:03 = 22:45), so 22:45 was never a mis-add. The owner then read the paper's `Yölentoaika`
+column back and photographed seven Book-1 spreads; because the column's `Siirto` figures chain
+continuously, it becomes a page-by-page ledger that pins each entry to a row. Six values were added
+and one was found sitting on the wrong row. **Night is now 20:50**, and our running total matches the
+paper's `Siirto` at every checkpoint through 30/11/2013.
+
+⏸ **The residual 1:55 is one unphotographed page range** — pp. 52–69 (Mar–Aug 2014), where the book
+runs 9:12 → 11:07 and our CSV has nothing. Tracked as item E at the top of `claude-docs/drift.md`.
+
+This remains a migration question about the paper, not an import question: the import's job is
+fidelity to the CSV, and it reports whatever the rows say.
 
 ## Verification: what "verified" means here
 

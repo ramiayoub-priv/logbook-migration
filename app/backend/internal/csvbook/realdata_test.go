@@ -54,12 +54,17 @@ func TestRealBooksProduceTheExpectedTotals(t *testing.T) {
 		PIC:        hm(1053, 3),
 		Dual:       hm(166, 32),
 		Instrument: hm(107, 14),
-		// The CSV's Night_Time column sums to 16:47. The paper book was inked
-		// with 22:45 at page 62, a figure claude-docs/drift.md records as
-		// "supplied but not read back" -- i.e. never reconciled. The gap is a
-		// migration question about the paper, not an import question; the
-		// import's job is fidelity to the CSV. See APP.md.
-		Night:      hm(16, 47),
+		// Night was 16:47 until 2026-08-01, against 22:45 inked at page 62.
+		// The owner then read the paper's Yolentoaika column back and
+		// photographed seven Book-1 spreads; its Siirto figures chain
+		// continuously, which pins every night entry to a row. Six values were
+		// added and one moved onto its correct row, taking the column to 20:50
+		// and matching the paper's Siirto at every checkpoint through
+		// 30/11/2013. The residual 1:55 is a single unphotographed page range
+		// (pp.52-69, Mar-Aug 2014) -- see claude-docs/drift.md item E.
+		// Raise this again only when that range is read; do not edit it to
+		// make a test pass.
+		Night:      hm(20, 50),
 		Instructor: hm(189, 41),
 		SEPSea:     hm(407, 39),
 		Landings:   3439,
@@ -115,11 +120,16 @@ func TestRealBooksSurfaceEveryKnownDataQualityItem(t *testing.T) {
 		csvbook.KindCumulativeBreak:    1,  // book 1 line 28, above
 		csvbook.KindComponentOverTotal: 1,  // the same row: instrument > total
 		csvbook.KindBlockTotalMismatch: 1,  // 08/09/2025, block 0:45 vs total 0:38
-		csvbook.KindRegistrationFormat: 16, // OK-PDP x1, SE-GKT x14, SE-LWI x1
-		csvbook.KindUnknownType:        4,  // "C192" on OH-CTL x2 and OH-GKT x2
-		csvbook.KindTypeConflict:       3,  // OH-CTL, OH-GKT, OH-CMU
-		csvbook.KindDateFormat:         8,  // book 2 lines 83-90, transcribed DD.MM.YYYY
-		csvbook.KindLandingsUnverified: 22, // the rows carrying night time
+		csvbook.KindRegistrationFormat: 15, // SE-GKT x14, SE-LWI x1 -- both genuine.
+		// Was 16: OK-PDP at book 2 line 102 was a transcription typo and the
+		// owner ruled on 2026-08-01 that any OK- reg in these books is OH-.
+		csvbook.KindUnknownType:        4, // "C192" on OH-CTL x2 and OH-GKT x2
+		csvbook.KindTypeConflict:       3, // OH-CTL, OH-GKT, OH-CMU
+		csvbook.KindDateFormat:         8, // book 2 lines 83-90, transcribed DD.MM.YYYY
+		// The rows carrying night time. Was 22; the night reconciliation of
+		// 2026-08-01 added six night rows (0:37, 0:10, 1:17, 0:51, 0:30, 0:38)
+		// and moved a seventh (0:24) between two rows, which is net +6.
+		csvbook.KindLandingsUnverified: 28,
 	}
 	for kind, n := range want {
 		if counts[kind] != n {
@@ -243,8 +253,10 @@ func TestRealBooksSplitLandingsConsistently(t *testing.T) {
 func TestRealBooksDeriveTheAircraftSeedList(t *testing.T) {
 	lb := loadReal(t)
 
-	if len(lb.Aircraft) != 39 {
-		t.Errorf("got %d aircraft, want 39 distinct registrations", len(lb.Aircraft))
+	// 38, not 39: OK-PDP was a typo for OH-PDP and was corrected in the CSV on
+	// 2026-08-01, so it no longer seeds a phantom one-flight aircraft.
+	if len(lb.Aircraft) != 38 {
+		t.Errorf("got %d aircraft, want 38 distinct registrations", len(lb.Aircraft))
 	}
 	if !sort.SliceIsSorted(lb.Aircraft, func(i, j int) bool {
 		return lb.Aircraft[i].Registration < lb.Aircraft[j].Registration
@@ -285,7 +297,9 @@ func TestRealBooksDeriveTheAircraftSeedList(t *testing.T) {
 	}
 
 	// The registrations the owner needs a note on must carry one.
-	for _, reg := range []string{"OH-GKT", "SE-GKT", "OK-PDP", "OH-CMU", "OH-CMV", "OH-MIL"} {
+	// OK-PDP is deliberately absent: it was corrected to OH-PDP in the CSV on
+	// 2026-08-01, so there is no longer an aircraft row needing a note.
+	for _, reg := range []string{"OH-GKT", "SE-GKT", "OH-CMU", "OH-CMV", "OH-MIL"} {
 		if byReg[reg].Notes == "" {
 			t.Errorf("%s should carry an explanatory note", reg)
 		}

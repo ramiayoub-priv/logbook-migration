@@ -36,7 +36,7 @@ func TestImportEndToEnd(t *testing.T) {
 	got := out.String()
 	for _, want := range []string{
 		"Read 1293 flights",
-		"Imported 1293 flights, 39 aircraft, 56 discrepancies",
+		"Imported 1293 flights, 38 aircraft, 61 discrepancies",
 		"Aircraft linkage: 1293 linked, 0 unlinked",
 		"Verified: every checksum matches the source CSVs.",
 		// The report must say plainly that nothing was fixed, every time.

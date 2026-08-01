@@ -83,6 +83,9 @@ Eight consecutive rows from one transcription batch use dots instead of slashes:
   no total changes, since the totals do not depend on the date).
 
 ### 3. Night time — the paper's 22:45 does not match the CSV's 16:47
+> **STATUS 2026-08-01: resolved down to 1:55 — see item E below. Night is now 20:50.** The next four
+> paragraphs are the state **as first found**; everything from "SOLVED-BY-HALVES" onward supersedes
+> them. The 16:47 / 5:58 figures below are historical.
 - The `Night_Time` column sums to **16:47** over all three books (Book 1 9:04 · Book 2 3:40 ·
   Book 3 4:03).
 - The p.62 inked block carries night time **22:45**. This file already records that figure as
@@ -139,7 +142,8 @@ So the night column adds up correctly on paper and 22:45 at p.62 is confirmed so
 **✳️ Applied 2026-08-01:** book 1 **line 250** (`01/02/2015` C172 OH-CAV, EFHF local, 17:21–17:58,
 total **0:37**) now carries `Night_Time 0:37` — an exact date+registration+duration match to the
 paper, and a full-night row (night == total), so there is nothing to apportion. **Night_Time carries
-no cumulative column, so no `Cumulative_*` value moved.** Our night total goes **16:47 → 17:24**.
+no cumulative column, so no `Cumulative_*` value moved.** Our night total goes **16:47 → 17:24**
+*(at this point in the session; it reached **20:50** once the seven spreads below were read).*
 
 #### 📷 Book 1, pages 74/75 photographed (user, 2026-08-01) — the 2015 rows are now settled
 The first Book-1 page image in the project. **The whole spread cross-checks against our CSV exactly**,
