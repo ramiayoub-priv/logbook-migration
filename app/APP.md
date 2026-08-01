@@ -14,29 +14,66 @@ Rules live in the repo root **`CLAUDE.md` §0** — read those first, they are n
 
 ## ★★ NEXT SESSION STARTS HERE
 
-**Status: foundations landed, calculation core done and green.** Nothing is deployed yet.
+*Assume you remember nothing. This block is the whole brief.*
 
-**Done so far**
-- Full recon of `ayoub.fi` (see `docs/deploy.md` for the shared-tenant map).
-- Stack decided: Go + SQLite + React/Vite. Rationale in the Decision Log below.
-- Repo rules written (`CLAUDE.md` §0), adapted from the neighbouring `transit` project.
-- Server cleanup done: transit's orphaned Quarkus killed; OpenVPN stopped + disabled at the user's
-  request (re-enable with `sudo systemctl enable --now openvpn-server@server`).
-- **Go module + `internal/hhmm` + `internal/timeutil`, both at 100% coverage**, failing-test-first.
-  `make check` runs vet + race tests + both coverage gates.
+**What this is.** A private, mobile-first pilot logbook web app for one user (the repo owner, a
+Finnish pilot), to be served at `ayoub.fi/logbook`. It replaces three CSVs in this repo that were
+transcribed from paper logbooks by the *other* effort in this repo (`claude-docs/`, still ongoing and
+not replaced by the app). Read `CLAUDE.md` §0 first — those rules are non-negotiable and were written
+for this work specifically.
 
-**Toolchain note**: Go is installed at `~/.local/go` on the dev machine (the system had none).
-Prepend `~/.local/go/bin` to `PATH`. The server's Go is 1.13 and is irrelevant — we cross-compile.
+**Status: foundations landed, calculation core done and green. Nothing is deployed. No frontend yet.**
 
-**Next**: Task 3, the schema and importer. This is the riskiest piece in the project: it must
-reproduce 1295 flights and their totals exactly, and refuse to complete on any checksum mismatch
-(rule §0.2). Read `docs/data-model.md` first — the schema and the CSV mapping are already specified
-there, including the seed rows that must be skipped and the known data-quality items to surface.
+### Done (2026-08-01)
+- Recon of `ayoub.fi` → `docs/deploy.md` has the full shared-tenant map. **The box is shared with the
+  owner's other sites; do not disturb them.**
+- Stack chosen: Go + SQLite + React/Vite (Decision Log §5).
+- `CLAUDE.md` §0 rules written, adapted from the neighbouring `transit` project.
+- Server cleanup, both reversible: transit's orphaned Quarkus killed (it runs on its own VM now);
+  OpenVPN stopped + disabled at the owner's request.
+- `app/backend/` Go module with **`internal/hhmm`** (H:MM ↔ integer minutes) and **`internal/timeutil`**
+  (the single UTC-conversion authority). **Both at 100% coverage**, written failing-test-first.
 
-**Open questions awaiting the user**
-- Is the `kraken-predictor-python-2` container on `:8000` still wanted? It is publicly exposed and is
-  now the box's largest memory consumer (~759 MB / 38%).
-- Stale ufw rules for `30814` and `19132` (nothing listening) — prune?
+### How to run things
+```bash
+export PATH=$HOME/.local/go/bin:$PATH   # Go 1.26 lives here; the system had none
+cd app/backend
+make check      # vet + race tests + both coverage gates
+make cover-core # the 100% gate on the calculation core
+```
+The server's own Go is 1.13 and irrelevant — we cross-compile (`make build`, `CGO_ENABLED=0`).
+
+### Next task: #3, the schema + importer
+**This is the riskiest piece in the project.** It must reproduce **1295 flights** and their totals
+exactly. Before writing code, read **`docs/data-model.md`** — the schema, the full CSV→DB column
+mapping, and the domain rules are already specified there. Key points that will bite otherwise:
+
+- **Skip each book's first data row.** It is the previous book's carried-over final row (a cumulative
+  seed), and importing it would double-count three flights.
+- **Do not import the seven `Cumulative_*` columns.** Use them as a verification checksum, then drop
+  them. Cumulatives are computed in this app, never stored (rule §0.5).
+- **Verify and refuse on mismatch** (rule §0.2): row counts *and* total-time checksums against the
+  CSVs. An importer that "mostly worked" is a corrupted legal record.
+- **Surface the known data-quality items, never auto-fix them**: `OK-PDP` (1 row), type `C192`
+  (4 rows), `OH-CMU` typed as both C152 and C172. Listed with context in `docs/data-model.md`.
+- Source files are at the repo root: `logbook_1_final.csv`, `logbook_2_final.csv`, `logbook_3.csv`
+  (26 columns, all values quoted, dates `DD/MM/YYYY`).
+
+### Open questions awaiting the owner
+- Is the `kraken-predictor-python-2` container on `:8000` still wanted? Publicly exposed, up 2 years,
+  and now the box's largest memory consumer (~759 MB / 38%).
+- Prune the stale ufw rules for `30814` and `19132` (nothing listens on either)?
+- **Rotate the `rami` sudo password** once deployment is done — it was pasted into a chat session on
+  2026-08-01 and must be treated as compromised. Tracked in `docs/security.md`.
+
+### Traps already paid for — do not rediscover these
+- **Go's `time.Date` is silent on both DST edges, in different ways.** See the 2026-08-01 entry in the
+  Decision Log. `internal/timeutil` already handles it; do not "simplify" that check.
+- **Docker bypasses ufw.** A published container port is not closed by a firewall rule. See
+  `docs/deploy.md`.
+- **`/api/` on `ayoub.fi` is already taken** by a stale transit proxy, which is why our API lives at
+  `/logbook/api/`.
+- **Port 22 is under constant attack** (fail2ban: 50,264 bans). Never risk it.
 
 ---
 

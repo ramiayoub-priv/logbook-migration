@@ -2,6 +2,16 @@
 
 **Read this first every fresh session.** It is the single source of truth for where we are.
 
+> ⚠ **This repo now holds a second effort.** As of 2026-08-01 we are also building the **logbook
+> application** (`ayoub.fi/logbook`) in **`app/`** — its tracker is **`app/APP.md`**. This file
+> (`claude-docs/`) remains the source of truth for **the CSV migration only**. The non-negotiable
+> rules that govern both live in the repo root **`CLAUDE.md` §0** — read those first.
+>
+> The two efforts share the dataset: the app imports `logbook_1_final.csv`, `logbook_2_final.csv`
+> and `logbook_3.csv`. So the migration's conventions — the `Z` suffix, `Total_Time` being the
+> figure the book totals on, the paper being authoritative — are now load-bearing for the app too.
+> **The migration is still the way flights get digitized; the app does not replace it.**
+
 ## The project in one paragraph
 We are digitizing a series of paper pilot logbooks into CSV. **Book 1 complete** →
 `logbook_1_final.csv`. **Book 2 complete** → `logbook_2_final.csv` (do not edit; both are finished
