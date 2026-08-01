@@ -1,0 +1,35 @@
+[Unit]
+Description=Logbook
+After=network.target
+
+[Service]
+User=logbook
+Group=logbook
+ExecStart=/opt/logbook/logbook-server
+Restart=always
+RestartSec=5
+Environment=LOGBOOK_ADDR=127.0.0.1:9002
+Environment=LOGBOOK_DB=/var/lib/logbook/logbook.db
+Environment=LOGBOOK_ORIGIN=https://ayoub.fi
+# Printed on the exported PDFs. Without it the documents are unnamed, which is
+# valid but not what an authority wants to receive.
+Environment=LOGBOOK_HOLDER=Rami Ayoub
+
+# hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+ReadWritePaths=/var/lib/logbook
+MemoryMax=192M
+
+[Install]
+WantedBy=multi-user.target

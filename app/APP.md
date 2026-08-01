@@ -23,8 +23,9 @@ not replaced by the app). Read `CLAUDE.md` §0 first — those rules are non-neg
 for this work specifically.
 
 **Status: feature-complete for v1, green, and LIVE at `https://ayoub.fi/logbook`. But the box is
-BEHIND the repo — it runs an older binary and a 1293-flight database, and the repo is at 1296. One
-owner-run command closes that gap. Read "Where the deploy actually stands" below before touching
+BEHIND the repo — it runs an older binary and a 1293-flight database, and the repo is at 1296,
+including the three 28/08/2025 flights. Closing that gap needs TWO owner-run `sudo` commands and two
+rsyncs; the runbook is in "Where the deploy actually stands" below. Read it before touching
 anything.**
 
 ### Done (2026-08-01)
@@ -73,8 +74,17 @@ app/frontend/
   src/auth.tsx       who is signed in (asked of the server, never cached) + useApi. Any 401
                      anywhere drops the app to the login page.
   src/router.tsx     ~40 lines instead of a routing library (rule 0.3).
-  src/format.ts      H:MM and UTC dates. The ONLY place minutes become H:MM.
+  src/format.ts      H:MM, UTC dates, and the HHMM four-digit entry helpers. The ONLY place
+                     minutes become H:MM, and the only place four digits become a time.
+  src/swupdate.ts    reloads the page once when a new service worker claims it -- a home-screen
+                     install has no reload button.
   src/pages/         Login, Table, Statistics, NewFlight, Export, Review, Sessions, RangePicker.
+
+app/deploy/          the box's staging scripts, IN THE REPO as of 2026-08-01 (rule 0.1 -- they
+                     lived only in /home/rami/logbook-deploy/ until then, which meant a fresh
+                     clone could not reconstruct the deploy). update.sh, install-backend.sh,
+                     install-apache.sh, apache-logbook.conf, logbook.service. Edit them HERE and
+                     rsync them to the box; never edit them on the box.
 ```
 `make cover-core` enforces 100% on everything marked `[core]` — the code where a bug means a wrong
 legal record, or an exposed one.
@@ -123,6 +133,11 @@ relink lost on re-import; and on 2026-08-01 **the new-flight form asking for `09
 whose keyboard has no colon key** — untypeable on a phone, invisible to 43 passing tests, a browser
 run at 390px, and a live end-to-end flight entry, because all of those type with a desktop keyboard
 or programmatically. **On a mobile form, test the keyboard, not just the field.**
+
+⚠ **And fix the whole class, not the reported instance.** That same evening the keyboard fix was
+applied to the clock fields and *not* to the duration fields one card below, which had the identical
+defect and had even been noted as having it. The owner had to report it a second time. **If a defect
+appears twice on one page, it is a rule — sweep the page.**
 
 **There is no committed database** — it is generated, and `app/.gitignore` keeps `*.db` and `*.bak`
 out of the repo. Nothing you need is only in a database file; rebuild it from the CSVs in one
@@ -223,13 +238,43 @@ and a **1293-flight database**. Both are staged and waiting on one command — s
 ✅ **The account** — created interactively with `createuser`. The password has never been in a file
 or a chat session and must stay that way.
 
-⏳ **THE ONE COMMAND STILL OUTSTANDING** — the owner must run it; there is no passwordless sudo:
+⏳ **THE RUNBOOK STILL OUTSTANDING** — four steps, in this order. The two `sudo` ones are the
+owner's; there is no passwordless sudo, and a session cannot run them. Verified as far as it can be
+without sudo: the staged CSVs on the box are **byte-identical (md5) to the repo's**, so the three
+28/08/2025 flights are already sitting there waiting for step 2 to import them.
 
 ```bash
+# 1. Stage the current build. rami owns /home/rami/logbook-deploy, so no sudo.
+#    Binaries are cross-compiled CGO_ENABLED=0 from this repo's HEAD.
+cd app/backend && export PATH=$HOME/.local/go/bin:$PATH
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /tmp/logbook-server ./cmd/server
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /tmp/logbookctl   ./cmd/logbookctl
+cd ../.. && rsync -a /tmp/logbook-server /tmp/logbookctl \
+    logbook_1_final.csv logbook_2_final.csv logbook_3.csv \
+    rami@ayoub.fi:/home/rami/logbook-deploy/
+rsync -a logbook_1_final.csv logbook_2_final.csv logbook_3.csv rami@ayoub.fi:/home/rami/logbook-deploy/csv/
+rsync -a app/deploy/ rami@ayoub.fi:/home/rami/logbook-deploy/   # scripts live in the repo now
+
+# 2. OWNER, sudo: new binary + backup + re-import + verify + restart.
+#    The startup log line must read flights=1296.
 ssh -t rami@ayoub.fi 'sudo /home/rami/logbook-deploy/update.sh'
-# then, from the dev machine (no sudo -- rami owns the web root):
+
+# 3. The frontend, AFTER step 2 (see the pairing warning below). No sudo.
+cd app/frontend && npm run build && cd ../..
 rsync -a --delete app/frontend/dist/ rami@ayoub.fi:/var/www/logbook/
+
+# 4. OWNER, sudo: the Cache-Control headers, so the phone stops serving the old build.
+ssh -t rami@ayoub.fi 'sudo /home/rami/logbook-deploy/install-apache.sh'
 ```
+
+⚠ **`install-apache.sh` now REPLACES its block rather than skipping it.** The first version refused
+to touch a vhost that already had a `BEGIN logbook` block, which meant a changed snippet could never
+reach the server. It now strips its own block, re-inserts the current `apache-logbook.conf`, and
+**refuses to write if stripping the block from the before and after files does not produce identical
+text** — the proof that nothing outside our block moved. Backup, `configtest` and auto-restore are
+unchanged. Rehearsed against a copy of the vhost before it was ever run as root, which caught two
+bugs: an inserted blank line made every run differ from the last, breaking both that safety check
+and idempotence.
 
 `update.sh` installs the new binary (keeping `.prev` for rollback), backs the database up to
 `/var/lib/logbook/backups/`, **re-imports** the corrected CSVs, verifies by a separate code path,
@@ -351,16 +396,94 @@ day · landings night.
 | 2 | Scaffold backend + frontend, test harness | **done** 2026-08-01 — backend `make check`, frontend `npm run check` (tsc + vitest) |
 | 3 | Schema + importer for 1296 flights (verified) | **done** 2026-08-01 |
 | 4 | API + authentication | **done** 2026-08-01 — `internal/stats`, `internal/auth`, `internal/ratelimit`, `store/auth.go`, `cmd/server`. Every `docs/security.md` control implemented with the test that fails if it is removed. Verified live against the real flights. |
-| 5 | Four frontend pages (mobile-first) | **done** 2026-08-01 — plus the auth UI. Six pages: Flights, Statistics, New flight, Export, Review, Devices, behind a login gate. React + TS + Vite, `app/frontend/`. **60 frontend tests green.** Reworked the same evening after the owner found the new-flight form unusable on a real phone, and the table now lists newest first. Verified in a real browser against the live API, including logging a flight end to end. |
+| 5 | Four frontend pages (mobile-first) | **done** 2026-08-01 — plus the auth UI. Six pages: Flights, Statistics, New flight, Export, Review, Devices, behind a login gate. React + TS + Vite, `app/frontend/`. **75 frontend tests green.** Reworked twice the same evening after the owner found the new-flight form unusable on a real phone: the table now lists newest first, and **every time on the form is four digits on a number pad** (`0915`, `0115`) with the totals derived live. Verified in a real browser against the live API, including logging a flight end to end, and the four-digit form's exact payload accepted `201` by a scratch server. |
 | 5b | `POST /flights` — the write path | **done** 2026-08-01 — `internal/entry` (validation, pure, 100%), `store.AddFlight`, the hand-entered `seq` band, the duplicate guard, and the import scoping that stops a re-import deleting app-entered flights. |
 | 6 | Three PDF exports (EASA clone + table + stats) | **done** 2026-08-01 — `internal/pdfmodel` (the cells and totals, pure, 100%) + `internal/pdfbook` (rendering, `go-pdf/fpdf`). Live against the real logbook: **87 EASA pages**, totals block reconciling, Finnish place names intact. |
-| 7 | PWA + deploy to `ayoub.fi/logbook` | **PWA done** 2026-08-01 — manifest, icons, and a hand-written service worker that caches the shell and **never** an API response, proven in a browser with the HTTP cache disabled. **Deployed and LIVE** 2026-08-01 at `https://ayoub.fi/logbook` — service user, binary, systemd unit, frontend, the additive Apache block and the account are all in place, and the owner's other seven sites still answer 200. **NOT finished**: the box runs an older binary and a 1293-flight database while the repo is at 1296, pending one owner-run command. See "Where the deploy actually stands". |
+| 7 | PWA + deploy to `ayoub.fi/logbook` | **PWA done** 2026-08-01 — manifest, icons, and a hand-written service worker that caches the shell and **never** an API response, proven in a browser with the HTTP cache disabled; the shell is now fetched `no-store` and a new worker reloads the page (`src/swupdate.ts`). **Deployed and LIVE** 2026-08-01 at `https://ayoub.fi/logbook` — service user, binary, systemd unit, frontend, the additive Apache block and the account are all in place, and the owner's other seven sites still answer 200. The deploy scripts now live in **`app/deploy/`** instead of only on the box. **NOT finished**: the box runs an older binary and a **1293**-flight database while the repo is at **1296** (the three 28/08/2025 flights). Current binaries and scripts are staged on the box and md5-matched; two owner `sudo` commands remain. See the runbook in "Where the deploy actually stands". |
 | 8 | Backfill landings day/night for the **30** night rows | not started — all 30 are flagged `landings_unverified` in the DB, listed by `logbookctl import`, and surfaced by the API as `landings_unverified` in the stats summary. `claude-docs/drift.md` has the analysis. The p.62 split recomputes to **68 night / 3326 day** (the sum 3394 is unchanged); six of those 68 are estimates from three multi-landing partial-night rows, range 65–72. |
 | 9 | Rule on the open source-data problems | **mostly closed** 2026-08-01 — two of the three ruled and fixed. One item left (`logbook_2_final.csv` lines 89–90) and it needs the physical page; it moves no total. See the ⏸ block at the top. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-01 — Four digits, and nothing to punctuate
+
+Asked for by the owner, in the plainest possible terms: *"no need to force the user to write a colon,
+no need to write Z — just hhmm, exactly four numbers always, then calculate the total times
+dynamically."* This is the third pass over the same form, and it is the one that finally states a
+single rule instead of a rule per field.
+
+**The morning's fix was half a fix.** The clock fields became native `<input type="time">`, which
+solved the colon by removing typing altogether — but the durations (PIC, dual, night, instrument,
+instructor) were left as free text still wanting `1:15`, on the same keyboard, one card further down
+the same page. The lesson from the morning was written down as "test the keyboard, not just the
+field" and then applied to only the fields that had been complained about. **A defect that appears
+twice on one page is a rule, not two bugs.**
+
+So every time on the form — clock and duration alike — is now four digits on a number pad: `0915` is
+09:15, `0115` is 1:15. `inputMode="numeric"`, `maxLength=4`, a digits-only filter (so a pasted
+`09:15Z` becomes `0915` instead of a field to clean up by hand), and an echo underneath reading the
+digits back as the time they mean, because four unpunctuated numerals are quick to type and easy to
+transpose.
+
+**Exactly four, never three.** `915` is as readable as 91:5 as it is as 09:15, and this is a legal
+record — a form that guesses is the silent corruption rule §0.2 forbids. A half-typed field is
+refused by the form itself, naming the control, which is the one thing this form is allowed to decide
+on its own; everything else still belongs to the server.
+
+Two things deliberately did **not** change. The **wire format is still `HH:MM` / `HH:MMZ`**, composed
+at submit, so `internal/timeutil` remains the single conversion authority (rule §0.4) and never
+learns that the form's fields changed shape. And the **zone stays a toggle** rather than a typed `Z`,
+for the reason argued this morning: the `Z` is load-bearing and a number pad cannot produce it.
+
+The **total and the air time were already derived**; what changed is that they now recompute off
+four-digit fields, so the figure appears the moment the fourth digit of the on-block time lands.
+
+### 2026-08-01 — The phone would not pick up a new build, and that needed three layers
+
+Reported by the owner in the same breath as the form ("do some pragma no cache so my phone will
+reload the page"), and it is a deploy-correctness problem rather than a convenience one: the frontend
+and the backend **ship together on purpose**, and a phone holding a stale `index.html` is precisely
+how they come apart.
+
+`index.html` is the only file under `/logbook/` whose **name stays the same while its bytes change on
+every deploy** — everything else is content-hashed, which is why the assets can be cached for a year
+and this one file cannot be cached at all. Three layers, each covering a device the others do not:
+
+1. **`Cache-Control: no-store` + `Pragma` + `Expires`** on `index.html`, in the Apache block *and* as
+   `<meta http-equiv>` in the document. The meta tags travel with the file, so a device served by
+   anything other than this vhost is still covered.
+2. **`fetch(request, {cache: 'no-store'})` for the shell in `sw.js`.** "Network first" was only ever
+   as fresh as the HTTP cache underneath it — the worker would faithfully serve a stale document the
+   browser handed it. The worker also no longer treats `/logbook/index.html` as an immutable asset,
+   which it did through the catch-all rule.
+3. **`reloadWhenUpdated`** (`src/swupdate.ts`): a home-screen PWA has no address bar and no reload
+   button, so when a new worker claims the page, the page reloads itself onto it. Once — the latch is
+   its own flag rather than `{once: true}`, because a reload loop on a phone at an airfield would
+   break the app exactly where it is needed.
+
+The cache name is bumped to `logbook-shell-v2`, so `activate` deletes the old shell outright.
+
+### 2026-08-01 — The deploy scripts move into the repo, and the Apache installer stops refusing to update
+
+Two rule-§0.1 defects found while getting the three 28/08/2025 flights to production.
+
+**The scripts existed only on the box.** `update.sh`, `install-backend.sh`, `install-apache.sh`,
+`apache-logbook.conf` and `logbook.service` lived in `/home/rami/logbook-deploy/` and nowhere else —
+so a fresh clone of `origin/master` could not reconstruct the deploy, which is the bar §0.1 sets.
+They are now in **`app/deploy/`**, edited there and rsynced to the box; never edited on the box.
+
+**`install-apache.sh` could not deliver a changed snippet.** It skipped the insert entirely if a
+`BEGIN logbook` block was already present — sound as a re-run guard, useless as a way to ship the new
+cache headers. It now strips its own block, re-inserts the current snippet, and **refuses to write
+unless stripping the block from the before and after files yields byte-identical text**: the proof
+that nothing outside our block moved, on a vhost that serves seven other sites (rule §0.3). Backup,
+`configtest`-before-reload and auto-restore are unchanged.
+
+Rehearsed against a **copy** of the vhost before it was ever run as root, which is the part worth
+keeping: it caught a blank line the inserter added on every pass, making each run differ from the
+last — breaking both idempotence and the safety check meant to catch exactly that.
 
 ### 2026-08-01 — The table shows newest first, and that reversal lives in the view
 

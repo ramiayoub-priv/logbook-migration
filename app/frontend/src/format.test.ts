@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest'
-import { hhmm, hhmmOrBlank, parseHHMM, todayISO, isoDate } from './format'
+import {
+  hhmm,
+  hhmmOrBlank,
+  parseHHMM,
+  todayISO,
+  isoDate,
+  digits,
+  parseClockDigits,
+  parseDurationDigits,
+  clockWire,
+  minutesToDigits,
+} from './format'
 
 // Durations cross the API as integer minutes -- one representation, so no two
 // figures can disagree (decision log, 2026-08-01). H:MM exists only here, at
@@ -47,6 +58,80 @@ describe('parseHHMM', () => {
     for (const bad of ['', '1.25', '115', '1:', ':15', 'x:yy', '1:60', '1:5']) {
       expect(parseHHMM(bad), `${bad} should not parse`).toBeNull()
     }
+  })
+})
+
+// --- Four digits, and nothing else ----------------------------------------
+//
+// Every time on the form is typed as HHMM on a plain number pad: no colon, no
+// Z, no picker. The colon was untypeable on a phone (decision log 2026-08-01)
+// and a picker is three taps for something a pilot reads off a clock.
+describe('digits', () => {
+  it('keeps only the numbers, and only four of them', () => {
+    expect(digits('0915')).toBe('0915')
+    expect(digits('09:15')).toBe('0915')
+    expect(digits('09:15Z')).toBe('0915')
+    // Stripping is not padding: a half-typed field stays half-typed, and
+    // parseClockDigits below is what refuses it.
+    expect(digits(' 9 15 ')).toBe('915')
+    expect(digits('091545')).toBe('0915')
+    expect(digits('')).toBe('')
+  })
+})
+
+describe('parseClockDigits', () => {
+  it('reads HHMM as a time of day', () => {
+    expect(parseClockDigits('0000')).toBe(0)
+    expect(parseClockDigits('0915')).toBe(9 * 60 + 15)
+    expect(parseClockDigits('2359')).toBe(23 * 60 + 59)
+  })
+
+  // Exactly four, always: three digits is ambiguous between 09:15 typed short
+  // and 91:5 mistyped, and guessing at a legal record is what rule 0.2 forbids.
+  it('refuses anything that is not four digits, or not a real clock time', () => {
+    for (const bad of ['', '9', '91', '915', '09151', '2400', '0960', '09:15']) {
+      expect(parseClockDigits(bad), `${bad} should not parse`).toBeNull()
+    }
+  })
+})
+
+describe('parseDurationDigits', () => {
+  // A duration is HHMM too, but its hours are not a clock: 24:00 is a real
+  // duration and 99:59 is a real typo guard rather than a real flight.
+  it('reads HHMM as a duration', () => {
+    expect(parseDurationDigits('0000')).toBe(0)
+    expect(parseDurationDigits('0115')).toBe(75)
+    expect(parseDurationDigits('1230')).toBe(750)
+    expect(parseDurationDigits('2400')).toBe(1440)
+  })
+
+  it('refuses anything that is not four digits, or has impossible minutes', () => {
+    for (const bad of ['', '115', '1:15', '0160', '01599']) {
+      expect(parseDurationDigits(bad), `${bad} should not parse`).toBeNull()
+    }
+  })
+})
+
+describe('clockWire', () => {
+  // The wire format is unchanged -- "HH:MM", with the Z added by the form's
+  // zone toggle -- so the server's single conversion authority is untouched.
+  // Only what the pilot types changed.
+  it('turns four digits into what the API expects', () => {
+    expect(clockWire('0915')).toBe('09:15')
+    expect(clockWire('0005')).toBe('00:05')
+  })
+
+  it('leaves a blank field blank rather than inventing a time', () => {
+    expect(clockWire('')).toBe('')
+    expect(clockWire('091')).toBe('')
+  })
+})
+
+describe('minutesToDigits', () => {
+  it('writes minutes back as the four digits the field holds', () => {
+    expect(minutesToDigits(75)).toBe('0115')
+    expect(minutesToDigits(0)).toBe('0000')
+    expect(minutesToDigits(600)).toBe('1000')
   })
 })
 

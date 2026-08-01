@@ -304,20 +304,39 @@ describe('the new-flight form', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Logged 2026-07-30, OH-CAM, 1:15.')
   })
 
-  // --- The times, after the 2026-08-01 mobile rework -----------------------
+  // --- The times: four digits, on a number pad -----------------------------
   //
-  // The old form asked for "09:15Z" in a field with inputMode="numeric". A
-  // phone number pad has no colon key, so on the device this app exists for,
-  // the flight could not be entered at all. These tests pin the replacement.
+  // Every time on this form is typed as HHMM and nothing else. The first
+  // version asked for "09:15Z" on a keyboard with no colon key; the second
+  // reached for native pickers and left the durations needing a colon. The
+  // owner's instruction is one rule for all of them: four numbers, always,
+  // with the zone carried by the toggle and the totals worked out for you.
 
-  it('takes the clock times from a native picker, not free text', async () => {
+  it('takes every time as four digits on a number pad', async () => {
     const user = userEvent.setup()
     renderApp()
     await user.click(await screen.findByRole('link', { name: 'New' }))
 
-    for (const label of ['Off block', 'On block']) {
-      expect(await screen.findByLabelText(label)).toHaveAttribute('type', 'time')
+    for (const label of [
+      'Off block', 'On block', 'Takeoff', 'Landing',
+      'PIC', 'Dual', 'Night', 'Instrument', 'Instructor',
+    ]) {
+      const field = await screen.findByLabelText(label)
+      expect(field, label).toHaveAttribute('inputmode', 'numeric')
+      expect(field, label).toHaveAttribute('maxlength', '4')
     }
+  })
+
+  // A pasted "09:15Z" -- from a message, or from the old habit -- must not
+  // become a field the pilot has to clean up by hand.
+  it('drops anything that is not a digit as it is typed', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+
+    const off = await screen.findByLabelText('Off block')
+    await user.type(off, '09:15Z')
+    expect(off).toHaveValue('0915')
   })
 
   it('derives the total time from the clock and refuses to let it be typed', async () => {
@@ -329,8 +348,8 @@ describe('the new-flight form', () => {
     expect(total).toHaveAttribute('readonly')
     expect(total).toHaveValue('')
 
-    await user.type(await screen.findByLabelText('Off block'), '09:15')
-    await user.type(screen.getByLabelText('On block'), '10:30')
+    await user.type(await screen.findByLabelText('Off block'), '0915')
+    await user.type(screen.getByLabelText('On block'), '1030')
     expect(screen.getByLabelText('Total time')).toHaveValue('1:15')
   })
 
@@ -338,8 +357,8 @@ describe('the new-flight form', () => {
     const user = userEvent.setup()
     renderApp()
     await user.click(await screen.findByRole('link', { name: 'New' }))
-    await user.type(await screen.findByLabelText('Off block'), '23:30')
-    await user.type(screen.getByLabelText('On block'), '00:40')
+    await user.type(await screen.findByLabelText('Off block'), '2330')
+    await user.type(screen.getByLabelText('On block'), '0040')
     expect(screen.getByLabelText('Total time')).toHaveValue('1:10')
   })
 
@@ -351,14 +370,13 @@ describe('the new-flight form', () => {
     // Blank by default: most rows in the paper books carry no airborne times.
     expect(await screen.findByLabelText('Air time')).toHaveValue('')
 
-    await user.type(screen.getByLabelText('Takeoff'), '09:20')
-    await user.type(screen.getByLabelText('Landing'), '10:25')
+    await user.type(screen.getByLabelText('Takeoff'), '0920')
+    await user.type(screen.getByLabelText('Landing'), '1025')
     expect(screen.getByLabelText('Air time')).toHaveValue('1:05')
   })
 
-  // The Z is load-bearing (rule 0.4) and cannot just be dropped when the field
-  // becomes a picker -- so the zone becomes a control, and it must reach the
-  // wire.
+  // The Z is load-bearing (rule 0.4) and cannot be typed on a number pad, so
+  // the zone is the toggle's job and the wire format is unchanged.
   it('sends the times with a Z when the zone is UTC', async () => {
     const create = vi.spyOn(api, 'createFlight').mockResolvedValue({
       flight: flight({ date: '2026-07-30', aircraft_reg: 'OH-CAM', total_minutes: 75 }),
@@ -366,10 +384,10 @@ describe('the new-flight form', () => {
     const user = userEvent.setup()
     renderApp()
     await user.click(await screen.findByRole('link', { name: 'New' }))
-    await user.type(await screen.findByLabelText('Off block'), '09:15')
-    await user.type(screen.getByLabelText('On block'), '10:30')
-    await user.type(screen.getByLabelText('Takeoff'), '09:20')
-    await user.type(screen.getByLabelText('Landing'), '10:25')
+    await user.type(await screen.findByLabelText('Off block'), '0915')
+    await user.type(screen.getByLabelText('On block'), '1030')
+    await user.type(screen.getByLabelText('Takeoff'), '0920')
+    await user.type(screen.getByLabelText('Landing'), '1025')
     await user.click(screen.getByRole('button', { name: 'Log this flight' }))
 
     expect(create).toHaveBeenCalledWith(
@@ -393,8 +411,8 @@ describe('the new-flight form', () => {
     renderApp()
     await user.click(await screen.findByRole('link', { name: 'New' }))
     await user.click(await screen.findByRole('button', { name: 'Helsinki local' }))
-    await user.type(screen.getByLabelText('Off block'), '12:15')
-    await user.type(screen.getByLabelText('On block'), '13:30')
+    await user.type(screen.getByLabelText('Off block'), '1215')
+    await user.type(screen.getByLabelText('On block'), '1330')
     await user.click(screen.getByRole('button', { name: 'Log this flight' }))
 
     expect(create).toHaveBeenCalledWith(
@@ -410,8 +428,8 @@ describe('the new-flight form', () => {
     const user = userEvent.setup()
     renderApp()
     await user.click(await screen.findByRole('link', { name: 'New' }))
-    await user.type(await screen.findByLabelText('Off block'), '09:15')
-    await user.type(screen.getByLabelText('On block'), '10:30')
+    await user.type(await screen.findByLabelText('Off block'), '0915')
+    await user.type(screen.getByLabelText('On block'), '1030')
     await user.click(screen.getByRole('button', { name: 'Log this flight' }))
 
     expect(create).toHaveBeenCalledWith(
@@ -419,16 +437,45 @@ describe('the new-flight form', () => {
     )
   })
 
-  // The duration fields have the same colon problem as the clock fields did.
-  // They stay typed -- a duration is a judgement, not a clock reading -- but
-  // the keyboard has to be able to produce "1:15".
-  it('gives the duration fields a keyboard that has a colon', async () => {
+  // The durations are four digits too, and the H:MM the server wants is this
+  // form's job rather than the pilot's.
+  it('sends a four-digit duration as the H:MM the API expects', async () => {
+    const create = vi.spyOn(api, 'createFlight').mockResolvedValue({
+      flight: flight({ date: '2026-07-30', aircraft_reg: 'OH-CAM', total_minutes: 75 }),
+    })
     const user = userEvent.setup()
     renderApp()
     await user.click(await screen.findByRole('link', { name: 'New' }))
-    for (const label of ['PIC', 'Dual', 'Night', 'Instrument', 'Instructor']) {
-      expect(await screen.findByLabelText(label)).toHaveAttribute('inputmode', 'text')
-    }
+    await user.type(await screen.findByLabelText('Off block'), '0915')
+    await user.type(screen.getByLabelText('On block'), '1030')
+    await user.type(screen.getByLabelText('PIC'), '0115')
+    await user.type(screen.getByLabelText('Night'), '0020')
+    await user.click(screen.getByRole('button', { name: 'Log this flight' }))
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ pic_time: '1:15', night_time: '0:20', dual_time: '' }),
+    )
+  })
+
+  // Half a time is not a time. Refusing here, before the request, is the one
+  // place this form is allowed to decide anything -- and it says which field.
+  it('refuses a half-typed time instead of sending it', async () => {
+    const create = vi.spyOn(api, 'createFlight')
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.type(await screen.findByLabelText('Off block'), '091')
+    await user.type(screen.getByLabelText('On block'), '1030')
+    await user.click(screen.getByRole('button', { name: 'Log this flight' }))
+
+    // The exact sentence, not a substring: the card's own guidance says "four
+    // digits" too, and an assertion that cannot tell the guidance from the
+    // error would pass on a form that reported nothing at all.
+    expect(
+      await screen.findByText('Write this time as four digits, for example 0915 for 09:15.'),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Off block')).toHaveAttribute('aria-invalid', 'true')
+    expect(create).not.toHaveBeenCalled()
   })
 
   // The date input is capped at today because a flight that has not happened

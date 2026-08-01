@@ -1,7 +1,27 @@
 import { useCallback, useMemo, useState } from 'react'
 import { api, ApiError, type FlightDraft } from '../api'
 import { useApi } from '../auth'
-import { hhmm, parseHHMM, todayISO } from '../format'
+import {
+  clockWire,
+  digits,
+  hhmm,
+  minutesToDigits,
+  parseClockDigits,
+  parseDurationDigits,
+  todayISO,
+} from '../format'
+
+// Every time on this form -- clock or duration -- is four digits on a number
+// pad. No colon, no Z, no picker. See the decision log for why, and format.ts
+// for why it is exactly four and never three.
+const CLOCK_FIELDS = ['off_block', 'on_block', 'takeoff', 'landing'] as const
+const DURATION_FIELDS = [
+  'night_time',
+  'instrument_time',
+  'pic_time',
+  'dual_time',
+  'instructor_time',
+] as const
 
 // Short labels on purpose: the select is half a phone wide, and "Single engine
 // piston — land" truncates to something unreadable. Every pilot reads SEP/MEP.
@@ -89,9 +109,9 @@ export function NewFlightPage() {
     setSaved(null)
   }
 
-  // Total time is chocks-to-chocks and is DERIVED, not typed. The four clock
-  // fields hold a bare "HH:MM" from the native picker; the zone is carried by
-  // the toggle below rather than by a Z the pilot has to remember to type.
+  // Total time is chocks-to-chocks and is DERIVED, not typed. It recomputes on
+  // every keystroke, so the moment the fourth digit of the on-block time lands
+  // the pilot can see whether the flight came out the length they flew.
   const blockMinutes = useMemo(
     () => blockFrom(draft.off_block, draft.on_block),
     [draft.off_block, draft.on_block],
@@ -104,20 +124,62 @@ export function NewFlightPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    setBusy(true)
     setFormError(null)
     setFieldErrors({})
+
+    // The wire format is unchanged -- "HH:MM", or "HH:MMZ" when the zone
+    // toggle says UTC -- so the server's single conversion authority (rule
+    // 0.4) never learns that the form's fields changed shape. Putting the
+    // colon and the Z back on is this function's whole job.
+    //
+    // This is also the one place the form is allowed to refuse anything. Half
+    // a time is not a time, and sending "091" for the server to reject would
+    // cost a round trip to say something that is obvious here.
+    const errs: Record<string, string> = {}
+    const wire: Partial<Record<string, string>> = {}
+
+    for (const key of CLOCK_FIELDS) {
+      const raw = draft[key]
+      if (raw === '') {
+        // Blank is not this function's business: off/on block being required
+        // and the airborne pair being all-or-nothing are the server's rules,
+        // and they stay stated in exactly one place.
+        wire[key] = ''
+        continue
+      }
+      const hhmmText = clockWire(raw)
+      if (hhmmText === '') {
+        errs[key] = 'Write this time as four digits, for example 0915 for 09:15.'
+        continue
+      }
+      wire[key] = utc ? `${hhmmText}Z` : hhmmText
+    }
+
+    for (const key of DURATION_FIELDS) {
+      const raw = draft[key]
+      if (raw === '') {
+        wire[key] = ''
+        continue
+      }
+      const minutes = parseDurationDigits(raw)
+      if (minutes === null) {
+        errs[key] = 'Write this duration as four digits, for example 0115 for 1:15.'
+        continue
+      }
+      wire[key] = hhmm(minutes)
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs)
+      setFormError('This flight cannot be logged as written. See the fields below.')
+      return
+    }
+
+    setBusy(true)
     try {
-      // The wire format is still "HH:MM" or "HH:MMZ" -- the server's one
-      // conversion authority is unchanged, and the toggle only decides which
-      // of the two this form writes.
-      const z = (v: string) => (v.trim() === '' ? '' : utc ? `${v}Z` : v)
       const payload: FlightDraft = {
         ...draft,
-        off_block: z(draft.off_block),
-        on_block: z(draft.on_block),
-        takeoff: z(draft.takeoff),
-        landing: z(draft.landing),
+        ...(wire as Partial<FlightDraft>),
         // Derived from the clock, never typed. Sent explicitly because the
         // server still requires the total to be stated rather than inventing
         // it -- this form is what states it.
@@ -241,11 +303,11 @@ export function NewFlightPage() {
 
         {/*
           One toggle for the whole card instead of a Z the pilot types. A phone
-          number pad has no colon key, so the old free-text "09:15Z" field was
-          literally untypeable on the device this app is used on -- and the Z is
-          load-bearing, so it cannot simply be dropped. Making the zone a
-          control states it explicitly and lets every clock field be a native
-          picker.
+          number pad has no colon key and no Z, so the old free-text "09:15Z"
+          field was literally untypeable on the device this app is used on --
+          and the Z is load-bearing, so it cannot simply be dropped. Making the
+          zone a control states it explicitly and leaves every time field able
+          to be four digits.
         */}
         <div className="zonetoggle" role="group" aria-label="Time zone for the times below">
           <button
@@ -271,23 +333,27 @@ export function NewFlightPage() {
             : 'The times below are read as Helsinki local time and converted to UTC. A time in the hour the clocks change is ambiguous and will be refused — write UTC instead.'}
         </p>
 
+        <p className="muted small">
+          Times are four digits, no colon: <strong>0915</strong> is 09:15.
+        </p>
+
         <div className="row">
           <Field id="off_block" label="Off block" error={fieldErrors['off_block']}>
-            <input
+            <TimeDigits
               id="off_block"
-              type="time"
+              kind="clock"
               value={draft.off_block}
-              onChange={(e) => set('off_block', e.target.value)}
-              aria-invalid={!!fieldErrors['off_block']}
+              onChange={(v) => set('off_block', v)}
+              invalid={!!fieldErrors['off_block']}
             />
           </Field>
           <Field id="on_block" label="On block" error={fieldErrors['on_block']}>
-            <input
+            <TimeDigits
               id="on_block"
-              type="time"
+              kind="clock"
               value={draft.on_block}
-              onChange={(e) => set('on_block', e.target.value)}
-              aria-invalid={!!fieldErrors['on_block']}
+              onChange={(v) => set('on_block', v)}
+              invalid={!!fieldErrors['on_block']}
             />
           </Field>
         </div>
@@ -320,21 +386,21 @@ export function NewFlightPage() {
           </p>
           <div className="row">
             <Field id="takeoff" label="Takeoff" error={fieldErrors['takeoff']}>
-              <input
+              <TimeDigits
                 id="takeoff"
-                type="time"
+                kind="clock"
                 value={draft.takeoff}
-                onChange={(e) => set('takeoff', e.target.value)}
-                aria-invalid={!!fieldErrors['takeoff']}
+                onChange={(v) => set('takeoff', v)}
+                invalid={!!fieldErrors['takeoff']}
               />
             </Field>
             <Field id="landing" label="Landing" error={fieldErrors['landing']}>
-              <input
+              <TimeDigits
                 id="landing"
-                type="time"
+                kind="clock"
                 value={draft.landing}
-                onChange={(e) => set('landing', e.target.value)}
-                aria-invalid={!!fieldErrors['landing']}
+                onChange={(v) => set('landing', v)}
+                invalid={!!fieldErrors['landing']}
               />
             </Field>
           </div>
@@ -352,48 +418,70 @@ export function NewFlightPage() {
         </details>
 
         {/*
-          Durations stay typed -- they are a judgement about the flight, not a
-          reading off a clock -- but inputMode is "text", not "numeric": the
-          numeric pad has no colon, which made "1:15" impossible to enter.
+          The durations are four digits on the same number pad. They were the
+          half of the form the mobile rework missed: they still wanted "1:15"
+          on a keyboard with no colon key, which is the identical defect one
+          card further down the page.
         */}
-        <p className="muted small">Durations are H:MM, for example 1:15.</p>
+        <p className="muted small">
+          Durations are four digits too: <strong>0115</strong> is 1:15, <strong>0020</strong> is
+          0:20. Leave a field empty if the flight logged none.
+        </p>
 
         <div className="row">
           <Field id="pic_time" label="PIC" error={fieldErrors['pic_time']}>
-            <input id="pic_time" inputMode="text" placeholder="1:15"
-              value={draft.pic_time} onChange={(e) => set('pic_time', e.target.value)}
-              aria-invalid={!!fieldErrors['pic_time']} />
-            {blockMinutes !== null && draft.pic_time !== hhmm(blockMinutes) && (
+            <TimeDigits
+              id="pic_time"
+              kind="duration"
+              value={draft.pic_time}
+              onChange={(v) => set('pic_time', v)}
+              invalid={!!fieldErrors['pic_time']}
+            />
+            {blockMinutes !== null && draft.pic_time !== minutesToDigits(blockMinutes) && (
               <button type="button" className="link"
-                onClick={() => set('pic_time', hhmm(blockMinutes))}>
+                onClick={() => set('pic_time', minutesToDigits(blockMinutes))}>
                 Use the whole {hhmm(blockMinutes)}
               </button>
             )}
           </Field>
           <Field id="dual_time" label="Dual" error={fieldErrors['dual_time']}>
-            <input id="dual_time" inputMode="text"
-              value={draft.dual_time} onChange={(e) => set('dual_time', e.target.value)}
-              aria-invalid={!!fieldErrors['dual_time']} />
+            <TimeDigits
+              id="dual_time"
+              kind="duration"
+              value={draft.dual_time}
+              onChange={(v) => set('dual_time', v)}
+              invalid={!!fieldErrors['dual_time']}
+            />
           </Field>
         </div>
 
         <div className="row three">
           <Field id="night_time" label="Night" error={fieldErrors['night_time']}>
-            <input id="night_time" inputMode="text"
-              value={draft.night_time} onChange={(e) => set('night_time', e.target.value)}
-              aria-invalid={!!fieldErrors['night_time']} />
+            <TimeDigits
+              id="night_time"
+              kind="duration"
+              value={draft.night_time}
+              onChange={(v) => set('night_time', v)}
+              invalid={!!fieldErrors['night_time']}
+            />
           </Field>
           <Field id="instrument_time" label="Instrument" error={fieldErrors['instrument_time']}>
-            <input id="instrument_time" inputMode="text"
+            <TimeDigits
+              id="instrument_time"
+              kind="duration"
               value={draft.instrument_time}
-              onChange={(e) => set('instrument_time', e.target.value)}
-              aria-invalid={!!fieldErrors['instrument_time']} />
+              onChange={(v) => set('instrument_time', v)}
+              invalid={!!fieldErrors['instrument_time']}
+            />
           </Field>
           <Field id="instructor_time" label="Instructor" error={fieldErrors['instructor_time']}>
-            <input id="instructor_time" inputMode="text"
+            <TimeDigits
+              id="instructor_time"
+              kind="duration"
               value={draft.instructor_time}
-              onChange={(e) => set('instructor_time', e.target.value)}
-              aria-invalid={!!fieldErrors['instructor_time']} />
+              onChange={(v) => set('instructor_time', v)}
+              invalid={!!fieldErrors['instructor_time']}
+            />
           </Field>
         </div>
       </div>
@@ -472,27 +560,75 @@ function Field({
 }
 
 /**
+ * TimeDigits is every time field on this form: four numerals, a number pad,
+ * and nothing to punctuate.
+ *
+ * `inputMode="numeric"` with a digits-only filter is what makes the phone show
+ * the pad it should have shown all along. The filter is not cosmetic -- it is
+ * what lets a pasted "09:15Z" become 0915 instead of a field the pilot has to
+ * clean up by hand -- and `maxLength` stops a fifth digit from silently
+ * shifting the hours.
+ *
+ * The echo underneath reads the digits back as the time they mean. Four
+ * unpunctuated numerals are quick to type and easy to transpose, so the form
+ * shows its reading of them before the flight is saved rather than after.
+ */
+function TimeDigits({
+  id,
+  kind,
+  value,
+  onChange,
+  invalid,
+}: {
+  id: string
+  kind: 'clock' | 'duration'
+  value: string
+  onChange: (v: string) => void
+  invalid: boolean
+}) {
+  const minutes = kind === 'clock' ? parseClockDigits(value) : parseDurationDigits(value)
+  const echo =
+    value === ''
+      ? ''
+      : minutes === null
+        ? '—'
+        : kind === 'clock'
+          ? clockWire(value)
+          : hhmm(minutes)
+  return (
+    <>
+      <input
+        id={id}
+        className="digits"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        maxLength={4}
+        autoComplete="off"
+        placeholder={kind === 'clock' ? '0915' : '0115'}
+        value={value}
+        onChange={(e) => onChange(digits(e.target.value))}
+        aria-invalid={invalid}
+      />
+      {echo !== '' && <div className="echo muted small">{echo}</div>}
+    </>
+  )
+}
+
+/**
  * blockFrom computes chocks-to-chocks from the two clock entries, rolling past
  * midnight the way the server does.
  *
- * It ignores a Z suffix because the difference between two times written in the
- * same zone is the same either way. A pair that mixes zones is not resolved
- * here -- the server refuses that outright rather than guessing.
+ * Both entries are in the same zone -- one toggle governs the whole card -- so
+ * the difference is the same figure whichever zone that is. A pair that mixes
+ * zones cannot be typed here at all, and the server refuses one outright
+ * rather than guessing.
  */
 function blockFrom(off: string, on: string): number | null {
-  const a = clockMinutes(off)
-  const b = clockMinutes(on)
+  const a = parseClockDigits(off)
+  const b = parseClockDigits(on)
   if (a === null || b === null) return null
   const d = b - a
   return d > 0 ? d : d + 24 * 60
 }
 
-function clockMinutes(raw: string): number | null {
-  const m = /^\s*(\d{1,2}):([0-5]\d)\s*[Zz]?\s*$/.exec(raw)
-  if (!m) return null
-  const h = Number(m[1])
-  if (h > 23) return null
-  return h * 60 + Number(m[2])
-}
-
-export const __test = { blockFrom, parseHHMM }
+export const __test = { blockFrom }

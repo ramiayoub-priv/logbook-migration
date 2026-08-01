@@ -34,6 +34,61 @@ export function parseHHMM(raw: string): number | null {
   return Number(m[1]) * 60 + Number(m[2])
 }
 
+// --- HHMM: what the pilot actually types ----------------------------------
+//
+// Every time field on the new-flight form holds four digits and nothing else:
+// "0915", never "09:15" and never "09:15Z". A phone's number pad has no colon
+// key and no Z, so anything else is either untypeable or a picker the pilot has
+// to tap through. The colon and the Z are put back on the wire by the form --
+// the API contract and the server's single conversion authority are unchanged.
+//
+// EXACTLY four, always. "915" is not read as 09:15: it is equally readable as
+// 91:5, and guessing at a time that goes into a legal record is the silent
+// corruption rule 0.2 forbids. Four digits or nothing.
+
+/** digits keeps at most four numerals and throws away everything else. */
+export function digits(raw: string): string {
+  return raw.replace(/\D/g, '').slice(0, 4)
+}
+
+/** parseClockDigits reads "0915" as minutes since midnight, or null. */
+export function parseClockDigits(raw: string): number | null {
+  const m = /^(\d{2})(\d{2})$/.exec(raw)
+  if (!m) return null
+  const h = Number(m[1])
+  const min = Number(m[2])
+  if (h > 23 || min > 59) return null
+  return h * 60 + min
+}
+
+/**
+ * parseDurationDigits reads "0115" as 75 minutes, or null.
+ *
+ * Separate from the clock reading because the hours are not a time of day:
+ * 24:00 is a legitimate duration where 24:00 is not a legitimate clock. The
+ * server still bounds a single flight at 24 hours.
+ */
+export function parseDurationDigits(raw: string): number | null {
+  const m = /^(\d{2})(\d{2})$/.exec(raw)
+  if (!m) return null
+  const min = Number(m[2])
+  if (min > 59) return null
+  return Number(m[1]) * 60 + min
+}
+
+/** clockWire turns four digits into the "HH:MM" the API expects, or "". */
+export function clockWire(raw: string): string {
+  const m = parseClockDigits(raw)
+  if (m === null) return ''
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+}
+
+/** minutesToDigits writes minutes back into a four-digit field: 75 -> "0115". */
+export function minutesToDigits(minutes: number): string {
+  const total = Math.max(0, Math.trunc(minutes))
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}${String(total % 60).padStart(2, '0')}`
+}
+
 /**
  * isoDate formats an instant as the YYYY-MM-DD the API expects.
  *

@@ -253,6 +253,26 @@ button.zone.on {
   border-color: var(--accent);
 }
 
+/* Four digits and nothing else. Wide letter spacing and tabular figures so
+   "0915" reads as a time at a glance and a transposed digit is visible; the
+   font is monospaced because proportional digits make 1 and 4 different widths
+   and the field stops looking like four fixed slots. */
+input.digits {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.22em;
+  text-indent: 0.11em;   /* letter-spacing pads the right of the last glyph */
+}
+
+/* The form reading the digits back as the time it took them to mean. Four
+   unpunctuated numerals are quick to type and easy to transpose, so the echo
+   is there before the flight is saved rather than after. */
+.field .echo {
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
 /* A derived figure is shown, never typed. It is a read-only input rather than
    an <output> so it stays labelable and keeps aria-invalid -- <output> carries
    an implicit role of "status", which collides with the page's own live region.

@@ -73,6 +73,11 @@ at the web root of `/var/www/logbook/` for the home-screen install to work. Two 
 - **`sw.js` must not be served from a long-lived cache.** A stale service worker outlives a deploy
   and keeps serving the previous bundle. Serve it `Cache-Control: no-cache` so the browser
   revalidates it every time; the hashed files under `assets/` are immutable and can be cached hard.
+- **`index.html` must not be cached either, and for the same reason.** It is the only file under
+  `/logbook/` whose name stays the same while its bytes change on every deploy — it is what points
+  at the hashed bundles. A phone holding a stale copy runs the previous frontend against the current
+  API, which is exactly the mismatch that "ship the binary and the frontend together" exists to
+  prevent. Reported from the field on 2026-08-01: the owner's phone would not pick up a new build.
 - The worker's scope is `/logbook/`, so it can only ever intercept our own paths — never the
   owner's other sites on this box.
 
@@ -80,9 +85,28 @@ at the web root of `/var/www/logbook/` for the home-screen install to work. Two 
 <Files "sw.js">
     Header set Cache-Control "no-cache"
 </Files>
+<Files "index.html">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</Files>
 <Directory /var/www/logbook/assets>
     Header set Cache-Control "public, max-age=31536000, immutable"
 </Directory>
+```
+
+**Three layers, deliberately, because each one covers a device the others do not:**
+
+| Layer | Where | What it fixes |
+|---|---|---|
+| `Cache-Control` / `Pragma` / `Expires` on `index.html` | Apache, and as `<meta http-equiv>` in the document itself | The browser's HTTP cache. The meta tags travel with the file, so a device served by anything other than this vhost is still covered. |
+| `fetch(request, {cache: 'no-store'})` on the shell | `public/sw.js` | The service worker's own "network first" was only ever as fresh as the HTTP cache underneath it. |
+| `reloadWhenUpdated` | `src/swupdate.ts`, wired in `src/main.tsx` | A home-screen install has no address bar and no reload button. When a new worker claims the page, the page reloads itself onto it — once, guarded against a loop. |
+
+Verify a deploy actually reached the device:
+```bash
+curl -sI https://ayoub.fi/logbook/ | grep -i cache-control     # expect no-store
+curl -sI https://ayoub.fi/logbook/sw.js | grep -i cache-control # expect no-cache
 ```
 
 ## Apache

@@ -3,6 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!--
+      This document must never be held in a cache. Its filename never changes
+      while its contents change on every deploy, and it is what points at the
+      content-hashed bundles -- so a stale copy of THIS file is a phone running
+      last week's app against this week's API. The frontend and the backend
+      ship together on purpose (docs/deploy.md), and a cached shell is the one
+      way they can come apart.
+
+      Belt and braces on purpose: the Apache headers in docs/deploy.md say the
+      same thing, and these meta tags are what protect a device that was
+      served by anything else -- a proxy, a captive portal, an old vhost.
+      Only this document; the hashed assets under /logbook/assets/ are
+      immutable and are still cached hard.
+    -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#0f172a" />
     <title>Logbook</title>

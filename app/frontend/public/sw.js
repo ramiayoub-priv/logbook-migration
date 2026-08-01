@@ -22,7 +22,7 @@
 
 // Bumped whenever the shell changes. The activate handler deletes every cache
 // that is not this one, so an old bundle cannot outlive a deploy.
-const CACHE = 'logbook-shell-v1'
+const CACHE = 'logbook-shell-v2'
 
 const BASE = '/logbook/'
 const SHELL = BASE
@@ -46,6 +46,10 @@ function policy(request, url) {
   if (url.pathname.startsWith(BASE + 'api/')) return 'passthrough'
   if (request.method !== 'GET') return 'passthrough'
   if (request.mode === 'navigate') return 'shell'
+  // index.html is the one file under /logbook/ that is NOT content-hashed:
+  // its name stays the same while its contents change on every deploy. Treating
+  // it as an immutable asset is how a phone keeps opening last week's build.
+  if (url.pathname === SHELL || url.pathname === BASE + 'index.html') return 'shell'
   if (url.pathname.startsWith(BASE + 'assets/')) return 'asset'
   if (url.pathname.startsWith(BASE)) return 'asset'
   return 'bypass'
@@ -75,7 +79,12 @@ self.addEventListener('fetch', (event) => {
 
   if (what === 'shell') {
     event.respondWith(
-      fetch(event.request)
+      // `cache: 'no-store'` goes past the browser's own HTTP cache. Without it
+      // "network first" is only as fresh as whatever that cache is holding,
+      // and a phone with index.html cached keeps opening the previous build
+      // with the worker none the wiser. The document is a few hundred bytes;
+      // the hashed bundles it points at are still cached hard.
+      fetch(event.request, { cache: 'no-store' })
         .then((res) => {
           // Keep the latest shell for the next cold start with no signal.
           const copy = res.clone()

@@ -85,6 +85,22 @@ describe('the service worker caches the shell', () => {
     expect(policy({ method: 'GET', mode: 'navigate' }, url('/logbook/statistics'))).toBe('shell')
   })
 
+  // index.html is the one file under /logbook/ that is NOT content-hashed, so
+  // cache-first on it means a deploy is invisible until the cache is cleared.
+  // It goes through the network-first shell path like any other navigation.
+  it('never treats the un-hashed shell document as an immutable asset', () => {
+    expect(policy(GET, url('/logbook/index.html'))).toBe('shell')
+  })
+
+  // The shell fetch must bypass the browser's own HTTP cache. Network-first is
+  // only as fresh as what the network layer hands back, and a phone that has
+  // index.html in its HTTP cache would keep opening the previous build with
+  // the worker none the wiser. Asserted against the source because it is a
+  // fetch option, not a routing decision -- there is nothing to call.
+  it('asks the network for the shell rather than the HTTP cache', () => {
+    expect(source).toMatch(/cache:\s*'no-store'/)
+  })
+
   // Build assets are content-hashed, so the filename changes when the bytes
   // do and a cache hit can never be stale.
   it('caches the hashed build assets', () => {
