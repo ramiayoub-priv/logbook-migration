@@ -32,9 +32,16 @@
 >   night is **18:42** vs our Books 1+2 **12:44** — the whole gap is inherited. Book 3 reconciles
 >   exactly: 18:42 + our 4:03 = **22:45**. So the missing night time is in the **old paper books'
 >   night column**, not in Book 3 and not in the addition.
-> - **NEW — line 102 of `logbook_2_final.csv` reads `OK-PDP`**, a one-off OCR typo for `OH-PDP`
->   (creates a phantom aircraft in the app). Also: **`SE-GKT` (Book 1) and `OH-GKT` are the same
->   airframe** re-registered — the app must not split them.
+>   **The user then read the paper night column back** (see `drift.md`): the paper is internally
+>   exact (11:58 before 26.01.2015 + nine listed rows 6:44 = 18:42), five of its rows already match
+>   ours, **`01/02/2015` OH-CAV 0:37 has been applied** (night now **17:24**), and the remaining
+>   **5:21 accounts for itself exactly** as three open questions — `25.02.2015` OH-KAM 0:10 (which of
+>   two legs), `26.01.2015` (**paper has two rows, our CSV has one — probably a missed flight**), and
+>   **4:03 that our CSV is short before 26.01.2015, with 2014 carrying zero night in ours**.
+> - **NEW, ✅ FIXED — line 102 of `logbook_2_final.csv` read `OK-PDP`**, a one-off OCR typo for
+>   `OH-PDP` (would have created a phantom aircraft in the app). User: **any `OK-` reg in these books
+>   is a typo for `OH-`.** Also: **`SE-GKT` (Book 1) and `OH-GKT` are the same airframe**
+>   re-registered — the app must not split them.
 > - **NEW — line 97** (`10/05/2018` OH-DBS) sits exactly one hour off Aviatron while the same day's
 >   other row matches to the minute. No total affected.
 >

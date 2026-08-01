@@ -116,32 +116,59 @@ The gap is **entirely inherited from Books 1–2** and was already on paper befo
   books together hold only 22 rows with any night time, so 5:58 is roughly six ordinary evening
   circuits' worth — a small number of missed cells, not a systematic error.
 
-⏸ **Awaiting the user — and this one genuinely needs the paper.** Books 1 and 2 page images are
-**not in the repo** (gitignored) and are not on this disk, so the night column cannot be re-read here.
+#### 📖 The paper night column, read back by the user (2026-08-01)
+The user read the end of Book 2 and the night column itself. **These are paper reads and they are
+authoritative.** Working back from the end of Book 2:
 
-**Shortlist of Book-1 rows to re-read — A PAGE-FINDING AID ONLY, NOT EVIDENCE.** These are rows that
-carry **no `Night_Time`** in our CSV. They are listed *only* so the physical book can be opened at the
-right pages; **the book's night column is the sole authority and decides every one of them.** Six of
-them are evening flights whose durations happen to sum to **5:39 of the 5:58** — suggestive of where
-to look, and nothing more:
+| paper date | reg | paper night | status against our CSV |
+|---|---|---|---|
+| 11.02.2021 | DA40 OH-STL | 1:55 (+ instrument 1:36) | ✅ already ours, exact |
+| 07.12.2020 | OH-TIL | 0:55 | ✅ already ours, exact |
+| 26.03.2020 | DA40 OH-STL | 0:50 | ✅ already ours, exact |
+| 04.11.2015 | OH-CAV | 0:42 | ✅ already ours, exact |
+| 01.10.2015 | OH-TIL | 0:27 | ✅ already ours, exact |
+| 25.02.2015 | DA40 OH-KAM | 0:10 | ⏸ **two candidate rows — see A** |
+| 01.02.2015 | OH-CAV | 0:37 | ✳️ **APPLIED** to book 1 line 250 |
+| 26.01.2015 | OH-CMO | 0:38 | ⏸ **no such row in our CSV — see B** |
+| 26.01.2015 | OH-STL | 0:30 | ⏸ **see B** |
+| *everything before 26.01.2015* | | **11:58** | ⏸ **ours is 7:55 — see C** |
 
-| line | date | reg | route | block | total |
-|---|---|---|---|---|---|
-| 111 | 21/01/2013 | OH-CTM | EFHF local | 18:41–19:58 | 1:17 |
-| 173 | 25/02/2014 | OH-KLS | EFHF local | 18:31–19:26 | 0:55 |
-| 237 | 15/09/2014 | OH-CMO | EFLA→EFHF | 20:27–21:18 | 0:51 |
-| 245 | 09/12/2014 | OH-KAM | EFHF local | 17:18–18:30 | 1:12 |
-| 246 | 20/12/2014 | OH-CMO | EFHF local | 16:28–17:15 | 0:47 |
-| 250 | 01/02/2015 | OH-CAV | EFHF local | 17:21–17:58 | 0:37 |
+**The paper is internally exact: 11:58 + the nine listed rows (6:44) = 18:42**, the Book-2 end figure.
+So the night column adds up correctly on paper and 22:45 at p.62 is confirmed sound.
 
-Also worth a glance while the book is open, all Book 1: line 107 (`09/11/2012` OH-CWB), line 177
-(`26/03/2014` OH-TIL EFSI→EFHF), line 255 (`16/03/2015` OH-CMO). And the five **partial**-night rows
-listed in the p.62 landing-split table further down already have a night value — if any of those is
-short on paper, that closes part of the 5:58 too.
+**✳️ Applied 2026-08-01:** book 1 **line 250** (`01/02/2015` C172 OH-CAV, EFHF local, 17:21–17:58,
+total **0:37**) now carries `Night_Time 0:37` — an exact date+registration+duration match to the
+paper, and a full-night row (night == total), so there is nothing to apportion. **Night_Time carries
+no cumulative column, so no `Cumulative_*` value moved.** Our night total goes **16:47 → 17:24**.
 
-**Knock-on if any of these rows does carry night time on paper:** its landings become night landings,
-so the inked **59 night / 3335 day** split at p.62 moves. `Cumulative_Landings` (the sum) is
-unaffected either way — only the split. Correct p.62 rather than the CSV, per the note further down.
+#### ⏸ Still open — and the remaining 5:21 accounts for itself exactly
+`22:45 − 17:24 = 5:21`, and the three open questions below sum to **1:08 + 0:10 + 4:03 = 5:21**.
+Nothing else is missing; these three are the whole of it.
+
+**A. `25.02.2015` OH-KAM 0:10 — which leg?** We hold **two** DA40 OH-KAM rows that day, a there-and-back
+to EFUT, neither with night time: **line 252** `EFHF→EFUT 16:16–17:03 (0:47)` and **line 253**
+`EFUT→EFHF 17:06–17:56 (0:50)`. The paper's 0:10 is a partial-night value and belongs to one of them.
+**Which row does the book put it on?** (Its 1 landing then becomes a night landing.)
+
+**B. `26.01.2015` — the paper has two rows, our CSV has one.** Paper: **OH-CMO 0:38** and
+**OH-STL 0:30**. Our CSV holds a single 26/01/2015 row — **line 248**, DA40 **OH-STL**,
+EFHF local, **11:17–11:55**, total **0:38**, 1 landing. So our one row carries the *registration* of
+the paper's STL entry but the *duration* of its CMO entry, and the nearest OH-CMO flights are
+20/12/2014 and 28/01/2015. **This most likely means a whole flight was missed in transcription** —
+if so it is the first known missing row in Books 1–2 and it moves `Cumulative_Total` and every series
+downstream of it. ⚠ **Do not patch this from inference — it needs the page.** Worth 1:08 of the gap.
+
+**C. The remaining 4:03 lies before 26.01.2015 — and almost certainly in 2014.** Paper says 11:58
+before that date; ours is **7:55**. Our night sub-totals run: end of 2011 **0:50**, end of 2012
+**5:29**, end of 2013 **7:55**, **end of 2014 still 7:55 — our CSV has no night time anywhere in
+2014.** A full calendar year with zero night entries, in a stretch where he flew night regularly
+either side of it, is where 4:03 most plausibly went. **Best next read: the book's night column
+across 2014**, or its night cumulative at any 2014 page boundary, which bisects it immediately.
+
+**Knock-on for the p.62 landing split.** Every row that gains night time turns its landings into
+night landings, so the inked **59 night / 3335 day** moves. `Cumulative_Landings` (the sum) is
+unaffected — only the split. Line 250's single landing is already one such move. Correct p.62 rather
+than the CSV, per the note further down.
 
 ### 4. `logbook_2_final.csv` line 102 — registration typo `OK-PDP` (found 2026-08-01)
 `17/05/2018 · P28A · EFRY → EFHF · 18:51–19:35 · 0:44`
@@ -158,7 +185,10 @@ unaffected either way — only the split. Correct p.62 rather than the CSV, per 
   pilot's own aircraft under its **Swedish registration before it became `OH-GKT`** (first OH-GKT row
   `16/06/2018`; the two never overlap). ⚠ **`SE-GKT` and `OH-GKT` are the same airframe** — the app
   must not treat them as two aircraft. Not a defect, but it needs handling.
-- ⏸ **Awaiting the user.** Recommended: `OK-PDP` → `OH-PDP`. No time value changes.
+- ✅ **FIXED 2026-08-01.** User: *"As for OK-PDP or OK anything, typo, always OH in this case."*
+  Line 102 now reads `OH-PDP`. No time value changed and no cumulative moved. **Rule for the future:
+  any `OK-` registration in these books is a transcription typo for `OH-` — there is no Czech-
+  registered aircraft anywhere in this logbook.** No `OK-*` registration remains in any CSV.
 
 ### 5. Minor — `logbook_2_final.csv` line 97 sits one hour off Aviatron (found 2026-08-01)
 `10/05/2018 · C150 OH-DBS · EFLA local · 08:15–09:27 · 1:12` (student, Ravantti).
