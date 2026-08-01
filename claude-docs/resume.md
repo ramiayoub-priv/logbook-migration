@@ -537,12 +537,12 @@ OH-PDP/SR20), with occasional night flights. Float seasons so far: **2025** 18/0
   "TOTAL THIS PAGE" and bottom-line totals are still trustworthy. **Cross-check only on those.**
   **Always cross-check on offset-independent per-page Δ ("TOTAL THIS PAGE"), never absolute totals — and
   note the book's Total column is itself 1:00 low from p.14 on.**
-- **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. **All Book-3 work through
-  IMG_6037 is committed AND pushed at `3acb6a7` (2026-08-01)** — master is clean and up to date with
-  origin. Images/HEIC/zip stay gitignored. Push only when asked.
-  Images/HEIC/zip are gitignored (not pushed). Git identity is now set repo-locally
-  (`Rami Ayoub <rami.ayoub@gmail.com>`) — it was missing and blocked a commit.
-  Push only when asked.
+- **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. **All work through the
+  missing-flights batch and the p.62 drift close is committed AND pushed at `46235ec`
+  (2026-08-01)** — master is clean and up to date with origin. (Book-3 work through IMG_6037 was
+  `3acb6a7`.) Images/HEIC/zip are gitignored (not pushed). Git identity is set repo-locally
+  (`Rami Ayoub <rami.ayoub@gmail.com>`) — it was missing once and blocked a commit.
+  **Commit and push only when asked.**
 
 ## Conventions locked in this session
 - **Zulu times:** keep the `Z` suffix in Off/On block (e.g. `07:56Z`) for UTC-logged rows; plain
