@@ -180,14 +180,18 @@ GET    /export/statistics.pdf  ?from&to private
 **Operator CLI** (no HTTP route exists for any of it, by design):
 `./dist/server createuser|passwd|users|disable|enable <name> -db <path>`.
 
-### Next task: #7, PWA + deploy to `ayoub.fi/logbook`
+### Next task: #7 (second half), deploy to `ayoub.fi/logbook`
 `docs/deploy.md` has the full shared-tenant map, the Apache stanza, the systemd unit and the
-rollback. Nothing in the app blocks it. What deployment still needs:
+rollback. Nothing in the app blocks it. **The PWA half is done**: manifest, icons and
+`public/sw.js`, which caches the shell so the app opens at an airfield with no signal and never
+caches a logbook response. Offline *writes* remain out of v1 scope.
 
-- A **manifest and service worker** for the home-screen install (the PWA half of Task 7). Offline
-  *writes* are explicitly out of v1 scope.
+What deployment still needs:
+
 - `LOGBOOK_HOLDER` set in the unit, or the exported PDFs carry no name. `-origin` must be
   `https://ayoub.fi`, and `-insecure-cookie` must **never** appear in the unit.
+- **`sw.js` served `Cache-Control: no-cache`** — a stale worker outlives a deploy and keeps serving
+  the old bundle. The stanza is in `docs/deploy.md`.
 - The frontend build rsynced to `/var/www/logbook/`, the binary to `/opt/logbook/`.
 - **Before touching the box, re-read `CLAUDE.md` §0.3.** It is shared with the owner's other sites;
   changes to Apache, ufw, systemd or Docker are additive, reversible, and verified from a second
@@ -281,7 +285,7 @@ day · landings night.
 | 5 | Four frontend pages (mobile-first) | **done** 2026-08-01 — plus the auth UI. Six pages: Flights, Statistics, New flight, Export, Review, Devices, behind a login gate. React + TS + Vite, `app/frontend/`. 43 frontend tests green. Verified in a real browser against the live API, including logging a flight end to end. |
 | 5b | `POST /flights` — the write path | **done** 2026-08-01 — `internal/entry` (validation, pure, 100%), `store.AddFlight`, the hand-entered `seq` band, the duplicate guard, and the import scoping that stops a re-import deleting app-entered flights. |
 | 6 | Three PDF exports (EASA clone + table + stats) | **done** 2026-08-01 — `internal/pdfmodel` (the cells and totals, pure, 100%) + `internal/pdfbook` (rendering, `go-pdf/fpdf`). Live against the real logbook: **87 EASA pages**, totals block reconciling, Finnish place names intact. |
-| 7 | PWA + deploy to `ayoub.fi/logbook` | not started — **this is the next task.** Nothing is deployed; the app has only ever run locally. |
+| 7 | PWA + deploy to `ayoub.fi/logbook` | **PWA done** 2026-08-01 — manifest, icons, and a hand-written service worker that caches the shell and **never** an API response, proven in a browser with the HTTP cache disabled. **Deploy not started** and needs the owner's go-ahead: it touches the shared box. |
 | 8 | Backfill landings day/night for the **30** night rows | not started — all 30 are flagged `landings_unverified` in the DB, listed by `logbookctl import`, and surfaced by the API as `landings_unverified` in the stats summary. `claude-docs/drift.md` has the analysis. The p.62 split recomputes to **68 night / 3326 day** (the sum 3394 is unchanged); six of those 68 are estimates from three multi-landing partial-night rows, range 65–72. |
 | 9 | Rule on the open source-data problems | **mostly closed** 2026-08-01 — two of the three ruled and fixed. One item left (`logbook_2_final.csv` lines 89–90) and it needs the physical page; it moves no total. See the ⏸ block at the top. |
 
@@ -390,6 +394,34 @@ Three places where the UI is deliberately not smoother than the truth:
 
 Routing is ~40 lines rather than a routing library (rule §0.3): six pages, no nested routes, no
 route parameters. Real `<a href>` links, so middle-click and long-press work.
+
+### 2026-08-01 — The service worker caches the shell and never the logbook
+
+The PWA half of Task 7. The app is used at an airfield on a phone with poor signal, so the shell
+should open without waiting for the network — but a service worker is a cache that **ignores
+`Cache-Control: no-store` unless it is written not to**, and every `/logbook/api/` response is
+personal data the server explicitly marks no-store.
+
+So the policy is one function, checked first, before any other rule can catch an API URL: anything
+under `/logbook/api/`, and anything that is not a GET, is passed through untouched and unstored —
+the worker does not call `respondWith` at all, so the browser does exactly what it would have done
+without it. Navigations are network-first with the cached shell as a fallback; the content-hashed
+build assets are cache-first, which is safe because the filename changes when the bytes do.
+
+Caching a logbook response would have left the owner's flights readable on the device after the
+session was revoked — a control the server states in a header, undone silently on the client.
+
+Written by hand rather than with a build plugin: the whole policy is forty lines, it is the kind of
+policy that has to be read to be trusted, and a PWA plugin is a supply-chain decision (rule §0.3).
+
+Tested against **the shipped `public/sw.js`** rather than a copy of its logic — the test evaluates
+the real file in a fake worker global and pulls `policy` back off it. Deleting the API guard turns
+three of those tests red, which is how it was confirmed rather than assumed. Then verified in a
+browser: after signing in and browsing, the cache holds the shell and nothing else; with the HTTP
+cache disabled and the network off, the shell still opens and the flights are **not** readable.
+
+One deploy consequence, recorded in `docs/deploy.md`: `sw.js` must be served `Cache-Control:
+no-cache`, or a stale worker outlives a deploy and keeps serving the previous bundle.
 
 ### 2026-08-01 — A second account does NOT isolate test data; a second file does
 

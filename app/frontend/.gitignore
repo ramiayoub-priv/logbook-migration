@@ -1,2 +1,8 @@
 dist/
 node_modules/
+
+# The repository root ignores *.png, because the logbook page photographs are
+# large and deliberately kept on local disk only. These icons are the opposite:
+# build inputs of about a kilobyte each, and without them a fresh clone builds
+# a PWA with no home-screen icon. They must be committed (CLAUDE.md rule 0.1).
+!public/icons/*.png

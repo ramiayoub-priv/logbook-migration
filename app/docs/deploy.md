@@ -67,6 +67,24 @@ rsync -a --delete app/frontend/dist/ rami@ayoub.fi:/var/www/logbook/
 `vite.config.ts` sets `base: '/logbook/'`, so every asset URL is built with that prefix. Building
 without it produces a page that 404s every asset behind the Apache `Alias`.
 
+The build also emits the PWA files — `manifest.webmanifest`, `sw.js` and `icons/` — which must land
+at the web root of `/var/www/logbook/` for the home-screen install to work. Two Apache notes:
+
+- **`sw.js` must not be served from a long-lived cache.** A stale service worker outlives a deploy
+  and keeps serving the previous bundle. Serve it `Cache-Control: no-cache` so the browser
+  revalidates it every time; the hashed files under `assets/` are immutable and can be cached hard.
+- The worker's scope is `/logbook/`, so it can only ever intercept our own paths — never the
+  owner's other sites on this box.
+
+```apache
+<Files "sw.js">
+    Header set Cache-Control "no-cache"
+</Files>
+<Directory /var/www/logbook/assets>
+    Header set Cache-Control "public, max-age=31536000, immutable"
+</Directory>
+```
+
 ## Apache
 
 Added **additively** to the existing `ayoub.fi-le-ssl.conf` vhost. It must not touch the existing
