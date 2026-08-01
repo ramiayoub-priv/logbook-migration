@@ -232,6 +232,53 @@ button.link {
   border: none; background: none; color: var(--danger);
   text-decoration: underline; padding: 6px 0; min-height: auto; width: auto;
 }
+
+/* --- The new-flight time controls ----------------------------------------- */
+
+/* UTC / local, as a control rather than a Z the pilot has to remember to type.
+   Two halves of one segmented button, so which zone is in force is always on
+   screen instead of being implied by punctuation inside a text field. */
+.zonetoggle { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 10px; }
+.zonetoggle > * { min-width: 0; }
+button.zone {
+  width: 100%;
+  font-weight: 600;
+  border-radius: 0;
+}
+button.zone:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+button.zone:last-child  { border-radius: 0 var(--radius) var(--radius) 0; border-left: none; }
+button.zone.on {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+/* A derived figure is shown, never typed. It is a read-only input rather than
+   an <output> so it stays labelable and keeps aria-invalid -- <output> carries
+   an implicit role of "status", which collides with the page's own live region.
+   Styled flat and borderless so it does not look editable: a read-only field
+   dressed as an editable one invites tapping at it and wondering why nothing
+   happens. */
+input.derived {
+  border: none;
+  background: none;
+  padding: 10px 2px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+input.derived:focus { outline: none; }
+
+/* The airborne pair is folded away because most flights have none. */
+details.airborne { margin: 4px 0 14px; }
+details.airborne > summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 6px 0;
+}
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* --- Tables --------------------------------------------------------------- */

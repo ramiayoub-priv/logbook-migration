@@ -23,6 +23,8 @@ function emptyDraft(): FlightDraft {
     arr_place: '',
     off_block: '',
     on_block: '',
+    takeoff: '',
+    landing: '',
     total_time: '',
     night_time: '',
     instrument_time: '',
@@ -41,6 +43,9 @@ export function NewFlightPage() {
   const { data: fleet } = useApi(loadAircraft, [])
 
   const [draft, setDraft] = useState<FlightDraft>(emptyDraft)
+  // Defaults to UTC: the owner's rule is that everything is UTC from now on
+  // (rule 0.4), and the paper books' Z-suffixed rows are the recent ones.
+  const [utc, setUTC] = useState(true)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
@@ -84,12 +89,17 @@ export function NewFlightPage() {
     setSaved(null)
   }
 
-  // The block time implied by the clock, offered as a prefill for the total.
-  // It is only ever a suggestion: the total is what the logbook adds up, and
-  // the server requires the pilot to state it rather than deriving it.
+  // Total time is chocks-to-chocks and is DERIVED, not typed. The four clock
+  // fields hold a bare "HH:MM" from the native picker; the zone is carried by
+  // the toggle below rather than by a Z the pilot has to remember to type.
   const blockMinutes = useMemo(
     () => blockFrom(draft.off_block, draft.on_block),
     [draft.off_block, draft.on_block],
+  )
+  // Airborne time, likewise derived. Blank whenever the optional pair is.
+  const airMinutes = useMemo(
+    () => blockFrom(draft.takeoff, draft.landing),
+    [draft.takeoff, draft.landing],
   )
 
   async function submit(e: React.FormEvent) {
@@ -98,7 +108,22 @@ export function NewFlightPage() {
     setFormError(null)
     setFieldErrors({})
     try {
-      const { flight } = await api.createFlight(draft)
+      // The wire format is still "HH:MM" or "HH:MMZ" -- the server's one
+      // conversion authority is unchanged, and the toggle only decides which
+      // of the two this form writes.
+      const z = (v: string) => (v.trim() === '' ? '' : utc ? `${v}Z` : v)
+      const payload: FlightDraft = {
+        ...draft,
+        off_block: z(draft.off_block),
+        on_block: z(draft.on_block),
+        takeoff: z(draft.takeoff),
+        landing: z(draft.landing),
+        // Derived from the clock, never typed. Sent explicitly because the
+        // server still requires the total to be stated rather than inventing
+        // it -- this form is what states it.
+        total_time: blockMinutes === null ? '' : hhmm(blockMinutes),
+      }
+      const { flight } = await api.createFlight(payload)
       setSaved(`Logged ${flight.date}, ${flight.aircraft_reg}, ${hhmm(flight.total_minutes)}.`)
       // A fresh form, but keep the date and aircraft: the next entry after a
       // day of circuits is usually the same aeroplane on the same day.
@@ -213,17 +238,44 @@ export function NewFlightPage() {
 
       <div className="card">
         <h2>Times</h2>
+
+        {/*
+          One toggle for the whole card instead of a Z the pilot types. A phone
+          number pad has no colon key, so the old free-text "09:15Z" field was
+          literally untypeable on the device this app is used on -- and the Z is
+          load-bearing, so it cannot simply be dropped. Making the zone a
+          control states it explicitly and lets every clock field be a native
+          picker.
+        */}
+        <div className="zonetoggle" role="group" aria-label="Time zone for the times below">
+          <button
+            type="button"
+            className={utc ? 'zone on' : 'zone'}
+            aria-pressed={utc}
+            onClick={() => setUTC(true)}
+          >
+            UTC
+          </button>
+          <button
+            type="button"
+            className={utc ? 'zone' : 'zone on'}
+            aria-pressed={!utc}
+            onClick={() => setUTC(false)}
+          >
+            Helsinki local
+          </button>
+        </div>
         <p className="muted small">
-          Write the time in UTC with a Z — <code>09:15Z</code> — or as Helsinki local time
-          without one. Durations are H:MM.
+          {utc
+            ? 'The times below are read as UTC.'
+            : 'The times below are read as Helsinki local time and converted to UTC. A time in the hour the clocks change is ambiguous and will be refused — write UTC instead.'}
         </p>
 
         <div className="row">
           <Field id="off_block" label="Off block" error={fieldErrors['off_block']}>
             <input
               id="off_block"
-              inputMode="numeric"
-              placeholder="09:15Z"
+              type="time"
               value={draft.off_block}
               onChange={(e) => set('off_block', e.target.value)}
               aria-invalid={!!fieldErrors['off_block']}
@@ -232,8 +284,7 @@ export function NewFlightPage() {
           <Field id="on_block" label="On block" error={fieldErrors['on_block']}>
             <input
               id="on_block"
-              inputMode="numeric"
-              placeholder="10:30Z"
+              type="time"
               value={draft.on_block}
               onChange={(e) => set('on_block', e.target.value)}
               aria-invalid={!!fieldErrors['on_block']}
@@ -242,33 +293,85 @@ export function NewFlightPage() {
         </div>
 
         <Field id="total_time" label="Total time" error={fieldErrors['total_time']}>
+          {/*
+            Derived, and deliberately not editable: this is the figure the whole
+            logbook adds up and a licence application is written from, and the
+            book totals on block time on 478 of Book 3's 479 rows. Typing it by
+            hand next to the clock that already states it is two places for one
+            fact to disagree.
+          */}
           <input
             id="total_time"
-            inputMode="numeric"
-            placeholder="1:15"
-            value={draft.total_time}
-            onChange={(e) => set('total_time', e.target.value)}
+            className="derived"
+            readOnly
+            tabIndex={-1}
+            value={blockMinutes === null ? '' : hhmm(blockMinutes)}
+            placeholder="—"
             aria-invalid={!!fieldErrors['total_time']}
           />
-          {blockMinutes !== null && draft.total_time !== hhmm(blockMinutes) && (
-            <button
-              type="button"
-              className="link"
-              onClick={() => set('total_time', hhmm(blockMinutes))}
-            >
-              Use the {hhmm(blockMinutes)} from the clock
-            </button>
-          )}
+          <div className="muted small">Chocks to chocks, from the two times above.</div>
         </Field>
+
+        <details className="airborne">
+          <summary>Takeoff and landing (optional)</summary>
+          <p className="muted small">
+            Airborne times. Most rows in the paper books have none, so leave these blank unless
+            you read them off the aeroplane. If you give one, give both.
+          </p>
+          <div className="row">
+            <Field id="takeoff" label="Takeoff" error={fieldErrors['takeoff']}>
+              <input
+                id="takeoff"
+                type="time"
+                value={draft.takeoff}
+                onChange={(e) => set('takeoff', e.target.value)}
+                aria-invalid={!!fieldErrors['takeoff']}
+              />
+            </Field>
+            <Field id="landing" label="Landing" error={fieldErrors['landing']}>
+              <input
+                id="landing"
+                type="time"
+                value={draft.landing}
+                onChange={(e) => set('landing', e.target.value)}
+                aria-invalid={!!fieldErrors['landing']}
+              />
+            </Field>
+          </div>
+          <Field id="air_time" label="Air time">
+            <input
+              id="air_time"
+              className="derived"
+              readOnly
+              tabIndex={-1}
+              value={airMinutes === null ? '' : hhmm(airMinutes)}
+              placeholder="—"
+            />
+            <div className="muted small">Wheels up to wheels down, from the two times above.</div>
+          </Field>
+        </details>
+
+        {/*
+          Durations stay typed -- they are a judgement about the flight, not a
+          reading off a clock -- but inputMode is "text", not "numeric": the
+          numeric pad has no colon, which made "1:15" impossible to enter.
+        */}
+        <p className="muted small">Durations are H:MM, for example 1:15.</p>
 
         <div className="row">
           <Field id="pic_time" label="PIC" error={fieldErrors['pic_time']}>
-            <input id="pic_time" inputMode="numeric" placeholder="1:15"
+            <input id="pic_time" inputMode="text" placeholder="1:15"
               value={draft.pic_time} onChange={(e) => set('pic_time', e.target.value)}
               aria-invalid={!!fieldErrors['pic_time']} />
+            {blockMinutes !== null && draft.pic_time !== hhmm(blockMinutes) && (
+              <button type="button" className="link"
+                onClick={() => set('pic_time', hhmm(blockMinutes))}>
+                Use the whole {hhmm(blockMinutes)}
+              </button>
+            )}
           </Field>
           <Field id="dual_time" label="Dual" error={fieldErrors['dual_time']}>
-            <input id="dual_time" inputMode="numeric"
+            <input id="dual_time" inputMode="text"
               value={draft.dual_time} onChange={(e) => set('dual_time', e.target.value)}
               aria-invalid={!!fieldErrors['dual_time']} />
           </Field>
@@ -276,18 +379,18 @@ export function NewFlightPage() {
 
         <div className="row three">
           <Field id="night_time" label="Night" error={fieldErrors['night_time']}>
-            <input id="night_time" inputMode="numeric"
+            <input id="night_time" inputMode="text"
               value={draft.night_time} onChange={(e) => set('night_time', e.target.value)}
               aria-invalid={!!fieldErrors['night_time']} />
           </Field>
           <Field id="instrument_time" label="Instrument" error={fieldErrors['instrument_time']}>
-            <input id="instrument_time" inputMode="numeric"
+            <input id="instrument_time" inputMode="text"
               value={draft.instrument_time}
               onChange={(e) => set('instrument_time', e.target.value)}
               aria-invalid={!!fieldErrors['instrument_time']} />
           </Field>
           <Field id="instructor_time" label="Instructor" error={fieldErrors['instructor_time']}>
-            <input id="instructor_time" inputMode="numeric"
+            <input id="instructor_time" inputMode="text"
               value={draft.instructor_time}
               onChange={(e) => set('instructor_time', e.target.value)}
               aria-invalid={!!fieldErrors['instructor_time']} />

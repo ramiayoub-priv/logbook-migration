@@ -323,3 +323,135 @@ func TestErrorsMessageNamesTheFields(t *testing.T) {
 		t.Errorf("error text %q does not mention the field at fault", err.Error())
 	}
 }
+
+// --- Airborne times -------------------------------------------------------
+//
+// Takeoff and landing are OPTIONAL: most rows in the paper books have none,
+// and a form that demanded them would block the common case to serve the rare
+// one. When they are given they are converted by the same authority as the
+// block pair, and the airborne duration is derived rather than typed.
+
+func TestAirborneTimesAreOptional(t *testing.T) {
+	f := mustValidate(t, valid()) // valid() carries neither
+	if !f.TakeoffUTC.IsZero() || !f.LandingUTC.IsZero() {
+		t.Errorf("a draft with no airborne times produced %v/%v, want both zero",
+			f.TakeoffUTC, f.LandingUTC)
+	}
+}
+
+func TestValidateConvertsAirborneTimes(t *testing.T) {
+	d := valid()
+	d.Takeoff, d.Landing = "09:20Z", "10:25Z"
+
+	f := mustValidate(t, d)
+	if got, want := f.TakeoffUTC, time.Date(2026, 7, 30, 9, 20, 0, 0, time.UTC); !got.Equal(want) {
+		t.Errorf("takeoff = %v, want %v", got, want)
+	}
+	if got, want := f.LandingUTC, time.Date(2026, 7, 30, 10, 25, 0, 0, time.UTC); !got.Equal(want) {
+		t.Errorf("landing = %v, want %v", got, want)
+	}
+}
+
+// Half a pair is not a time, it is a typo. Saying so beats storing a takeoff
+// with no landing, which would silently make the airborne duration unknowable.
+func TestValidateRefusesHalfAnAirbornePair(t *testing.T) {
+	for _, c := range []struct{ takeoff, landing, field string }{
+		{"09:20Z", "", "landing"},
+		{"", "10:25Z", "takeoff"},
+	} {
+		d := valid()
+		d.Takeoff, d.Landing = c.takeoff, c.landing
+		_, err := entry.Validate(d, now)
+		if err == nil {
+			t.Fatalf("takeoff=%q landing=%q was accepted; want a rejection naming %s",
+				c.takeoff, c.landing, c.field)
+		}
+		if got := fieldsInError(t, err); len(got) != 1 || got[0] != c.field {
+			t.Errorf("takeoff=%q landing=%q named %v, want exactly [%s]",
+				c.takeoff, c.landing, got, c.field)
+		}
+	}
+}
+
+func TestValidateRejectsAnUnparseableAirborneTime(t *testing.T) {
+	d := valid()
+	d.Takeoff, d.Landing = "0920", "10:25Z"
+	_, err := entry.Validate(d, now)
+	if err == nil {
+		t.Fatal("takeoff \"0920\" was accepted, want a rejection")
+	}
+	if got := fieldsInError(t, err); len(got) != 1 || got[0] != "takeoff" {
+		t.Errorf("named %v, want exactly [takeoff]", got)
+	}
+}
+
+// An aeroplane cannot be airborne longer than it is off blocks. This catches
+// the realistic typo -- a landing time later than the on-block time -- which
+// would otherwise be stored as a flight whose parts contradict each other.
+func TestValidateRefusesAirborneTimeLongerThanBlockTime(t *testing.T) {
+	d := valid() // 09:15Z -> 10:30Z, so 1:15 of block
+	d.Takeoff, d.Landing = "09:10Z", "10:35Z"
+
+	_, err := entry.Validate(d, now)
+	if err == nil {
+		t.Fatal("an 1:25 airborne time inside 1:15 of block was accepted, want a rejection")
+	}
+	if got := fieldsInError(t, err); len(got) != 1 || got[0] != "takeoff" {
+		t.Errorf("named %v, want exactly [takeoff]", got)
+	}
+}
+
+// Equal is fine: no taxi at all is unusual, not impossible, and refusing it
+// would be inventing a rule the paper books do not keep.
+func TestValidateAllowsAirborneTimeEqualToBlockTime(t *testing.T) {
+	d := valid()
+	d.Takeoff, d.Landing = "09:15Z", "10:30Z"
+	mustValidate(t, d)
+}
+
+func TestAirborneTimesRollPastMidnight(t *testing.T) {
+	d := valid()
+	d.OffBlock, d.OnBlock = "23:30Z", "00:40Z"
+	d.Takeoff, d.Landing = "23:35Z", "00:35Z"
+	d.TotalTime, d.PICTime = "1:10", "1:10"
+
+	f := mustValidate(t, d)
+	if got := f.LandingUTC.Sub(f.TakeoffUTC); got != time.Hour {
+		t.Errorf("airborne = %v, want 1h -- the landing must roll to the next day", got)
+	}
+}
+
+// The block pair has this test too: the message must send the pilot to the
+// half that is actually wrong, or the form highlights a field that is fine.
+func TestAnUnparseableLandingNamesTheLandingField(t *testing.T) {
+	d := valid()
+	d.Takeoff, d.Landing = "09:20Z", "quarter past"
+
+	_, err := entry.Validate(d, now)
+	if err == nil {
+		t.Fatal("landing \"quarter past\" was accepted, want a rejection")
+	}
+	if got := fieldsInError(t, err); len(got) != 1 || got[0] != "landing" {
+		t.Errorf("named %v, want exactly [landing]", got)
+	}
+}
+
+// Same posture as the block pair on a DST fold: refuse and ask for Zulu rather
+// than manufacture an unaudited instant (rule 0.4).
+func TestValidateRefusesAnAmbiguousLocalAirborneTime(t *testing.T) {
+	d := valid()
+	d.Date = "2025-10-26" // the autumn fold; 03:30 Helsinki happens twice
+	d.OffBlock, d.OnBlock = "03:25Z", "04:45Z"
+	d.Takeoff, d.Landing = "03:30", "04:40"
+
+	_, err := entry.Validate(d, now)
+	if err == nil {
+		t.Fatal("an ambiguous local takeoff was accepted; it must ask for a Zulu time")
+	}
+	if got := fieldsInError(t, err); len(got) != 1 || got[0] != "takeoff" {
+		t.Errorf("named %v, want exactly [takeoff]", got)
+	}
+	if !strings.Contains(strings.ToLower(err.Error()), "z") {
+		t.Errorf("error %q does not tell the pilot to write the time as UTC", err)
+	}
+}

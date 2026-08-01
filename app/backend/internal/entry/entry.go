@@ -83,6 +83,13 @@ type Draft struct {
 	OffBlock string `json:"off_block"`
 	OnBlock  string `json:"on_block"`
 
+	// Airborne times, OPTIONAL and usually blank -- most rows in the paper
+	// books have none. When both are given the pair is converted by the same
+	// authority as the block pair, and the airborne duration is derived from
+	// them rather than typed. Same written form as the block times.
+	Takeoff string `json:"takeoff"`
+	Landing string `json:"landing"`
+
 	TotalTime      string `json:"total_time"`
 	NightTime      string `json:"night_time"`
 	InstrumentTime string `json:"instrument_time"`
@@ -322,4 +329,67 @@ func validateTimes(d Draft, f *csvbook.Flight, bad func(string, string, ...any))
 	// conversion can always be audited or revisited (rule 0.4).
 	f.OffBlockRaw, f.OnBlockRaw = off, on
 	f.TimeOrigin = origin
+
+	validateAirborneTimes(d, f, bad)
+}
+
+// validateAirborneTimes converts the optional takeoff/landing pair.
+//
+// Optional is the point: most rows in the paper books record only the block
+// times, so demanding these would block the common case to serve the rare one.
+// But half a pair is a typo rather than a choice -- a takeoff with no landing
+// makes the airborne duration unknowable -- so one without the other is
+// refused, naming the empty half.
+//
+// The pair goes through timeutil.BlockPair for the same reason the block pair
+// does: it is the one conversion authority (rule 0.4), and it is what makes the
+// midnight roll behave identically for both pairs.
+func validateAirborneTimes(d Draft, f *csvbook.Flight, bad func(string, string, ...any)) {
+	takeoff := strings.TrimSpace(d.Takeoff)
+	landing := strings.TrimSpace(d.Landing)
+
+	switch {
+	case takeoff == "" && landing == "":
+		return
+	case landing == "":
+		bad("landing", "a takeoff time needs a landing time; the airborne duration "+
+			"cannot be known from one of them")
+		return
+	case takeoff == "":
+		bad("takeoff", "a landing time needs a takeoff time; the airborne duration "+
+			"cannot be known from one of them")
+		return
+	}
+
+	takeoffUTC, landingUTC, origin, err := timeutil.BlockPair(f.Date, takeoff, landing)
+	if err != nil {
+		field, raw := "takeoff", takeoff
+		if _, _, e := timeutil.ToUTC(f.Date, takeoff); e == nil {
+			field, raw = "landing", landing
+		}
+		bad(field, "%q is not a time written as HH:MM, optionally with a Z for UTC", raw)
+		return
+	}
+	if origin == timeutil.OriginUnknown {
+		bad("takeoff", "this local time is ambiguous on %s because the clocks change; "+
+			"write both times in UTC with a Z, for example %sZ", f.Date, takeoff)
+		return
+	}
+
+	// An aeroplane cannot be airborne longer than it is off blocks. Equal is
+	// allowed -- no taxi at all is unusual, not impossible -- but longer means
+	// one of the four times is mistyped, and storing it would create a flight
+	// whose own parts contradict each other.
+	if !f.OffBlockUTC.IsZero() && !f.OnBlockUTC.IsZero() {
+		airborne := landingUTC.Sub(takeoffUTC)
+		block := f.OnBlockUTC.Sub(f.OffBlockUTC)
+		if airborne > block {
+			bad("takeoff", "airborne %s is longer than the %s between off and on block; "+
+				"check all four times",
+				hhmm.Format(int(airborne.Minutes())), hhmm.Format(int(block.Minutes())))
+			return
+		}
+	}
+
+	f.TakeoffUTC, f.LandingUTC = takeoffUTC, landingUTC
 }

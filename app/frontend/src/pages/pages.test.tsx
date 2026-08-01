@@ -261,6 +261,133 @@ describe('the new-flight form', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Logged 2026-07-30, OH-CAM, 1:15.')
   })
 
+  // --- The times, after the 2026-08-01 mobile rework -----------------------
+  //
+  // The old form asked for "09:15Z" in a field with inputMode="numeric". A
+  // phone number pad has no colon key, so on the device this app exists for,
+  // the flight could not be entered at all. These tests pin the replacement.
+
+  it('takes the clock times from a native picker, not free text', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+
+    for (const label of ['Off block', 'On block']) {
+      expect(await screen.findByLabelText(label)).toHaveAttribute('type', 'time')
+    }
+  })
+
+  it('derives the total time from the clock and refuses to let it be typed', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+
+    const total = await screen.findByLabelText('Total time')
+    expect(total).toHaveAttribute('readonly')
+    expect(total).toHaveValue('')
+
+    await user.type(await screen.findByLabelText('Off block'), '09:15')
+    await user.type(screen.getByLabelText('On block'), '10:30')
+    expect(screen.getByLabelText('Total time')).toHaveValue('1:15')
+  })
+
+  it('derives the total across midnight rather than going negative', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.type(await screen.findByLabelText('Off block'), '23:30')
+    await user.type(screen.getByLabelText('On block'), '00:40')
+    expect(screen.getByLabelText('Total time')).toHaveValue('1:10')
+  })
+
+  it('derives the air time from the optional takeoff and landing', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+
+    // Blank by default: most rows in the paper books carry no airborne times.
+    expect(await screen.findByLabelText('Air time')).toHaveValue('')
+
+    await user.type(screen.getByLabelText('Takeoff'), '09:20')
+    await user.type(screen.getByLabelText('Landing'), '10:25')
+    expect(screen.getByLabelText('Air time')).toHaveValue('1:05')
+  })
+
+  // The Z is load-bearing (rule 0.4) and cannot just be dropped when the field
+  // becomes a picker -- so the zone becomes a control, and it must reach the
+  // wire.
+  it('sends the times with a Z when the zone is UTC', async () => {
+    const create = vi.spyOn(api, 'createFlight').mockResolvedValue({
+      flight: flight({ date: '2026-07-30', aircraft_reg: 'OH-CAM', total_minutes: 75 }),
+    })
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.type(await screen.findByLabelText('Off block'), '09:15')
+    await user.type(screen.getByLabelText('On block'), '10:30')
+    await user.type(screen.getByLabelText('Takeoff'), '09:20')
+    await user.type(screen.getByLabelText('Landing'), '10:25')
+    await user.click(screen.getByRole('button', { name: 'Log this flight' }))
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        off_block: '09:15Z',
+        on_block: '10:30Z',
+        takeoff: '09:20Z',
+        landing: '10:25Z',
+        // Derived, and stated on the wire: the server still requires the total
+        // rather than inventing it.
+        total_time: '1:15',
+      }),
+    )
+  })
+
+  it('sends the times bare when the zone is Helsinki local', async () => {
+    const create = vi.spyOn(api, 'createFlight').mockResolvedValue({
+      flight: flight({ date: '2026-07-30', aircraft_reg: 'OH-CAM', total_minutes: 75 }),
+    })
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.click(await screen.findByRole('button', { name: 'Helsinki local' }))
+    await user.type(screen.getByLabelText('Off block'), '12:15')
+    await user.type(screen.getByLabelText('On block'), '13:30')
+    await user.click(screen.getByRole('button', { name: 'Log this flight' }))
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ off_block: '12:15', on_block: '13:30' }),
+    )
+  })
+
+  // An empty airborne pair must not travel as a half-written one.
+  it('leaves the airborne pair empty when it is not filled in', async () => {
+    const create = vi.spyOn(api, 'createFlight').mockResolvedValue({
+      flight: flight({ date: '2026-07-30', aircraft_reg: 'OH-CAM', total_minutes: 75 }),
+    })
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.type(await screen.findByLabelText('Off block'), '09:15')
+    await user.type(screen.getByLabelText('On block'), '10:30')
+    await user.click(screen.getByRole('button', { name: 'Log this flight' }))
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ takeoff: '', landing: '' }),
+    )
+  })
+
+  // The duration fields have the same colon problem as the clock fields did.
+  // They stay typed -- a duration is a judgement, not a clock reading -- but
+  // the keyboard has to be able to produce "1:15".
+  it('gives the duration fields a keyboard that has a colon', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    for (const label of ['PIC', 'Dual', 'Night', 'Instrument', 'Instructor']) {
+      expect(await screen.findByLabelText(label)).toHaveAttribute('inputmode', 'text')
+    }
+  })
+
   // The date input is capped at today because a flight that has not happened
   // cannot be logged; the server refuses it too.
   it('will not offer a future date', async () => {

@@ -240,6 +240,9 @@ export interface FlightDraft {
   arr_place: string
   off_block: string
   on_block: string
+  /** Airborne times. Optional and usually blank -- but if one is sent, both must be. */
+  takeoff: string
+  landing: string
   total_time: string
   night_time: string
   instrument_time: string
