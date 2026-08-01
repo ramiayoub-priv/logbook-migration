@@ -41,10 +41,14 @@
 > | Landings (sum) | 3394 | 3394 | ✅ |
 > | **Night** | **22:45** | **22:45** | ✅ **closed 2026-08-01** |
 >
-> ### 🎯 ALL SEVEN `Cumulative_*` SERIES RECONCILE ROW-BY-ROW WITH **ZERO BREAKS** OVER 1293 ROWS.
+> ### 🎯 ALL SEVEN `Cumulative_*` SERIES RECONCILE ROW-BY-ROW WITH **ZERO BREAKS** OVER 1296 ROWS.
 > Every time column's own sum now equals its stored final cumulative, exactly:
-> Total **1219:35** · PIC **1053:03** · Student **166:32** · Instrument **107:05** ·
-> SEP_Sea **407:39** · Landings **3439** · Instructor **189:41** · Night **22:45**.
+> Total **1222:10** · PIC **1054:45** · Student **167:25** · Instrument **107:58** ·
+> SEP_Sea **407:39** · Landings **3444** · Instructor **189:41** · Night **22:45**.
+>
+> ⚠ **These moved on 2026-08-01** — see "THE ONE SANCTIONED EXCEPTION" below. They were
+> 1219:35 / 1053:03 / 166:32 / 107:05 / 3439 over 1293 rows until three genuinely missing
+> flights of 28/08/2025 were found and appended.
 >
 > **THE TIMES MATCH. Do not re-validate the book on spec.** Re-check with the command at the end of
 > this block if you want proof; do not re-transcribe pages that already reconcile.
@@ -58,6 +62,43 @@
 > shown not to, by diffing every `Cumulative_*` cell before and after. ⚠ **Note the direction of the
 > logic**: the line-28 fix below *looked* like it would move a total and in fact was the only way to
 > *preserve* one. Test the claim, don't assume it.
+>
+> ### ⚠ THE ONE SANCTIONED EXCEPTION — three missing flights, 28/08/2025 (owner ruling, 2026-08-01)
+>
+> **The freeze governs *corrections*. It does not govern *missing data*, and this was missing data.**
+>
+> The owner found that **28/08/2025 was absent from `logbook_3.csv` entirely** — line 411 is
+> 27/08/2025, line 412 jumps to 08/09/2025. Three OH-ESR (SR20) flights had never been recorded, in
+> the CSV *or* on paper. One of them is a **SEP/IR revalidation check flight** with Tarhanen as PIC,
+> so the omission was suppressing a licence-relevant currency item, not just minutes.
+>
+> Reconstructed from the **Aviatron aircraft-logbook** screens (`IMG_6052/6053/6054`). The airframe
+> counter chains exactly across all three with no gap, which is what makes the set provably complete:
+> **2663:11 → 2663:51 → 2664:39 → 2665:31**.
+>
+> | # | UTC (airborne) | air | block | route | ldg | logged as |
+> |---|---|---|---|---|---|---|
+> | 1 | 13:39–14:19 | 0:40 | 0:45 | EFNU–EFPR | 1 | PIC |
+> | 2 | 15:38–16:26 | 0:48 | 0:53 | EFPR–EFPR | 1 | **dual + instrument**, PIC Tarhanen |
+> | 3 | 16:46–17:38 | 0:52 | 0:57 | EFPR–EFNU | 3 | PIC |
+>
+> Two owner rulings shaped the rows. **Aviatron records air time; this book totals on block time**
+> (only 1 row in 479 has `Block_Time` ≠ `Total_Time`, and it is a flagged discrepancy), so **+5 min
+> per flight** gives block, and block is what goes in `Total_Time`. And the check flight logs
+> **instrument in full**.
+>
+> **They are appended as LATE ENTRIES at the end of Book 3, not inserted in date order** — matching
+> how the paper book records them (three new lines after 30/07/2026, dated 28.08.2025, remarked
+> "entered late"). Inserting them chronologically would have meant re-inking the carried-forward
+> totals on ~5 already-written pages, which on a legal record reads like tampering. The books were
+> already not in date order (18 rows go backwards, now 21); order on `seq`, never on `flight_date`.
+>
+> **Deltas:** flights +3 → **1296** · Total +2:35 · PIC +1:42 · Student +0:53 · Instrument +0:53 ·
+> Landings +5. Night, Instructor and SEP_Sea **unmoved** (nobody instructed; OH-ESR is a landplane).
+> Discrepancies stayed at **61** and cumulative breaks at **zero** — the appended `Cumulative_*`
+> cells were checked against the importer's independent row-by-row recomputation, not just totalled.
+>
+> ⛔ **The p.62 inked block is now stale by construction** and the freeze resumes at the new figures.
 >
 > **What is still open** (full detail in `drift.md`; **none of it moves any total**):
 > 1. **`logbook_2_final.csv` lines 89–90** — two `04.05.2018` dates. Affects row *order* only, and

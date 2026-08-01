@@ -35,9 +35,9 @@ func TestImportEndToEnd(t *testing.T) {
 
 	got := out.String()
 	for _, want := range []string{
-		"Read 1293 flights",
-		"Imported 1293 flights, 38 aircraft, 61 discrepancies",
-		"Aircraft linkage: 1293 linked, 0 unlinked",
+		"Read 1296 flights",
+		"Imported 1296 flights, 38 aircraft, 61 discrepancies",
+		"Aircraft linkage: 1296 linked, 0 unlinked",
 		"Verified: every checksum matches the source CSVs.",
 		// The report must say plainly that nothing was fixed, every time.
 		"NOTHING HAS BEEN CORRECTED",
@@ -101,7 +101,7 @@ func TestVerifyFailsAgainstAnEmptyDatabase(t *testing.T) {
 	var out bytes.Buffer
 	err = run([]string{"verify", "-db", dbPath, "-csv", repoRoot(t)}, &out)
 	if err == nil {
-		t.Fatal("verifying an empty database against 1293 flights must fail")
+		t.Fatal("verifying an empty database against 1296 flights must fail")
 	}
 	if !strings.Contains(err.Error(), "flight count") {
 		t.Errorf("err = %v, want it to name the failing checksum", err)

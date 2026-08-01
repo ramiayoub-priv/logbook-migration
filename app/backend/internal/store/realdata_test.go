@@ -39,8 +39,8 @@ func TestRealImportRoundTripsEveryFlight(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Import: %v", err)
 	}
-	if res.Flights != 1293 {
-		t.Errorf("imported %d flights, want 1293", res.Flights)
+	if res.Flights != 1296 {
+		t.Errorf("imported %d flights, want 1296", res.Flights)
 	}
 	if res.Totals != lb.Totals {
 		t.Errorf("stored totals %+v differ from the source %+v", res.Totals, lb.Totals)
@@ -53,11 +53,11 @@ func TestRealImportRoundTripsEveryFlight(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if linked != 1293 || unlinked != 0 {
-		t.Errorf("linkage = %d/%d, want 1293 linked and 0 unlinked", linked, unlinked)
+	if linked != 1296 || unlinked != 0 {
+		t.Errorf("linkage = %d/%d, want 1296 linked and 0 unlinked", linked, unlinked)
 	}
 
-	// Field-by-field, all 1293 rows. A checksum can be passed by two errors
+	// Field-by-field, all 1296 rows. A checksum can be passed by two errors
 	// that cancel; this cannot.
 	got, err := db.Flights()
 	if err != nil {

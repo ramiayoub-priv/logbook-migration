@@ -49,15 +49,21 @@ func TestSummarizeReproducesTheFrozenTotals(t *testing.T) {
 		name      string
 		got, want int
 	}{
-		{"flights", s.Flights, 1293},
-		{"total", s.Total, hm(1219, 35)},
-		{"PIC", s.PIC, hm(1053, 3)},
-		{"dual", s.Dual, hm(166, 32)},
-		{"instrument", s.Instrument, hm(107, 5)},
+		// Moved 2026-08-01 by the three 28/08/2025 flights the owner found
+		// missing from the CSV entirely. Deltas: +3 flights, total +2:35,
+		// PIC +1:42, dual +0:53, instrument +0:53, landings +5; night,
+		// instructor and seaplane unmoved. The reasoning, and why this is the
+		// one sanctioned exception to the frozen cumulatives, is on the same
+		// constants in internal/csvbook/realdata_test.go.
+		{"flights", s.Flights, 1296},
+		{"total", s.Total, hm(1222, 10)},
+		{"PIC", s.PIC, hm(1054, 45)},
+		{"dual", s.Dual, hm(167, 25)},
+		{"instrument", s.Instrument, hm(107, 58)},
 		{"night", s.Night, hm(22, 45)},
 		{"instructor", s.Instructor, hm(189, 41)},
 		{"seaplane", s.SeaTotal, hm(407, 39)},
-		{"landings", s.LandingsDay + s.LandingsNight, 3439},
+		{"landings", s.LandingsDay + s.LandingsNight, 3444},
 	} {
 		if c.got != c.want {
 			t.Errorf("%s = %d minutes, want %d", c.name, c.got, c.want)
@@ -129,7 +135,7 @@ func TestRangeSlicesTheRealBooksWithoutLosingAFlight(t *testing.T) {
 }
 
 // TestPaginateTheRealBooksIntoEASAPages checks the page geometry the PDF
-// depends on: 1293 flights at 15 rows to a page is 86 full pages and a partial
+// depends on: 1296 flights at 15 rows to a page is 86 full pages and a partial
 // 87th, and the running block must chain from the first page to the last
 // without drifting from the whole-logbook figure.
 func TestPaginateTheRealBooksIntoEASAPages(t *testing.T) {
@@ -141,10 +147,12 @@ func TestPaginateTheRealBooksIntoEASAPages(t *testing.T) {
 		t.Fatalf("Paginate: %v", err)
 	}
 	if len(pages) != 87 {
-		t.Fatalf("got %d pages for 1293 flights at %d rows, want 87", len(pages), rowsPerPage)
+		t.Fatalf("got %d pages for 1296 flights at %d rows, want 87", len(pages), rowsPerPage)
 	}
-	if got := len(pages[86].Flights); got != 3 {
-		t.Errorf("the last page has %d rows, want 3 (1293 = 86*15 + 3)", got)
+	// Still 87 pages: the three 28/08/2025 late entries landed on the already
+	// partial last page, taking it from 3 rows to 6.
+	if got := len(pages[86].Flights); got != 6 {
+		t.Errorf("the last page has %d rows, want 6 (1296 = 86*15 + 6)", got)
 	}
 
 	var seen int
@@ -159,8 +167,8 @@ func TestPaginateTheRealBooksIntoEASAPages(t *testing.T) {
 		}
 		running = p.Total
 	}
-	if seen != 1293 {
-		t.Errorf("the pages hold %d flights between them, want 1293", seen)
+	if seen != 1296 {
+		t.Errorf("the pages hold %d flights between them, want 1296", seen)
 	}
 
 	// The bottom line of the last page is the logbook total. This is the figure
@@ -169,8 +177,8 @@ func TestPaginateTheRealBooksIntoEASAPages(t *testing.T) {
 	if last != stats.Summarize(lb.Flights) {
 		t.Errorf("the last page's TOTAL != the whole logbook")
 	}
-	if last.Total != hm(1219, 35) {
-		t.Errorf("the last page's TOTAL is %d minutes, want 1219:35", last.Total)
+	if last.Total != hm(1222, 10) {
+		t.Errorf("the last page's TOTAL is %d minutes, want 1222:10", last.Total)
 	}
 }
 

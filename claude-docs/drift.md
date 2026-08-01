@@ -2,6 +2,87 @@
 
 Log every correction that alters a row later rows built on. Fix cumulatives from that row forward.
 
+---
+
+## ✅ CLOSED 2026-08-01 — THREE FLIGHTS OF 28/08/2025 WERE MISSING ENTIRELY (owner-found)
+
+**The largest single omission found in this project, and the only change ever permitted to move the
+frozen end-of-book-3 cumulatives.** Recorded first because it is the most recent change to the data.
+
+**What was wrong.** `logbook_3.csv` had **no 28/08/2025 rows at all** — line 411 is 27/08/2025 and
+line 412 jumps to 08/09/2025. Three OH-ESR (SR20) flights had never been written down, in the CSV
+*or* in the paper book. The owner found this, not the importer: every cumulative series reconciled
+with zero breaks *because the rows were absent rather than wrong*, which is exactly the failure mode
+a cumulative check cannot see. **A consistency check proves the rows present are self-consistent; it
+can say nothing about a row that was never written.**
+
+**Why it mattered beyond the minutes.** The middle flight is a **SEP/IR revalidation check flight**
+with **Tarhanen as PIC**. The gap was therefore hiding a licence-relevant currency item, not just
+2:35 of total time.
+
+**Source and why it is trustworthy.** Reconstructed from the **Aviatron aircraft-logbook** screens
+(`IMG_6052`, `IMG_6053`, `IMG_6054`). Aviatron is normally a *cross-reference, never a source*
+(rule §0.2) — it is used as a source here only because the paper has no entry to be authoritative
+about. What makes the set provably complete is the **airframe counter**, which chains with no gap:
+
+```
+2663:11 --0:40--> 2663:51 --0:48--> 2664:39 --0:52--> 2665:31
+```
+
+Each addition is exact, so no fourth flight can be hiding between them.
+
+| # | UTC (airborne) | air | block | route | crew | ldg | logged as |
+|---|---|---|---|---|---|---|---|
+| 1 | 13:39–14:19 | 0:40 | 0:45 | EFNU–EFPR | 1 | 1 | PIC · MAT cross country |
+| 2 | 15:38–16:26 | 0:48 | 0:53 | EFPR–EFPR | 2 | 1 | **dual + instrument** · PIC Tarhanen |
+| 3 | 16:46–17:38 | 0:52 | 0:57 | EFPR–EFNU | 1 | 3 | PIC · MAT cross country |
+
+**Three owner rulings, 2026-08-01:**
+
+1. **Air → block: +5 min per flight.** Aviatron records *air* time (its 0:40 field is exactly
+   14:19−13:39). This book totals on **block** time — only **1 row in 479** has `Block_Time` ≠
+   `Total_Time`, and that one (08/09/2025) is a flagged `block_total_mismatch`. So block = air + 5,
+   and **block is what goes in `Total_Time`**. *(An earlier reading of this session took the 08/09
+   row as the pattern and computed +2:20; it is the corpus's lone anomaly, and the correct delta is
+   **+2:35**.)*
+2. **The check flight logs instrument in full** — 0:53, the whole block time.
+3. **Late entries, not chronological insertion.** They go at the **end of Book 3**, after
+   30/07/2026, dated 28.08.2025 and remarked "entered late" — on paper *and* in the CSV, so the two
+   keep matching. Inserting them in date order would have required re-inking the carried-forward
+   totals on ~5 already-written pages (69 rows follow line 411), which is error-prone and on a legal
+   record reads like tampering. This adds 3 to the out-of-date-order row count (18 → 21); order on
+   `seq`, never on `flight_date`.
+
+**`Off_Block`/`On_Block` are derived, and that is stated here rather than hidden.** No row in Book 3
+has an empty `Off_Block`, so these three needed one, but the true off/on-block clock times are not
+recorded anywhere. The observed Aviatron times are preserved exactly in `Takeoff`/`Landing`; the
++5 min was applied **entirely as taxi-out** (`Off_Block` = takeoff − 5, `On_Block` = landing), which
+makes `On_Block − Off_Block` equal `Block_Time` and `Total_Time` on every row. The split is a
+convention, not an observation — if the real taxi times ever surface, only these two cells change.
+
+**Deltas** (verified against the importer's independent row-by-row recomputation, not just totalled):
+
+| | before | after | Δ |
+|---|---|---|---|
+| flights | 1293 | **1296** | +3 |
+| Total | 1219:35 | **1222:10** | +2:35 |
+| PIC | 1053:03 | **1054:45** | +1:42 |
+| Student/dual | 166:32 | **167:25** | +0:53 |
+| Instrument | 107:05 | **107:58** | +0:53 |
+| Landings | 3439 | **3444** | +5 |
+| Night · Instructor · SEP_Sea | | *unmoved* | — |
+
+Night and Instructor are untouched (afternoon flights, nobody instructed) and SEP_Sea is untouched
+because OH-ESR is an SR20 landplane. Discrepancies stayed at **61** and cumulative breaks at
+**zero**. EASA pagination stays at **87 pages** — the three rows landed on the already-partial last
+page, 3 rows → 6.
+
+⛔ **The p.62 inked totals block is now stale by construction.** The paper needs the three late
+entries written in and its running totals continued from them; the frozen figures resume at the new
+values above.
+
+---
+
 ## 🔎 OPEN — items found by the app importer (2026-08-01), re-investigated 2026-08-01
 
 Building the app's importer (`app/backend/internal/csvbook`) put every row of all three CSVs through

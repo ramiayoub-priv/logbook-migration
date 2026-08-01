@@ -45,21 +45,46 @@ func loadReal(t *testing.T) *csvbook.Logbook {
 func TestRealBooksProduceTheExpectedTotals(t *testing.T) {
 	lb := loadReal(t)
 
-	// 1293 flights, not 1295: the three CSVs hold 1295 data rows, but the
+	// 1296 flights, not 1298: the three CSVs hold 1298 data rows, but the
 	// first row of Books 2 and 3 is the previous book's final flight carried
 	// over to seed the cumulative columns.
+	//
+	// 1296, was 1293. On 2026-08-01 the owner found three flights of
+	// 28/08/2025 (OH-ESR, EFNU-EFPR-EFPR-EFNU) missing from the CSV entirely
+	// -- line 411 is 27/08/2025 and line 412 jumps to 08/09/2025. They were
+	// reconstructed from the Aviatron aircraft-logbook screens, whose airframe
+	// counter chains exactly across all three (2663:11 -> 2663:51 -> 2664:39
+	// -> 2665:31), and appended as LATE ENTRIES at the end of Book 3 rather
+	// than inserted in date order, which is how the paper book records them
+	// too -- see the decision in claude-docs/drift.md.
+	//
+	// This is the ONE sanctioned exception to the frozen end-of-book-3
+	// cumulatives: those figures were frozen against *corrections*, and this
+	// is missing data, not a correction. The owner lifted the freeze
+	// explicitly on 2026-08-01 for these three rows only. Deltas below.
 	want := csvbook.Totals{
-		Flights: 1293,
-		Total:   hm(1219, 35),
-		PIC:     hm(1053, 3),
-		Dual:    hm(166, 32),
+		Flights: 1296,
+		// +2:35 -- the three flights' block times, 0:45 + 0:53 + 0:57.
+		// Aviatron records AIR time (0:40/0:48/0:52); the owner ruled +5 min
+		// per flight for block, and this book totals on block time (only one
+		// row in 479 has Block_Time != Total_Time, and it is a flagged
+		// discrepancy).
+		Total: hm(1222, 10),
+		// +1:42 -- flights 1 and 3 only. The middle flight is the SEP/IR
+		// revalidation check ride: Tarhanen was PIC, so it logs dual, not PIC.
+		PIC: hm(1054, 45),
+		// +0:53 -- the check flight, dual in full.
+		Dual: hm(167, 25),
 		// 107:05, was 107:14. Book 1 line 28 (28/09/2011, OH-COF) logged 1:21 of
 		// instrument on a 1:12 flight -- more instrument than flight time. The
 		// owner ruled on 2026-08-01 that 1:12 is the reading, and the CSV was
 		// corrected. Delta -0:09, and it moves no cumulative: the
 		// Cumulative_Instrument column always advanced by 1:12, which is exactly
 		// why the row was the outlier rather than the column.
-		Instrument: hm(107, 5),
+		//
+		// +0:53 on 2026-08-01: the 28/08/2025 SEP/IR revalidation check flight,
+		// logged instrument in full at the owner's ruling. 107:05 -> 107:58.
+		Instrument: hm(107, 58),
 		// Night was 16:47 until 2026-08-01, against 22:45 inked at page 62.
 		// The owner then read the paper's Yolentoaika column back and
 		// photographed seven Book-1 spreads; its Siirto figures chain
@@ -79,9 +104,12 @@ func TestRealBooksProduceTheExpectedTotals(t *testing.T) {
 		// has frozen the end-of-book-3 cumulatives (claude-docs/resume.md); this
 		// figure must not move again. Do not edit it to make a test pass.
 		Night:      hm(22, 45),
+		// Instructor and SEPSea are unmoved by the 28/08/2025 late entries:
+		// nobody was instructed, and OH-ESR is an SR20 landplane.
 		Instructor: hm(189, 41),
 		SEPSea:     hm(407, 39),
-		Landings:   3439,
+		// +5 -- 1 + 1 + 3.
+		Landings: 3444,
 	}
 	if lb.Totals != want {
 		t.Errorf("totals mismatch\n got %s\nwant %s", show(lb.Totals), show(want))

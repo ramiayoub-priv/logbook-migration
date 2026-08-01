@@ -22,8 +22,9 @@ transcribed from paper logbooks by the *other* effort in this repo (`claude-docs
 not replaced by the app). Read `CLAUDE.md` §0 first — those rules are non-negotiable and were written
 for this work specifically.
 
-**Status: the application is feature-complete for v1 and green — backend, API, PDFs and frontend.
-Nothing is deployed. Deployment (Task 7) is the next task.**
+**Status: feature-complete for v1 and green. Deployment (Task 7) is HALF DONE and is the live task —
+the backend runs on the box, Apache has not been switched on, so `ayoub.fi/logbook` is still 404 to
+the world. Read "Where the deploy actually stands" below before touching anything.**
 
 ### Done (2026-08-01)
 - **Task 2** — `app/backend/` Go module, `internal/hhmm` and `internal/timeutil`. Both 100%.
@@ -123,13 +124,17 @@ command.
 
 ### The numbers the import produces — memorise these
 ```
-flights 1293 | total 1219:35 | pic 1053:03 | dual 166:32 | instrument 107:05
-night 22:45  | instructor 189:41 | seaplane 407:39 | landings 3439 | aircraft 38
+flights 1296 | total 1222:10 | pic 1054:45 | dual 167:25 | instrument 107:58
+night 22:45  | instructor 189:41 | seaplane 407:39 | landings 3444 | aircraft 38
 discrepancies 61 | EASA export 87 pages
 ```
-**These equal the figures inked at paper page 62, which the owner has frozen** — no change,
-migration or app, may move them (`claude-docs/resume.md`). All seven `Cumulative_*` series reconcile
-with **zero breaks**.
+All seven `Cumulative_*` series reconcile with **zero breaks**.
+
+⚠ **These moved on 2026-08-01** and the previous values are still all over the git history: they
+were `1293 / 1219:35 / 1053:03 / 166:32 / 107:05 / 3439`. Three flights of **28/08/2025** were
+missing from `logbook_3.csv` entirely — see the decision log below and `claude-docs/drift.md`.
+Outside that one owner-ruled exception the figures remain **frozen**: no change, migration or app,
+may move them (`claude-docs/resume.md`).
 
 Asserted in `internal/csvbook/realdata_test.go` and again, by a different code path, in
 `internal/stats/realdata_test.go`. **If one of them changes unexpectedly, the import is wrong until
@@ -180,22 +185,49 @@ GET    /export/statistics.pdf  ?from&to private
 **Operator CLI** (no HTTP route exists for any of it, by design):
 `./dist/server createuser|passwd|users|disable|enable <name> -db <path>`.
 
-### Next task: #7 (second half), deploy to `ayoub.fi/logbook`
-`docs/deploy.md` has the full shared-tenant map, the Apache stanza, the systemd unit and the
-rollback. Nothing in the app blocks it. **The PWA half is done**: manifest, icons and
-`public/sw.js`, which caches the shell so the app opens at an airfield with no signal and never
-caches a logbook response. Offline *writes* remain out of v1 scope.
+### Where the deploy actually stands (2026-08-01)
 
-What deployment still needs:
+**Before touching the box, re-read `CLAUDE.md` §0.3.** It is shared with the owner's other sites;
+changes to Apache, ufw, systemd or Docker are additive, reversible, and verified before the first
+connection is closed. **Never risk port 22.** Nothing in this deploy touches ufw, sshd or Docker —
+the backend binds `127.0.0.1:9002`, so no firewall change is needed at any step.
 
-- `LOGBOOK_HOLDER` set in the unit, or the exported PDFs carry no name. `-origin` must be
-  `https://ayoub.fi`, and `-insecure-cookie` must **never** appear in the unit.
-- **`sw.js` served `Cache-Control: no-cache`** — a stale worker outlives a deploy and keeps serving
-  the old bundle. The stanza is in `docs/deploy.md`.
-- The frontend build rsynced to `/var/www/logbook/`, the binary to `/opt/logbook/`.
-- **Before touching the box, re-read `CLAUDE.md` §0.3.** It is shared with the owner's other sites;
-  changes to Apache, ufw, systemd or Docker are additive, reversible, and verified from a second
-  connection before the first is closed. **Never risk port 22.**
+**`rami` has no passwordless sudo on the box.** Every privileged step is a command the *owner* runs;
+a session cannot do it unattended. Read-only survey over SSH works fine with the existing key.
+
+✅ **Done and verified live:**
+- `logbook` system user; `/opt/logbook`, `/var/lib/logbook` (0750), `/var/www/logbook`.
+- The static binary at `/opt/logbook/logbook-server`, cross-compiled `CGO_ENABLED=0`.
+- `logbook.service` **enabled and running**, 21.4 MB RSS against a 192 MB `MemoryMax`.
+- Health `200` returning exactly `{"status":"ok"}`, and `/flights` without a session `401` — default
+  deny survived the deploy.
+- The frontend build rsynced to `/var/www/logbook/` (`rami` owns it, so no sudo), assets carrying
+  the `/logbook/` base.
+
+⏳ **Not done — `ayoub.fi/logbook` is 404 until these land:**
+1. **The database on the box is STALE.** It predates the 28/08/2025 late entries, so it holds 1293
+   flights, not 1296. Rebuild (`logbookctl import` + `verify`), rsync, restart. It must be replaced
+   *before* the app is reachable, and `install-backend.sh` deliberately **refuses to overwrite an
+   existing database** — move it aside consciously.
+2. **Apache.** `a2enmod headers` (it is available but off — the `sw.js` no-cache rule needs it), then
+   the additive block from `docs/deploy.md`, `apache2ctl configtest`, `systemctl reload apache2`.
+3. **No user account exists yet** (`users` reports none). Create it interactively; the password must
+   never pass through a chat session or a file.
+
+⚠ **`docs/deploy.md` said `ProxyPass /logbook/api/ → 127.0.0.1:9002/api/` and that was WRONG** — the
+server mounts routes at the full public path (`basePath = "/logbook/api"`), so the backend 404s
+`/api/health`. Fixed in the doc on 2026-08-01. The install script's health check caught it *before*
+Apache was ever reloaded, which is the argument for phasing the deploy: the backend was proven on
+`127.0.0.1` while the site was still untouched.
+
+The staging directory `/home/rami/logbook-deploy/` on the box holds the binary, the database, the
+unit, the Apache snippet and two idempotent install scripts (`install-backend.sh`,
+`install-apache.sh`). `install-apache.sh` backs the vhost up to `/root/`, runs `configtest` **before**
+any reload, restores the backup automatically if it fails, and then curls all seven of the owner's
+other sites. Baseline before the change: all seven **200**, `/logbook/` **404**.
+
+**The PWA half is done**: manifest, icons and `public/sw.js`, which caches the shell so the app opens
+at an airfield with no signal and never caches a logbook response. Offline *writes* stay out of v1.
 
 ### Open questions awaiting the owner
 - Is the `kraken-predictor-python-2` container on `:8000` still wanted? Publicly exposed, up 2 years,
@@ -207,8 +239,15 @@ What deployment still needs:
   only thing standing between the app and a fully verified night-landing figure.
 
 ### Traps already paid for — do not rediscover these
-- **It is 1293 flights, not 1295.** 1295 is the CSV *row* count; Books 2 and 3 each open with the
+- **It is 1296 flights, not 1298.** 1298 is the CSV *row* count; Books 2 and 3 each open with the
   previous book's final row as a cumulative seed, and those two are skipped.
+- **A zero-break cumulative reconciliation does NOT mean the data is complete.** All seven series
+  reconciled perfectly while three flights were missing from 28/08/2025, because absent rows are
+  invisible to a consistency check. Only the owner, or an external record with a continuous counter,
+  can find an omission.
+- **This book totals on BLOCK time.** `Total_Time` == `Block_Time` on 478 of Book 3's 479 rows; the
+  single exception (08/09/2025) is a flagged discrepancy, not a pattern. Do not read it as one —
+  that misreading produced a wrong delta once already.
 - **A hand-entered flight lives in a different `seq` band (1 000 000+) and carries `source_book = 0`.**
   Both are load-bearing: the importer keys on `source_book` to know which rows it may delete, and
   the bands are disjoint because the importer renumbers 1..N on every run. See `docs/data-model.md`.
@@ -285,13 +324,49 @@ day · landings night.
 | 5 | Four frontend pages (mobile-first) | **done** 2026-08-01 — plus the auth UI. Six pages: Flights, Statistics, New flight, Export, Review, Devices, behind a login gate. React + TS + Vite, `app/frontend/`. 43 frontend tests green. Verified in a real browser against the live API, including logging a flight end to end. |
 | 5b | `POST /flights` — the write path | **done** 2026-08-01 — `internal/entry` (validation, pure, 100%), `store.AddFlight`, the hand-entered `seq` band, the duplicate guard, and the import scoping that stops a re-import deleting app-entered flights. |
 | 6 | Three PDF exports (EASA clone + table + stats) | **done** 2026-08-01 — `internal/pdfmodel` (the cells and totals, pure, 100%) + `internal/pdfbook` (rendering, `go-pdf/fpdf`). Live against the real logbook: **87 EASA pages**, totals block reconciling, Finnish place names intact. |
-| 7 | PWA + deploy to `ayoub.fi/logbook` | **PWA done** 2026-08-01 — manifest, icons, and a hand-written service worker that caches the shell and **never** an API response, proven in a browser with the HTTP cache disabled. **Deploy not started** and needs the owner's go-ahead: it touches the shared box. |
+| 7 | PWA + deploy to `ayoub.fi/logbook` | **PWA done** 2026-08-01 — manifest, icons, and a hand-written service worker that caches the shell and **never** an API response, proven in a browser with the HTTP cache disabled. **Deploy HALF DONE** 2026-08-01 — backend, binary, systemd unit and frontend assets are on the box and the service is running and healthy on `127.0.0.1:9002`; **Apache is not switched on, the database there is stale (1293, not 1296), and no user account exists**, so the site is still 404. See "Where the deploy actually stands". |
 | 8 | Backfill landings day/night for the **30** night rows | not started — all 30 are flagged `landings_unverified` in the DB, listed by `logbookctl import`, and surfaced by the API as `landings_unverified` in the stats summary. `claude-docs/drift.md` has the analysis. The p.62 split recomputes to **68 night / 3326 day** (the sum 3394 is unchanged); six of those 68 are estimates from three multi-landing partial-night rows, range 65–72. |
 | 9 | Rule on the open source-data problems | **mostly closed** 2026-08-01 — two of the three ruled and fixed. One item left (`logbook_2_final.csv` lines 89–90) and it needs the physical page; it moves no total. See the ⏸ block at the top. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-01 — Three flights were missing, and the frozen totals were unfrozen once to add them
+
+Found by the owner mid-deployment, which is why the deploy is staged in phases: the backend was
+running but Apache had not yet been switched on, so the stale database never became reachable.
+
+`logbook_3.csv` had **no 28/08/2025 rows at all** — line 411 is 27/08/2025, line 412 is 08/09/2025.
+Three OH-ESR flights had never been written down, in the CSV or on paper, and one of them is a
+**SEP/IR revalidation check flight**. Full reconstruction, sourcing and deltas in
+`claude-docs/drift.md`; the three things worth arguing here are these.
+
+**A zero-break reconciliation proved nothing about completeness.** All seven `Cumulative_*` series
+reconciled row by row over 1293 rows with zero breaks — *while three flights were missing* — because
+a consistency check compares the rows that exist to a column those same rows produced. An absent row
+is absent from both sides. This is the structural blind spot of every check this project has, and no
+amount of internal verification closes it; it took the owner and an external record with a continuous
+airframe counter (2663:11 → 2663:51 → 2664:39 → 2665:31, each step exact) to find and bound it.
+
+**The freeze governs corrections, not omissions.** The owner froze the end-of-book-3 cumulatives so
+that nobody would keep re-litigating figures that now match the paper. Applying that to *missing
+flights* would have inverted its purpose — it would have made the record permanently wrong in order
+to keep it stable, and suppressed a licence-relevant currency item. So the freeze was lifted, by the
+owner, explicitly, for these three rows only, and resumes at the new figures. Recorded because the
+distinction is the whole reason the rule survives contact with new data.
+
+**Late entries, not chronological insertion.** They append at the end of Book 3 rather than slotting
+into August 2025, on paper and in the CSV alike. Inserting them in date order would mean re-inking
+carried-forward totals on ~5 already-written pages; a dated late entry changes nothing already
+written and reads as what it is. The CSV follows the paper because the paper is authoritative, and
+the schema already orders on `seq` rather than `flight_date` — the books hold 21 out-of-date-order
+rows now, up from 18.
+
+The guard tests did their job loudly: **six assertions across four packages** went red on the CSV
+change (`csvbook`, `stats`, `store`, `cmd/logbookctl`), including the EASA pagination geometry. Each
+constant was moved only after the importer's independent recomputation confirmed the delta — never
+the other way round.
 
 ### 2026-08-01 — Task 5b: a flight typed into the app must survive the next import
 

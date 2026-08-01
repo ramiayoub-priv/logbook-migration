@@ -92,8 +92,8 @@ Added **additively** to the existing `ayoub.fi-le-ssl.conf` vhost. It must not t
 
 ```apache
 # --- logbook ---
-ProxyPass        /logbook/api/  http://127.0.0.1:9002/api/
-ProxyPassReverse /logbook/api/  http://127.0.0.1:9002/api/
+ProxyPass        /logbook/api/  http://127.0.0.1:9002/logbook/api/
+ProxyPassReverse /logbook/api/  http://127.0.0.1:9002/logbook/api/
 
 Alias /logbook /var/www/logbook
 <Directory /var/www/logbook>
@@ -108,6 +108,12 @@ Alias /logbook /var/www/logbook
 ```
 
 `ProxyPass` is declared before `Alias` so the API path wins over the static alias.
+
+⚠ **The proxy does NOT rewrite the path.** The server mounts its routes at the *full public path* —
+`basePath = "/logbook/api"` in `cmd/server/server.go` — so the backend answers `/logbook/api/health`
+and **404s `/api/health`**. This file said `.../9002/api/` until 2026-08-01 and it was wrong; the
+health check in the install script caught it before Apache was ever reloaded. Both halves of every
+`ProxyPass` line carry the same prefix.
 
 **Always validate before reloading**: `apache2ctl configtest`, then `systemctl reload apache2` (reload,
 not restart — it does not drop the other sites' connections). If configtest fails, fix it before
