@@ -1,31 +1,32 @@
-# Resume Here — Current State
+# Resume Here — the migration's final state
 
-**Read this first every fresh session.** It is the single source of truth for where we are.
+# ⛔ THIS EFFORT IS CLOSED — 2026-08-02
 
-> ⚠ **This repo now holds a second effort.** As of 2026-08-01 we are also building the **logbook
-> application** (`ayoub.fi/logbook`) in **`app/`** — its tracker is **`app/APP.md`**. This file
-> (`claude-docs/`) remains the source of truth for **the CSV migration only**. The non-negotiable
-> rules that govern both live in the repo root **`CLAUDE.md` §0** — read those first.
+> **Owner ruling, verbatim: *"we will no longer touch historical data. This is the truth now. From
+> now on the focus is on developing the logbook app."***
 >
-> **App status (2026-08-01): the whole backend is done** — schema, verified importer, calculation
-> core, API and authentication. Nothing is deployed and there is no frontend yet. **If you are here
-> to do migration work, you do not need any of it** — except one thing:
+> **Nothing in this file is a task.** There is no next page, no next batch, no next checkpoint.
+> Every photographed spread of every book — `logbook-3/IMG_6007`–`IMG_6037`, book pages 1–62 — is
+> transcribed, verified and reconciled, and the three CSVs are now **read-only inputs to the app**.
+> Do not edit a cell, append a row, re-transcribe a page or close a known discrepancy. The hard
+> rule is **`CLAUDE.md` §0.8**; read that before anything here.
 >
-> ```bash
-> cd app/backend && go test -count=1 ./...   # after ANY append to logbook_3.csv
-> ```
+> **Where the work is now: `app/APP.md`.** New flights are entered through the application
+> (`POST /flights`), which is the only way the record grows from here.
 >
-> The backend asserts the exact totals and discrepancy counts of these CSVs, so **appending flights
-> will make it fail — that is the test doing its job.** Confirm the deltas against `drift.md`, then
-> update the constants in `internal/csvbook/realdata_test.go` and
-> `internal/stats/realdata_test.go` **in the same commit as the CSV change**, stating the delta.
-> Never adjust a constant first and reconcile afterwards. ⚠ `go test` caches: without `-count=1` a
-> green run can be stale, which has already hidden five real failures once.
+> **This file remains valuable as a record**: it is why the numbers are what they are, and the
+> conventions it documents — the `Z` suffix, `Total_Time` as the book's totalling column, the paper
+> being authoritative — are load-bearing for the app's importer and its time conversion.
 >
-> The two efforts share the dataset: the app imports `logbook_1_final.csv`, `logbook_2_final.csv`
-> and `logbook_3.csv`. So the migration's conventions — the `Z` suffix, `Total_Time` being the
-> figure the book totals on, the paper being authoritative — are now load-bearing for the app too.
-> **The migration is still the way flights get digitized; the app does not replace it.**
+> Two things stay open **permanently and visibly**, because closing them would mean touching the
+> data: the **30 `landings_unverified`** rows (flagged in the DB and named on the statistics page)
+> and the **`logbook_2_final.csv` lines 89–90** date ambiguity, which moves no total and needs a
+> physical page nobody is going to re-read. Surface them; never offer to finish them.
+>
+> ⚠ **The guard tests no longer have a legitimate reason to fail.** `internal/csvbook/realdata_test.go`
+> and `internal/stats/realdata_test.go` used to go red whenever `logbook_3.csv` grew. **It will not
+> grow again.** A change in any of those figures is now a defect, and the fix is never to update the
+> constant. (`go test` still caches — use `-count=1` when in doubt.)
 >
 > ## ✅ STATE OF THE DATA IN ONE TABLE (2026-08-01) — read this before re-verifying anything
 >
@@ -187,7 +188,7 @@ then do we append to `logbook_3.csv` with recomputed cumulative columns.
 `python3 -c "from PIL import Image; Image.open('logbook-3/IMG_6007.JPEG').rotate(-90, expand=True).save('/tmp/r.jpg')"`.
 The old per-image files in `logbook-2-csv/` are stale ollama output — untrusted. See `workflow.md`.
 
-## Current checkpoint — BOOK 3 IN PROGRESS (EASA logbook)
+## The transcription log — BOOK 3 COMPLETE (EASA logbook) *(closed 2026-08-02; kept as a record)*
 - **Book 2 is COMPLETE & finalized** → `logbook_2_final.csv` (421 rows, do not edit; seed for Book 3).
 - **Book 3 started 2026-07-31.** Source photos live in **`logbook-3/IMG_6007–6037.JPEG`** (31 images,
   extracted from `logbook3_photos.zip`; each image is one two-page EASA spread; **rotate CW to read**).

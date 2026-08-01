@@ -1,11 +1,14 @@
 # CLAUDE.md
 
-This repo holds **two efforts** that share one dataset:
+This repo holds **two efforts** that share one dataset. As of **2026-08-02** only one of them is
+live work:
 
-1. **The migration** — digitizing a series of paper pilot logbooks into CSV. Docs: **`claude-docs/`**.
-2. **The app** — a logbook web application served at **`ayoub.fi/logbook`**. Docs: **`app/APP.md`**.
+1. **The migration** — digitizing the paper pilot logbooks into CSV. **COMPLETE AND CLOSED.**
+   Docs: **`claude-docs/`**, now a historical record. See §0.9 below — this is a hard rule.
+2. **The app** — the logbook web application at **`ayoub.fi/logbook`**. **The only active effort.**
+   Docs: **`app/APP.md`**.
 
-Both are live work. Read the rules below every session, then the doc set for whichever you are touching.
+Read the rules below every session, then **`app/APP.md`**.
 
 ---
 
@@ -82,34 +85,63 @@ Both are live work. Read the rules below every session, then the doc set for whi
    row. Prefer doing the work inline. Only delegate when it genuinely needs breadth. **Do not spawn
    subagents or workflows unless the user asks for them.**
 
-8. **NUDGE THE USER TO START A FRESH SESSION WHEN THIS ONE GETS LONG — and run the handoff first.**
+8. **THE HISTORICAL DATA IS CLOSED. DO NOT TOUCH IT.** *(Owner ruling, 2026-08-02, verbatim: "we
+   will no longer touch historical data. This is the truth now. From now on the focus is on
+   developing the logbook app.")*
+   - **The three CSVs are frozen artefacts.** `logbook_1_final.csv`, `logbook_2_final.csv` and
+     `logbook_3.csv` are **read-only inputs to the app**. Do not edit a cell, do not append a row,
+     do not re-transcribe a page, do not "improve" a value — not to fix a typo, not to close a
+     known discrepancy, not because a new photograph turned up. Every paper page that exists has
+     been transcribed (`logbook-3/IMG_6007`–`IMG_6037`, book pages 1–62); there is no backlog.
+   - **New flights are entered in the app**, through `POST /flights`. That is now the only way the
+     record grows. It lands with `source_book = 0` in its own `seq` band and survives everything.
+   - **The numbers are final, and the tests now mean something stronger.** 1296 flights, total
+     1222:10, PIC 1054:45, dual 167:25, instrument 107:58, night 22:45, instructor 189:41, seaplane
+     407:39, landings 3444, 38 aircraft, 61 discrepancies. `realdata_test.go` used to have one
+     legitimate reason to go red — the CSVs growing. **That reason is gone. A change in any of
+     those figures is now a defect, full stop**, and the fix is never to update the constant.
+   - **The open data questions stay open, permanently, and stay visible.** The 30
+     `landings_unverified` rows keep their flag and the statistics page keeps saying so; the
+     `logbook_2_final.csv` lines 89–90 date ambiguity stands unresolved. Surfacing them is honest;
+     closing them would require touching the data. Do not offer to finish them.
+   - `claude-docs/` becomes a **historical record**: read it to understand why the data is what it
+     is, never as a task list.
+
+9. **NUDGE THE USER TO START A FRESH SESSION WHEN THIS ONE GETS LONG — and run the handoff first.**
    Say it out loud; don't wait to be asked. Finish the current unit of work, then: update `app/APP.md`
    (task board honest + a dated decision-log entry), rewrite the "NEXT SESSION STARTS HERE" block as a
    cold-start brief assuming zero memory of the conversation, then commit **and push**.
 
 ---
 
-## 1. The migration (`claude-docs/`)
+## 1. The migration (`claude-docs/`) — **CLOSED 2026-08-02**
 
-Every fresh session touching the migration, **read `claude-docs/` first**.
+**This effort is finished. Nothing below is a task.** Every photographed spread of every book is
+transcribed, verified and reconciled, and the owner has closed the dataset (rule §0.8). What follows
+is kept because the app depends on these conventions and because `drift.md` is the audit trail
+behind every number in the record — read it to understand the data, never to change it.
 
-- **`claude-docs/resume.md`** — START HERE. Current checkpoint, what's next, project overview.
-- **`claude-docs/workflow.md`** — how to process one logbook page, step by step.
-- **`claude-docs/reference.md`** — CSV schema, seaplane regs, aircraft regs, sanity checks.
-- **`claude-docs/drift.md`** — corrections log and known discrepancies.
+If you are here because something looks wrong in the historical data: **surface it to the owner and
+stop.** Do not prepare a fix.
 
-### The essentials
-- **`logbook_3.csv`** is the active file we are building (Book 3, a newer **EASA-format** logbook).
-  `logbook_1_final.csv` and `logbook_2_final.csv` are completed Books 1 & 2 (do not edit;
-  `logbook_2_final.csv` seeds Book 3's cumulatives). Same 26-col schema across all books.
-- **Claude transcribes the page images directly** (`logbook-3/IMG_XXXX.JPEG`, **rotate CW** — they're
-  sideways); **the user verifies** before anything is appended. (No more ollama.)
-- **Hybrid-batch pace (user-approved):** transcribe up to **3 pages per pass**, cross-check each
-  with `logbook_tools.py`, and present a report that greenlights clean pages and surfaces only the
-  ambiguous/flagged rows. The user still verifies the flags before append — never fully autonomous.
-- After appending, **update the checkpoint in `resume.md`** and log any corrections in `drift.md`.
+- **`claude-docs/resume.md`** — the final state of the data, and the rulings that produced it.
+- **`claude-docs/reference.md`** — CSV schema, seaplane regs, aircraft regs. **Still load-bearing
+  for the app**: the importer reads these files and these conventions.
+- **`claude-docs/drift.md`** — the corrections log. 106 KB of why the numbers are what they are.
+- **`claude-docs/workflow.md`** — how a page *was* transcribed. Of historical interest only.
 
-Details in `claude-docs/`. When in doubt, that directory wins over this summary.
+### What survived the closure, because the app depends on it
+- **Three CSVs, 26 columns, 1298 rows → 1296 flights** (Books 2 and 3 each open with the previous
+  book's final row as a cumulative seed; those two are skipped). **Read-only.**
+- **A `Z` suffix means the time is already UTC**; its absence means Helsinki local. The app's single
+  conversion authority is built on exactly this.
+- **`Total_Time` is the figure the book totals on**, and it is block time on 478 of Book 3's 479
+  rows.
+- **The paper was authoritative.** Electronic cross-references (Aviatron, laskukierros) were checks,
+  never sources. That question is now settled for good.
+
+Details in `claude-docs/`. When in doubt about *why the data is what it is*, that directory wins.
+When it reads like an instruction to do more transcription, rule §0.8 wins.
 
 ---
 

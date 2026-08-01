@@ -17,10 +17,20 @@ Rules live in the repo root **`CLAUDE.md` §0** — read those first, they are n
 *Assume you remember nothing. This block is the whole brief.*
 
 **What this is.** A private, mobile-first pilot logbook web app for one user (the repo owner, a
-Finnish pilot), to be served at `ayoub.fi/logbook`. It replaces three CSVs in this repo that were
-transcribed from paper logbooks by the *other* effort in this repo (`claude-docs/`, still ongoing and
-not replaced by the app). Read `CLAUDE.md` §0 first — those rules are non-negotiable and were written
-for this work specifically.
+Finnish pilot), live at `https://ayoub.fi/logbook`. It holds 1296 flights transcribed from three
+paper logbooks, computes every total on demand, and exports an EASA-format PDF for the authority.
+Read `CLAUDE.md` §0 first — those rules are non-negotiable and were written for this work.
+
+**⛔ FIRST, THE RULING THAT CHANGES WHAT YOU MAY DO (2026-08-02).** The transcription effort in
+`claude-docs/` is **CLOSED**. The three CSVs are **read-only inputs**: do not edit a cell, append a
+row, re-transcribe a page or close a known discrepancy — see `CLAUDE.md` §0.8. Every paper page that
+exists is already transcribed; there is no backlog. **New flights are entered in the app**, and
+`app/` is the only active effort. If the old migration docs read like a task list, they are stale
+and the rule wins.
+
+**Where to start.** This file, then `docs/data-model.md` / `docs/security.md` / `docs/deploy.md` as
+the work requires. The single highest-value open item is **Task 10, edit/delete a flight** — argued
+in the 2026-08-02 decision-log entry, and it needs the owner's ruling before any code is written.
 
 **Status: feature-complete for v1, green, and LIVE at `https://ayoub.fi/logbook` — and as of
 2026-08-02 the box is LEVEL with the repo: current binary (md5-matched), current frontend, the three
@@ -151,35 +161,33 @@ discrepancies 61 | EASA export 87 pages
 ```
 All seven `Cumulative_*` series reconcile with **zero breaks**.
 
-⚠ **These moved on 2026-08-01** and the previous values are still all over the git history: they
-were `1293 / 1219:35 / 1053:03 / 166:32 / 107:05 / 3439`. Three flights of **28/08/2025** were
-missing from `logbook_3.csv` entirely — see the decision log below and `claude-docs/drift.md`.
-Outside that one owner-ruled exception the figures remain **frozen**: no change, migration or app,
-may move them (`claude-docs/resume.md`).
+⚠ **These moved once, on 2026-08-01**, and the previous values are still all over the git history:
+they were `1293 / 1219:35 / 1053:03 / 166:32 / 107:05 / 3439`. Three flights of **28/08/2025** were
+missing from `logbook_3.csv` entirely — see the decision log and `claude-docs/drift.md`. **They will
+not move again**: the dataset was closed on 2026-08-02 (`CLAUDE.md` §0.8).
 
 Asserted in `internal/csvbook/realdata_test.go` and again, by a different code path, in
 `internal/stats/realdata_test.go`. **If one of them changes unexpectedly, the import is wrong until
 proven otherwise — do not adjust the expectation to make the test pass.**
 
-⚠ **The one legitimate reason for those tests to fail: `logbook_3.csv` is still growing.** Book 3 is
-**not finished**. When it grows, `realdata_test.go` fails — that is the test doing its job. The
-correct response is:
+⚠ **These tests no longer have ANY legitimate reason to fail.** Until 2026-08-02 there was one —
+`logbook_3.csv` growing as pages were transcribed — and this file carried a procedure for updating
+the constants when it did. **That procedure is void.** The CSVs are closed, so a red
+`realdata_test.go` now means the importer, the store or the stats code has broken, and the fix is
+never to touch the expectation. If you find yourself editing a number in `realdata_test.go`, stop
+and re-read `CLAUDE.md` §0.8.
 
-1. Run `go run ./cmd/logbookctl import -dry-run -csv ../..` and read the report.
-2. Confirm the new totals are the *expected* deltas — `drift.md` records a per-page Δ for every
-   batch, so cross-check against that, not against a feeling.
-3. Only then update the constants, **in the same commit as the CSV change**, with the delta stated
-   in the commit message.
+### ⛔ THE DATA IS CLOSED — these items stay open forever, and that is deliberate
+Do **not** re-validate the books on spec, and do **not** offer to finish these. Closing either one
+would mean touching the historical data (`CLAUDE.md` §0.8). They are surfaced in the UI because a
+record that hides what it has not verified is worse than one that says so.
 
-Never update a constant first and reconcile afterwards.
-
-### ⏸ THE DATA IS RECONCILED — one paper-side item is left, and it is not an app task
-`claude-docs/resume.md` is the authority; do **not** re-validate the books on spec.
-
+- **The 30 `landings_unverified` rows.** Flagged in the DB, counted by the API, asterisked in the
+  table and named in a paragraph on the statistics page. **Keep every one of those signals.**
 - **`logbook_2_final.csv` lines 89–90** (`04.05.2018` ×2), dated `DD.MM.YYYY`. Affects **row order
-  only**, moves no total, and **no electronic source can settle it**. Needs the physical page.
-- Also paper-side: the **p.62 inked landing split** `59 night / 3335 day` recomputes to
-  **`68 / 3326`**. The landing *sum* 3394 never moved. **Correct the paper, not the CSV.**
+  only**, moves no total, and no electronic source can settle it.
+- Paper-side only: the **p.62 inked landing split** `59 night / 3335 day` recomputes to **`68 /
+  3326`** (the sum 3394 never moved). Nothing to do — the CSV was always right.
 
 ### The API surface, as built
 All under **`/logbook/api/`** — not `/api/`, which on `ayoub.fi` is taken by a stale transit proxy.
@@ -322,13 +330,33 @@ other sites. Baseline before the change: all seven **200**, `/logbook/` **404**.
 at an airfield with no signal and never caches a logbook response. Offline *writes* stay out of v1.
 
 ### Open questions awaiting the owner
+
+**The one that blocks work — Task 10, editing a flight.** The app is now the only way the record
+grows, and a flight typed on a phone cannot currently be corrected without opening SQLite. It needs
+a ruling before code, because on a legal record the obvious implementation is the wrong one:
+
+- **Correct in place, or append a correction?** An in-place `UPDATE` makes a licence total change
+  with no trace of what it was — the drift this project spent 106 KB of `drift.md` on. The
+  alternative is a superseded row, kept and excluded from totals, which is auditable but doubles the
+  work of every read path.
+- **What may be edited?** A typo in a remark is not a typo in `total_time`. A field-by-field answer
+  is possible; a blanket one is what gets regretted.
+- **Delete, or void?** Real deletion of a flight that was never flown is legitimate; so is the fear
+  of a fat-fingered swipe on a phone. The `source_book = 0` band means app-entered rows are
+  distinguishable from paper ones — a delete restricted to them is a much smaller decision.
+- Whatever is chosen, **the imported 1296 stay untouchable** (`CLAUDE.md` §0.8).
+
+**Security and the box** (unchanged, all pre-dating today):
+- **Rotate the `rami` sudo password.** It was pasted into a chat session on 2026-08-01 and must be
+  treated as compromised. Tracked in `docs/security.md`. **This is the oldest open item.**
 - Is the `kraken-predictor-python-2` container on `:8000` still wanted? Publicly exposed, up 2 years,
   and the box's largest memory consumer (~759 MB / 38%).
 - Prune the stale ufw rules for `30814` and `19132` (nothing listens on either)?
-- **Rotate the `rami` sudo password** once deployment is done — it was pasted into a chat session on
-  2026-08-01 and must be treated as compromised. Tracked in `docs/security.md`.
-- Task 8 (backfill the 30 inferred landing splits from the page images) is still open and is the
-  only thing standing between the app and a fully verified night-landing figure.
+
+**Smaller app items, none blocking:** offline *writes* are still out of scope (§2); the new-flight
+form's four-digit layout has been proven in tests and on the owner's phone but never inspected in a
+desktop browser at 390px; and `MemoryMax` is still set from an estimate — the real peak during a
+full-logbook PDF export has not been measured (`docs/deploy.md` asks for it).
 
 ### Traps already paid for — do not rediscover these
 - **A cache fix cannot reach a device that already has the old service worker.** Right after the
@@ -424,12 +452,52 @@ day · landings night.
 | 5b | `POST /flights` — the write path | **done** 2026-08-01 — `internal/entry` (validation, pure, 100%), `store.AddFlight`, the hand-entered `seq` band, the duplicate guard, and the import scoping that stops a re-import deleting app-entered flights. |
 | 6 | Three PDF exports (EASA clone + table + stats) | **done** 2026-08-01 — `internal/pdfmodel` (the cells and totals, pure, 100%) + `internal/pdfbook` (rendering, `go-pdf/fpdf`). Live against the real logbook: **87 EASA pages**, totals block reconciling, Finnish place names intact. |
 | 7 | PWA + deploy to `ayoub.fi/logbook` | **PWA done** 2026-08-01 — manifest, icons, and a hand-written service worker that caches the shell and **never** an API response, proven in a browser with the HTTP cache disabled; the shell is now fetched `no-store` and a new worker reloads the page (`src/swupdate.ts`). **Deployed and LIVE** 2026-08-01 at `https://ayoub.fi/logbook` — service user, binary, systemd unit, frontend, the additive Apache block and the account are all in place, and the owner's other seven sites still answer 200. The deploy scripts now live in **`app/deploy/`** instead of only on the box. **NOT finished**: the box runs an older binary and a **1293**-flight database while the repo is at **1296** (the three 28/08/2025 flights). Current binaries and scripts are staged on the box and md5-matched; two owner `sudo` commands remain. See the runbook in "Where the deploy actually stands". |
-| 8 | Backfill landings day/night for the **30** night rows | not started — all 30 are flagged `landings_unverified` in the DB, listed by `logbookctl import`, and surfaced by the API as `landings_unverified` in the stats summary. `claude-docs/drift.md` has the analysis. The p.62 split recomputes to **68 night / 3326 day** (the sum 3394 is unchanged); six of those 68 are estimates from three multi-landing partial-night rows, range 65–72. |
-| 9 | Rule on the open source-data problems | **mostly closed** 2026-08-01 — two of the three ruled and fixed. One item left (`logbook_2_final.csv` lines 89–90) and it needs the physical page; it moves no total. See the ⏸ block at the top. |
+| 8 | Backfill landings day/night for the **30** night rows | **WILL NOT DO** — closed 2026-08-02 by the owner's ruling that historical data is not to be touched (`CLAUDE.md` §0.8). The 30 rows keep their `landings_unverified` flag **permanently**: the API reports the count, the table asterisks the row and the statistics page names it in a paragraph. That is the honest state and it must not be quietly dropped to make a page look tidier. |
+| 9 | Rule on the open source-data problems | **closed** 2026-08-02 — two of three were ruled and fixed on 2026-08-01. The third (`logbook_2_final.csv` lines 89–90, `04.05.2018` ×2) stands **unresolved forever**: it affects row order only, moves no total, and settling it needs a physical page that will not be re-read. Recorded, not fixed. |
+| 10 | **Edit / delete a flight** | **not started — the top candidate for next session.** The app is now the only way the record grows, and a flight typed on a phone cannot be corrected without opening SQLite. See the 2026-08-02 decision-log entry and the brief at the top for the design questions this raises on a legal record. **Needs the owner's ruling before any code.** |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-02 — The historical data is closed, and the app is the only effort left
+
+Owner ruling, verbatim: *"we will no longer touch historical data. This is the truth now. From now
+on the focus is on developing the logbook app."* Written into `CLAUDE.md` as **rule §0.8** and
+banner-headed on `claude-docs/resume.md`, because the old docs read as a standing instruction to
+keep transcribing and a fresh session would have followed them.
+
+**It closes cleanly, which is why now.** Every photographed spread — `IMG_6007`–`IMG_6037`, book
+pages 1–62 — is transcribed, verified and reconciled; all seven `Cumulative_*` series match row by
+row with zero breaks; and the last known omission (the three 28/08/2025 flights) was found, sourced
+and imported to production the same night. There is no backlog being abandoned here. The paper book
+has blank pages left, and the flights that would have filled them go into the app instead.
+
+Three consequences worth stating, because each one changes how a future session should behave.
+
+**The guard tests get stronger, not weaker.** `realdata_test.go` has had exactly one legitimate
+reason to go red — `logbook_3.csv` growing — and appending was routine enough that the correct
+response was written into this file as a procedure. That procedure is now void: the CSVs will not
+grow again, so **any movement in 1296 / 1222:10 / 1054:45 / … is a defect**, and updating the
+constant is never the fix. A test that could previously fail for a good reason can now only fail for
+a bad one, which makes it a much better test.
+
+**The two open data questions stay open, permanently, and stay visible.** The 30
+`landings_unverified` rows keep their flag, the asterisk on the row and the paragraph on the
+statistics page; the `logbook_2_final.csv` lines 89–90 date ambiguity stands. Closing either would
+mean touching the data. This is not an oversight to tidy up later — it is the honest state of a
+record whose paper source is no longer being consulted, and the UI already says so. Task 8 is closed
+as **will not do**, not as done.
+
+**The write path stops being a convenience and becomes the system of record.** `POST /flights` was
+designed on the assumption that the importer owned the data and hand entry was the exception — which
+is why a hand-entered row lives in its own `seq` band with `source_book = 0` and survives a
+re-import. That design now carries more weight than it was built for, and the gap it leaves is
+sharper: **there is no way to edit or delete a flight.** A typo in a flight logged on a phone is
+currently permanent unless someone opens SQLite. That is the first thing to weigh next session — see
+the brief at the top of this file.
+
+A re-import is now only ever a scratch-database rebuild, not a production operation.
 
 ### 2026-08-01 — Four digits, and nothing to punctuate
 
