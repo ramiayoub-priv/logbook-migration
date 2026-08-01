@@ -82,10 +82,12 @@ Eight consecutive rows from one transcription batch use dots instead of slashes:
   Total 474:07 then 474:58. **If the paper says 5 April, two rows move by a month** (row order only —
   no total changes, since the totals do not depend on the date).
 
-### 3. Night time — the paper's 22:45 does not match the CSV's 16:47
-> **STATUS 2026-08-01: resolved down to 1:55 — see item E below. Night is now 20:50.** The next four
-> paragraphs are the state **as first found**; everything from "SOLVED-BY-HALVES" onward supersedes
-> them. The 16:47 / 5:58 figures below are historical.
+### 3. Night time — ✅ **FULLY CLOSED 2026-08-01. Night is 22:45, equal to the paper, Δ 0:00.**
+> **STATUS: RESOLVED.** The last gap (item E, 1:55 across Book-1 pp. 52–69) was closed by the
+> **page 52/53 photograph** — see "📷 Book 1, pages 52/53" below. The `Night_Time` column across all
+> three books now sums to **22:45**, exactly the figure inked at p.62. **Nothing about night time is
+> open.** The next four paragraphs are the state **as first found**; everything from
+> "SOLVED-BY-HALVES" onward supersedes them. The 16:47 / 5:58 / 20:50 figures below are historical.
 - The `Night_Time` column sums to **16:47** over all three books (Book 1 9:04 · Book 2 3:40 ·
   Book 3 4:03).
 - The p.62 inked block carries night time **22:45**. This file already records that figure as
@@ -184,14 +186,14 @@ across all of them**, which turns the night column into a page-by-page ledger:
 | 38/39 | 6:46 | 7:06 | 0:20 | 25.03.2013 OH-CTH | ✅ already ours |
 | 48/49 | 7:06 | 8:12 | 1:06 | 06.11.2013 OH-TIL 0:36 + 11.11.2013 OH-COF 0:30 | ✅ already ours |
 | 50/51 | 8:12 | 9:12 | 1:00 | 14.12.2013 OH-COF (full night) | ✅ already ours |
-| **52–69** | **9:12** | **11:07** | **1:55** | **not photographed** | ⏸ **THE ONLY GAP LEFT** |
+| **52/53** | **9:12** | **11:07** | **1:55** | **25.02.2014 OH-KLS 0:55** + **26.03.2014 OH-TIL 1:00** | ✳️ **APPLIED — CLOSES THE COLUMN** |
+| 54–69 | 11:07 | 11:07 | — | *(no night flown; the column is flat to p.71)* | ✅ implied by p.53 = p.71 |
 | 70/71 | 11:07 | 11:58 | **0:51** | **15.09.2014 OH-CMO** EFLA→EFHF (0:51, full night) | ✳️ **APPLIED** line 237 |
 | 74/75 | 11:58 | 13:53 | 1:55 | 05.01 **0:30** + 26.01 STL **0:38** + 01.02 0:37 + 25.02 0:10 | ✳️ **ALL APPLIED** |
 
-**Our running night now equals the paper's `Siirto` at every checkpoint through 30/11/2013**
-(5:29, 6:46, 7:06, 8:12 — all exact) **and page 74/75 contributes its full 1:55**. Night total
-**16:47 → 20:50**. The *only* residual is item E's 1:55, which simply carries through every
-checkpoint after p.51 as a constant offset — exactly what a single missing block looks like.
+**Our running night now equals the paper's `Siirto` at EVERY checkpoint in the book** — 5:29, 6:46,
+7:06, 8:12, **11:07** and 11:58 all exact — and page 74/75 contributes its full 1:55. Night total
+**16:47 → 20:50 → 22:45**. ✅ **The ledger is complete; there is no residual.**
 
 - ✳️ **⚠ `0:24` WAS ON THE WRONG ROW — MOVED.** Page 35 puts the `0 24` beside the `Päällikkö 0 56`
   entry on the row whose `Kokonaisaika` is **117:55** — that is **09.11.2012 OH-CWB EFHF local
@@ -208,16 +210,42 @@ checkpoint after p.51 as a constant offset — exactly what a single missing blo
 - Minor, no action: p.51 writes the 14.12.2013 OH-COF block as **17:09–18:09**; ours says
   **17:07–18:07**. Duration 1:00 either way and no total moves.
 
-#### ⏸ Still open — 1:55, in one place
-`22:45 − 20:50 = 1:55`, all of it **item E** below. Every other night row in all three books is now
-reconciled against the paper's own night column.
+#### 📷 Book 1, pages 52/53 photographed (user, `IMG_6048`, 2026-08-01) — **ITEM E CLOSED, NIGHT = 22:45**
+The last gap. **All 1:55 is on this one spread**, so pages 54–69 carry no night at all and the
+column is flat from p.53 to p.71. The spread is internally perfect and matches our CSV row for row.
 
-**E. 📄 PAGES 52–69 ARE THE LAST GAP — 1:55 of night, between `25.02.2014` and `30.08.2014`.**
-Page 51 ends at night **9:12** (25.02.2014) and page 71 carries **11:07** in (before 30.08.2014), so
-the book records **1:55** of night somewhere in between and our CSV has **none** — our 2014 night is
-still zero outside the 15.09 row above. **Photographing the spreads covering Mar–Aug 2014 closes the
-whole item.** Read it the same way: the `Yölentoaika` entry pairs with the `Päällikkö` value on its
-visual line, and `Kokonaisaika` pins the row.
+The page holds **8 flights, 25.02.2014 → 31.03.2014**, and its `Yölentoaika` column runs
+`Siirto` **9:12** → bottom line **11:07** — **and 11:07 is exactly the `Siirto` carried into p.71**,
+which is what proves the range is closed rather than merely sampled.
+
+| paper row | `Kokonaisaika` | flight | `Yölentoaika` | `Päällikkö` | our line |
+|---|---|---|---|---|---|
+| *Siirto* | 186:08 | — | **9:12** | 134:22 | line 172 (`Cumulative_Total` 186:08 ✓) |
+| 1 | 187:03 | 25.02 C152 **KLS** EFHF local 18:31–19:26 (0:55) | **0:55** | 0:55 | ✳️ **APPLIED line 173** |
+| 2 | 188:08 | 08.03 C172 CMO EFHF local (1:05) | — | 1:05 | line 174 |
+| 3 | 188:43 | 12.03 C152 CTM EFHF→EFHV (0:35) | — | 0:35 | line 175 |
+| 4 | 189:40 | 13.03 C152 CTM EFHV→EFHF (0:57) | — | 0:57 | line 176 |
+| 5 | 191:41 | 26.03 P28A **TIL** EFJY→EFHF 18:05–20:06 (2:01) | **1:00** | 2:01 | ✳️ **APPLIED line 177** |
+| 6 | 192:45 | 28.03 C152 CRA EFHF→EFHN (1:04) | — | 1:04 | line 178 |
+| 7 | 193:34 | 29.03 C152 CRA EFHN→EFHF (0:49) | — | 0:49 | line 179 |
+| 8 | 194:00 | 31.03 C172 CMO EFHF local (0:26) | — | 0:26 | line 180 |
+| *bottom* | **194:00** | | **11:07** | **142:14** | line 180 `Cumulative_Total` 194:00 ✓ |
+
+- ✳️ **`25.02.2014` C152 OH-KLS, EFHF local 18:31–19:26 → `Night_Time` 0:55 — a FULL-NIGHT row**
+  (night == total; the `Yölentoaika` and `Päällikkö` cells both read `0 55`). **Line 173.**
+  ⚠ Not to be confused with the *other* 25.02.2014 row (line 172, DA40 OH-KAS, 10:16–11:07) which is
+  the last row of p.51 and is daytime — **that** is why the ledger's 9:12 checkpoint is dated 25.02.
+- ✳️ **`26.03.2014` P28A OH-TIL, EFJY→EFHF 18:05–20:06 (2:01) → `Night_Time` 1:00** — a partial-night
+  row, the night being the last hour into Malmi. **Line 177.**
+- **Arithmetic verified three ways:** `9:12 + 0:55 + 1:00 = 11:07` = the page's own bottom line = the
+  p.71 `Siirto`. `Kokonaisaika` 186:08 → 194:00 (Δ 7:52) equals our `Cumulative_Total` at both ends.
+  `Päällikkö` 134:22 → 142:14 (Δ 7:52, all PIC). `Laskujen lukumäärä` 410 → 420 (Δ 10) equals our
+  `Cumulative_Landings` at both ends.
+- **The +0:03 Book-1 PIC drift is confirmed constant across this spread** — paper `Päällikkö` 134:22
+  vs our 134:25 at the carry-in, and 142:14 vs our 142:17 at the bottom. **This page introduces no
+  new PIC error**; the 3 min predates p.52. (Still unexplained, still moves nothing.)
+- **`Night_Time` carries no cumulative column, so no `Cumulative_*` value moved** and all six
+  reconciling series still reconcile with zero breaks. Verified after the edit.
 
 **D. ✅ RESOLVED 2026-08-01 — the photograph's reading was adopted.** User: *"go with the photo
 read and let's close this."* Applied: **`05.01.2015` DA40 OH-KAM** EFHF local 15:26–16:23 (0:57) →
@@ -262,6 +290,29 @@ Aviatron id **9843** has the same aircraft, date and **identical 1:12 block**, b
 id 9852 **to the minute**, so this is not a time-zone offset (that would move both rows); it is a
 one-hour slip on one cell, in the book or in transcription. **No total is affected** — the duration
 is right either way. ⏸ Documented only; the paper decides.
+
+### 6. ⏸ OPEN — three airfield codes on `logbook_1_final.csv` disagree with the p.52 photograph
+Found 2026-08-01 while reading `IMG_6048` for the night column. **No time value and no total is
+affected** — these are place cells only. The photograph is a direct read of the authoritative paper,
+and all three are legible; the writer distinguishes `EFHV` and `EFHN` clearly elsewhere on the same
+page (rows 3–4 are unmistakably `EFHV`).
+
+| line | date / reg | our CSV | paper (`IMG_6048`) | note |
+|---|---|---|---|---|
+| 177 | 26/03/2014 P28A OH-TIL | `EFSI` → EFHF | **`EFJY`** → EFHF | the row's own `Remarks` already says *"Departure airfield reads like EFSI"* — it was transcribed as uncertain. EFJY = Jyväskylä. |
+| 178 | 28/03/2014 C152 OH-CRA | EFHF → `EFHV` | EFHF → **`EFHN`** | |
+| 179 | 29/03/2014 C152 OH-CRA | `EFHF` → EFHF | **`EFHN`** → EFHF | |
+
+**Lines 178/179 are an out-and-back to `EFHN` (Hanko)** — the paper's version chains
+(EFHF→EFHN, then EFHN→EFHF) whereas ours does not (EFHF→EFHV, then EFHF→EFHF, leaving the aircraft
+teleporting home from Hyvinkää). **The chain is corroborating evidence, not just handwriting.**
+⏸ **Awaiting the user's ruling.** Recommended: adopt all three paper reads and drop the now-stale
+`EFSI` remark on line 177. Nothing downstream moves.
+
+### 7. ⏸ MINOR — stray `Remarks` value on `logbook_1_final.csv` line 173
+The `Remarks` cell reads **`Siirto`** — the Finnish column label for "carried forward", which leaked
+out of a page header during transcription. It is not a remark about the flight. ⏸ Cosmetic; the
+user's call whether to blank it. No total affected.
 
 ### Not defects — confirmed by the same sweep
 - **18 rows are genuinely out of date order** across the three books (e.g. Book 1 line 269,
@@ -1421,6 +1472,10 @@ logged it; our row is correct as is.
 The user wrote the corrected totals at the bottom of **page 62** and confirmed them back:
 **Total 1206:58 · SE-VFR 1101:01 · SE-IFR 105:57 · PIC 1040:26 · FI 185:50 · Dual 166:32 ·
 Day landings 3335 · Night landings 59.** (Night time **22:45** was supplied but not read back.)
+⚠ **Two of those inked figures have since been superseded** — the night column was closed on
+2026-08-01 and **our night now equals 22:45 exactly**, but the day/night *landing* split recomputes
+to **68 / 3326**, not 59 / 3335. See the landing-split section below. The landing **sum** (3394) and
+every time total on this line are unchanged and correct.
 **Every paper-vs-ours drift is therefore zero from p.62 onward.** The historical offsets
 (Total +2:06, PIC +1:46, SE-IFR +4:02, Dual +0:20, FI −1:23 at p.60) are now closed by hand.
 **Do not re-apply them to any later page, and do not read a p.62-or-later book total as evidence of
@@ -1437,37 +1492,37 @@ correction he does not recall the basis for → +1:45 at p.54 → +1:46 at p.60.
 reconciled exactly on p.26 and p.28, which is why our figure was kept. **That 2:30 remains unexplained
 and is now baked into the paper book as well.**
 
-### ⚠ The day/night landing split written at p.62 is PART INFERRED — 9 of the 59 nights
+### ⚠ The day/night landing split written at p.62 is PART INFERRED — and it MOVED when night closed
 `Landings` stores the **sum**; the night split is inferred from `Night_Time` (see `reference.md`).
-Across all three books there are **22 rows with night time**. **17 are full-night**
-(`Night_Time == Total_Time`) → all their landings are night, **50 landings, certain**. Book 3's seven
-(24 landings) are corroborated row-by-row by the transcription notes above.
-**The remaining 9 are estimates** from five partial-night rows — all evening departures from EFHF,
-so the night portion is at the *end* and each row's **final** landing is certainly night; how many
-earlier ones fall after night onset is not recoverable from the CSV:
 
-> ⚠⚠ **THIS TABLE AND THE 59/3335 SPLIT ARE BOTH OUT OF DATE as of 2026-08-01** — the night
-> investigation at the top of this file has since **moved one value onto a different row and added
-> four more night rows**, and item E (1:55 across pages 52–69) is still open. **Recompute the whole
-> split once the night column is closed; do not rely on the figures below.** In particular
-> `15/11/2012 OH-KAS` is **no longer a night row at all** — its 0:24 belongs to `09/11/2012 OH-CWB`
-> (1 landing, partial night), which changes this table's first line and the estimate built on it.
+> **⚠⚠ THE INKED `59 night / 3335 day` AT p.62 IS SUPERSEDED — RECOMPUTED 2026-08-01 to
+> `68 night / 3326 day`.** The night column was closed that day (item 3 above): the investigation
+> moved one value onto a different row and added **eight** more night rows, including the two from
+> the p.52/53 photograph. **`Cumulative_Landings` (the sum, 3394 at p.62) did NOT move** — it never
+> depended on the split. **Only the split moves, and only on paper.** ⏸ **The p.62 ink needs
+> correcting to 68 / 3326** — the user's call when he next has the book open.
+
+Recomputed over the **1279 rows up to and including the end of paper p.62** (all 30 night rows in all
+three books fall before that boundary — **none after**, so the split is stable):
+
+- **22 full-night rows** (`Night_Time == Total_Time`) → **57 landings, all certain night.**
+- **5 partial-night rows with a single landing** → the landing is at the *end* of an evening flight,
+  inside the night portion → **5 more certain.** (`09/11/2012` CWB, `25/03/2013` CTH,
+  **`26/03/2014` TIL**, `05/01/2015` KAM, `25/02/2015` KAM.)
+- **= 62 certain.** The remaining **6 are estimates**, from just three multi-landing partial rows:
 
 | date | reg | off–on | total / night | ldg | night ldg | basis |
 |---|---|---|---|---|---|---|
-| ~~15/11/2012~~ | ~~OH-KAS~~ | ~~14:38–15:42~~ | **superseded** | ~~5~~ | ~~2~~ | night moved to 09/11/2012 OH-CWB (1 ldg) |
-| 09/11/2012 | OH-CWB | 16:20–17:16 | 0:56 / 0:24 | 1 | **1** | single landing, at the end — certain |
-| 25/03/2013 | OH-CTH | 18:50–20:03 | 1:13 / 0:20 | 1 | **1** | single landing, at the end — certain |
 | 11/11/2013 | OH-COF | 17:00–18:00 | 1:00 / 0:30 | 4 | **2** | night = exactly the second half |
 | 26/03/2020 | OH-STL | 16:35–18:38 | 2:03 / 0:50 | 3 | **1** | night = last 40%; only the final landing is safe |
 | 11/02/2021 | OH-STL | 17:27–19:40 | 2:13 / 1:55 | 3 | **3** | night starts 18 min after off-block |
 
-**Range: night 55–66, day 3328–3339.** The user adopted the midpoint estimate (**59 / 3335**) and
-inked it. **Two exact sources still exist and were offered but not used:** (a) the Day/Night landings
-columns on paper for those five rows — Book 1 ×3, Book 2 ×2 — which our transcription never captured,
-and (b) the book's own printed day-only cumulative at p.60 plus the 59 all-day landings of pp.61–62.
-**If either is ever read, correct p.62 rather than assuming the CSV is wrong** — `Cumulative_Landings`
-(the sum) is unaffected either way; only the split moves.
+**Best estimate: night 68 / day 3326. Range: night 65–72, day 3322–3329.**
+(Only those three rows carry any uncertainty; every other night landing in the project is certain.)
+**One exact source still exists and has never been read:** the paper Day/Night landing columns for
+those three rows (`logbook_1_final.csv` ×1, `logbook_2_final.csv` ×2 — 11/11/2013, 26/03/2020,
+11/02/2021). Reading them would make the split exact. **If it is ever read, correct p.62 rather than
+assuming the CSV is wrong** — `Cumulative_Landings` is unaffected either way.
 ⚠ Assumes no row has night landings without night time logged. The reverse happened on 05/03/2024
 (book put 3 night landings in the day column), so the columns do get crossed.
 

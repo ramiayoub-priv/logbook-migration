@@ -12,13 +12,39 @@
 > figure the book totals on, the paper being authoritative — are now load-bearing for the app too.
 > **The migration is still the way flights get digitized; the app does not replace it.**
 >
-> ⚠ **As of 2026-08-01 the app's importer reads all three CSVs and reconciles all seven
-> `Cumulative_*` series row by row.** *(The paragraph below is the state **as first found**; the
-> block after it records what was then resolved. Read both.)* It found **three previously unlogged
-> problems** in the source data — a bad `Instrument_Time` at `logbook_1_final.csv` line 28, eight `DD.MM.YYYY` dates at
-> `logbook_2_final.csv` lines 83–90, and a 5:58 gap between our night time (16:47) and the paper's
-> inked 22:45. **All are open and waiting on the user**; see the block at the top of
-> `drift.md`. Nothing has been corrected.
+> ## ✅ STATE OF THE DATA IN ONE TABLE (2026-08-01) — read this before re-verifying anything
+>
+> All 1293 flight rows, checked row by row against the paper's inked page-62 block:
+>
+> | column | ours | paper p.62 | |
+> |---|---|---|---|
+> | Total | 1206:58 | 1206:58 | ✅ |
+> | PIC | 1040:26 | 1040:26 | ✅ |
+> | SE-IFR / Instrument | 105:57 | 105:57 | ✅ |
+> | Dual / Student | 166:32 | 166:32 | ✅ |
+> | FI / Instructor | 185:50 | 185:50 | ✅ |
+> | Landings (sum) | 3394 | 3394 | ✅ |
+> | **Night** | **22:45** | **22:45** | ✅ **closed 2026-08-01** |
+>
+> **Six of the seven `Cumulative_*` series reconcile row-by-row with ZERO breaks** (Total, PIC,
+> Student, Instructor, Landings, SEP_Sea). **There is exactly one break in 1293 rows** — item 1
+> below. **The times match. Do not re-validate the book on spec; work the short open list instead.**
+>
+> **What is actually open** (full detail at the top of `drift.md`; none of it moves a *total*):
+> 1. **`logbook_1_final.csv` line 28** — `Instrument_Time` **1:21** on a **1:12** flight. The single
+>    cumulative break. Column sums 107:14, cumulative says 107:05. **Matters only because the app
+>    computes cumulatives from rows (rule 5)**, so it would render 107:14 against the paper's 107:05.
+>    Fix = one cell, `1:21` → `1:12`; **no total moves**, every cumulative already reflects 1:12.
+> 2. **`logbook_2_final.csv` lines 89–90** — two `04.05.2018` dates. Row *order* only if the paper
+>    says 5 April. No electronic source can settle it; needs the page.
+> 3. **Three airfield codes on `logbook_1_final.csv` lines 177/178/179** disagree with the p.52
+>    photograph (`EFSI`→**EFJY**, `EFHV`→**EFHN**, `EFHF`→**EFHN**). Place cells only.
+> 4. **`logbook_2_final.csv` line 97** — one hour off Aviatron. Duration right either way.
+> 5. **The p.62 inked landing split `59 night / 3335 day` is stale → recomputes to `68 / 3326`.**
+>    The landing *sum* (3394) is unaffected. Correct the paper, not the CSV.
+>
+> *(Historical: the importer originally surfaced three unlogged problems — line 28, the dotted dates,
+> and a 5:58 night gap. The night gap is now fully closed; the other two remain as items 1–2.)*
 >
 > **Re-investigated the same day — each one is now localised, and a fourth and fifth turned up:**
 > - **Line 28 (instrument):** the 9 min is entirely inside Book 1 (its column sums 3:21, its own
@@ -49,11 +75,16 @@
 >   - ✳️ Applied on the user's ruling *"go with the photo read"*: **05.01.2015 OH-KAM 0:30**
 >     (line 247) and **26.01.2015 OH-STL 0:38** (line 248, full night). This supersedes his earlier
 >     dictated list, which put those two values one row apart; totals identical either way.
->   - ⏸ **1:55 LEFT, IN ONE PLACE: pages 52–69** (Mar–Aug 2014, not yet photographed — the book's
->     night runs **9:12** at p.51 to **11:07** at p.71 and our CSV has nothing in between).
->     **Photographing those spreads closes the night column completely.**
->   - **⚠ The p.62 day/night landing split (59/3335) is now out of date** — recompute it once the
->     night column closes.
+>   - ✅ **CLOSED by the p.52/53 photograph (`IMG_6048`, 2026-08-01).** The last 1:55 was **all on one
+>     spread**: **25.02.2014 C152 OH-KLS** EFHF local 18:31–19:26 **0:55, full night** (line 173) and
+>     **26.03.2014 P28A OH-TIL** EFJY→EFHF 18:05–20:06 **1:00 of 2:01** (line 177). The page's own
+>     `Yölentoaika` runs `Siirto` **9:12** → bottom **11:07**, and **11:07 is exactly p.71's `Siirto`**
+>     — so pages 54–69 carry no night at all and the column is closed, not merely sampled.
+>     Night **20:50 → 22:45 = the paper, Δ 0:00.** All eight rows on the spread matched our CSV on
+>     reg, block times and duration; `Kokonaisaika` 186:08→194:00 and landings 410→420 both equal ours.
+>   - ✅ **The p.62 day/night landing split recomputed: `59/3335` → `68/3326`** (62 certain + 6
+>     estimated from three multi-landing partial-night rows; range 65–72). **The landing sum 3394 is
+>     unchanged.** ⏸ The *paper* needs correcting, not the CSV.
 >   - **Reading method for Book-1/2 pages:** `Yölentoaika` = night, `Kokonaisaika` = running total,
 >     `Päällikkö` = PIC, `Oppilas` = student, `Opettaja` = instructor, `Siirto` = carried forward.
 >     Values straddle the dotted row separators and the photos are taken at an angle — **pin a row by
@@ -444,22 +475,27 @@ The user inked our figures at the bottom of p.62: **Total 1206:58 · SE-VFR 1101
 PIC 1040:26 · FI 185:50 · Dual 166:32 · Day ldg 3335 · Night ldg 59** (night time 22:45).
 **All paper-vs-ours drift is zero from p.62 on** — every historical offset (Total +2:06, PIC +1:46,
 SE-IFR +4:02, Dual +0:20, FI −1:23) was corrected by hand. **Do not re-apply them.** Full
-decomposition + the ⚠ **9-of-59 inferred night landings** in `drift.md`.
+decomposition in `drift.md`.
+⚠ **Two of those inked cells are now stale — the day/night LANDING split only.** Since the night
+column closed, the split recomputes to **68 night / 3326 day**. **Night *time* 22:45 is confirmed
+correct and our column now equals it exactly**, and the landing **sum** (3394) never moved. So the
+p.62 ink needs two numbers changed, and nothing in the CSV does.
 
 ## Next action — TWO THINGS, BOTH WAITING ON THE USER
 
-**1. ⏸ NIGHT COLUMN: photograph Book-1 pages 52–69 (Mar–Aug 2014).** This is the live, actionable
-item — everything else in the night reconciliation is closed. The book's `Yölentoaika` runs **9:12**
-at the bottom of p.51 (25.02.2014) to **11:07** at p.71's `Siirto` (before 30.08.2014), so it records
-**1:55** of night in that range and our CSV has none. Reading those spreads closes the night column
-completely. Method, ledger and the two remaining CSV questions are at the **top of `drift.md`**.
-Read each page the same way: **`Kokonaisaika` pins the row; the `Yölentoaika` entry pairs with the
-`Päällikkö` value on its visual line.** ⚠ **Never infer night from clock times or sunset** — the
-book's night column is the only authority (user, 2026-08-01).
+**1. ✅ THE NIGHT COLUMN IS CLOSED — nothing to photograph.** Night = **22:45**, equal to the paper.
+Closed 2026-08-01 by the p.52/53 photograph (`IMG_6048`); see the night block above and `drift.md`.
+⚠ **Never infer night from clock times or sunset** — the book's night column is the only authority
+(user, 2026-08-01). What remains are **small unruled cells, none of which moves a total**:
+- **`logbook_1_final.csv` line 28** — `Instrument_Time` `1:21` → `1:12`. **The only cumulative break
+  in 1293 rows**, and the one thing that will make the app disagree with the paper (107:14 vs 107:05).
+- **`logbook_2_final.csv` lines 89–90** — the two `04.05.2018` dates. Needs the physical page.
+- **`logbook_1_final.csv` lines 177/178/179** — three airfield codes that disagree with the p.52
+  photo (`EFSI`→`EFJY`, `EFHV`→`EFHN`, `EFHF`→`EFHN`).
+- **The p.62 inked landing split** `59/3335` → recomputed **`68/3326`**; correct the paper.
 
-Two one-cell CSV questions are also still unruled — `logbook_1_final.csv` line 28
-(`Instrument_Time` 1:21 → 1:12) and `logbook_2_final.csv` lines 89–90 (the two `04.05.2018` dates).
-Both are in `drift.md`; neither moves a total.
+All four are written up in `drift.md` (items 1, 2, 6, and the landing-split section).
+**Do not re-validate the book on spec — the totals match.**
 
 **2. ⏸ THE CSV IS AHEAD OF THE PAPER (Book 3).**
 **Every photographed spread is transcribed** (`IMG_6007`–`IMG_6037`, pages 1–62) **and the CSV now runs
