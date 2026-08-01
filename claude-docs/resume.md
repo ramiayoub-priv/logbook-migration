@@ -297,14 +297,37 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
   **2025 float season closes 06/11**; the book crosses into **2026** on 6035 r13.
   New pupil **Koskinen**; new place **Vuolenkoski** (only genuinely new one — the rest were grepped
   against all three CSVs first). ⚠ **`EFPR` ≠ `EFPO`** — both are real and both are in the books.
-- **Last row in `logbook_3.csv`:** `31/01/2026 · SR20 · OH-ESR · EFNU → EFNU ·
-  11:30Z–13:55Z · Total 2:25 · PIC 2:25 · 3 landings`
+- **Thirtieth & thirty-first spreads done — ALL PHOTOGRAPHED SPREADS ARE NOW TRANSCRIBED:**
+  `IMG_6036` (pages 59–60, 15 flights **06/03/2026–11/05/2026**) and `IMG_6037` (pages 61–62,
+  **14** flights **15/05/2026–03/06/2026**), verified & appended 2026-08-01. **Both SIDEWAYS — CCW
+  `rotate(90)`** (6022–6037 all sideways). No `LT` subscripts. **Zero block-vs-total warnings on all
+  29 rows** — every block pair matched to the minute (second such batch running). 6037 reconciled
+  **exactly** (Δtotal/Δpic **11:16**, FI **6:32**); landings **30** and **56**, both landing cells blank.
+  **⚠ 6036 is 1 min short in the book:** row 13 (01/05 OH-PDP EFHV local) is **0:24** by its block
+  cells *and* its own SE-VFR/PIC cell, but the running column adds 0:23 and both page totals inherit
+  it (12:17 vs our 12:18). **User: keep 0:24** → Total & PIC drift each move +0:01. Sixth running-Total slip.
+  **⚠ 6036 rows 12–15 are written `/25` — user-confirmed typo, they are 2026**; rows 13/14 (01/05,
+  03/05) also carry margin arrows and are **entered out of order** after the 08/05 row.
+  **⚠⚠ 6036 is stored LOCAL throughout (user), which CONFLICTS with its one club record** —
+  12/04/2026 OH-CAM is club `09:58–12:10` vs book `06:58–09:10` (exactly −3 h, i.e. UTC), landings
+  3 = 3. Flagged; user ruled the page local anyway. Documented in drift.md, no total affected.
+  **6037 zones are mixed FOUR ways:** rows 1–4 `Z` (club +3 h), rows **5–7 local** (club matches
+  digit-for-digit), row **8 local**, row **9 `Z`**, rows **10–14 local**. Rows 8/9 overlapped as
+  written; user resolved from memory — *"I flew the Maule first then drove to fly CDK."*
+  **🌊 2026 float season opens 15/05/2026** (OH-CTL EFRY→Tuusulanjärvi), a fortnight earlier than 2025.
+  **New airport `EFOP` (Oripää)**, **new place `Ojakkala`** (Vihti, on Hiidenvesi — 01/06 C185 OH-CDK
+  float-instruction local). New pupils **Toivo Huovinen, Harry Karlsson, Thomas Hansson**; 18/05 has
+  **Mikko Sinervä as the *pupil*** on an *Opekertaus* proficiency check. 6037 r3 has **no club record**
+  — the pupil forgot to log it; the user will have them enter it. 6037 r8's type is written `M2`;
+  user confirms **M6**. 6037 r4 landings book 4 vs club 3 — **book correct** (user).
+- **Last row in `logbook_3.csv`:** `03/06/2026 · P28A · OH-PDP · EFHV → EFLA ·
+  16:02–16:35 (local) · Total 0:33 · PIC 0:33 · 1 landing`
 - **Cumulative totals at that row (our continuous series, seeded from Book 2):**
-  - Cumulative_Total **1182:39** · Cumulative_PIC **1016:07** · Cumulative_Student **166:32**
-  - Cumulative_Instrument **105:14** · Cumulative_SEP_Sea **390:08**
-  - Cumulative_Landings **3305** (= day+night; runs ahead of book's day-only count — see drift.md)
-  - Cumulative_Instructor **178:33**
-- **`logbook_3.csv` has 434 data rows** (+ header + seed row = 436 lines).
+  - Cumulative_Total **1206:13** · Cumulative_PIC **1039:41** · Cumulative_Student **166:32**
+  - Cumulative_Instrument **105:57** · Cumulative_SEP_Sea **398:17**
+  - Cumulative_Landings **3391** (= day+night; runs ahead of book's day-only count — see drift.md)
+  - Cumulative_Instructor **185:05**
+- **`logbook_3.csv` has 463 data rows** (+ header + seed row = 465 lines).
 
 ### Book-3 conventions (locked 2026-07-31 with user)
 - **Same 26-col schema.** EASA→our-schema mapping: **Dual (Oppilas) → Student_Time**;
@@ -321,40 +344,50 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
 - **Tooling:** `logbook_tools.py <batch.json> --csv logbook_3.csv [--append]` (new `--csv` flag targets
   Book 3; defaults to Book 2). Block-vs-total diffs ≤5 min now warn instead of blocking append.
 
-## Next action — Book 3, IMG_6036 (pages 59–60) — THE LAST TWO SPREADS
-Only **`IMG_6036`** and **`IMG_6037`** remain; Book 3 finishes with them. Continues from
-**31/01/2026**. Forward cover from the references (run `python3 aviatron_to_csv.py --from 2026-02-01`
-and grep the club CSV):
-`laskukierros_flights.csv` has 2026 rows through **25/07/2026**; `aviatron_flights.csv` has
-**OH-GKT** on 13/06, 26/06, 11/07 ×2 and 12/07/2026 (Kahvisaari / Mäntyharju / Leikonvesi / EFRY).
-**⚠ Watch the DST boundary again** (late Mar 2026): club/Aviatron local↔UTC is +2 before, +3 after.
-**Grep both references before transcribing.** When Book 3 is done, rename to `logbook_3_final.csv`
-following the Book-1/2 convention and refresh this file's project summary.
-**Check orientation first** — image
-orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, 6012–6021 were all
-already upright, and **6022–6035 have all been sideways (CCW `rotate(90)`)**. Never assume —
-thumbnail first. **Also scan the block-minute cells for the tiny `LT` subscript** (see below).
-Quickest check: `Image.open(p).resize((1024,768))` and eyeball
-which way is up; then crop the two pages at high res (the original is ~2048×1536). Transcribe all rows,
-cross-check via the book's "TOTAL THIS PAGE" using `--csv logbook_3.csv`, and surface flags.
-**Time zones can be mixed within one spread** (proved on IMG_6014, IMG_6018, IMG_6022) — when rows
-appear to overlap or run out of order, suspect a local-vs-UTC mix and ask the user *which rows*, not
-just whether. **On IMG_6022 the answer was a per-aircraft rule** ("all local except OH-GKT and OH-ESR")
-**that still needed a per-row exception** — always walk each day's flight chain for ordering conflicts
-before applying such a rule wholesale.
+## Next action — ⏸ CAUGHT UP. Waiting on new photos.
+**Every photographed spread of Book 3 is transcribed** (`IMG_6007`–`IMG_6037`, pages 1–62). There is
+nothing to process until the user photographs more pages.
+
+**⚠ Book 3 is NOT finished — do not rename `logbook_3.csv` to `logbook_3_final.csv`.** The paper book
+runs to page 128 and we are at **p.62**; p.61/62 has no "TOTAL THIS PAGE" filled in because the page
+is still in progress. The Book-1/2 `_final` rename only applies to a *closed* book.
+
+**What's already flown but not yet in the book** (both references run ahead of the paper — useful for
+sanity-checking the next batch, not for appending):
+- `laskukierros_flights.csv`: **23/06/2026 ×2** (OH-CTL, Tuusula local + Karhusaari→Pellinki, pupil
+  Pekka Puhakka), **29/06/2026** OH-CAM EFHV local, **25/07/2026** OH-TIL EFTP local (IFR 1:08).
+- Aviatron (`OH-GKT`): **13/06** EFRY→Kahvisaari 1:02, **26/06** Kahvisaari local 1:03 (9 ldg),
+  **11/07** Kahvisaari→Mäntyharju 1:04 + Mäntyharju→Leikonvesi 1:05, **12/07/2026**
+  Leikonvesi→Kahvisaari 1:17. *OH-GKT has not appeared in the paper book since 06/11/2025.*
+- **⚠ 6037 r3 (16/05/2026 Kabböle local 0:50) is missing from the club file** — the pupil forgot to
+  log it and the user is chasing them; it may appear in a future pull. Our row is correct as is.
+
+### When new photos arrive
+**Check orientation first** — it is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`,
+6012–6021 were already upright, **6022–6037 have all been sideways (CCW `rotate(90)`)**. Never assume —
+thumbnail first (`Image.open(p).resize((1024,768))`), then crop the two pages at high res
+(original ~2048×1536). **Also scan the block-minute cells for the tiny `LT` subscript** (see below).
+Transcribe all rows, cross-check via the book's "TOTAL THIS PAGE" using `--csv logbook_3.csv`, and
+surface flags. **If the newest page has no page totals filled in, cross-check on the running-Total
+column's first→last delta instead** (that worked exactly on IMG_6037: Δ 11:16 over 14 rows) — but
+remember the running column has slipped six times, so treat a mismatch as a row to re-read, not proof.
+**⚠ DST: late-Mar 2026 the club/Aviatron local↔UTC offset goes +2 → +3.**
+**Time zones can be mixed within one spread** (IMG_6014, 6018, 6022, 6030, 6031, and **6037 four ways**)
+— when rows overlap or run out of order, suspect a local-vs-UTC mix and ask the user *which rows*.
+On IMG_6037 the answer was **per-row memory** ("I flew the Maule first then drove to fly CDK"), not a
+rule; on IMG_6022 it was a per-aircraft rule that still needed a per-row exception. Always walk each
+day's flight chain for ordering conflicts before applying anything wholesale.
 **Hybrid-batch pace works well:** transcribe 2–3 spreads/pass, tool-reconcile each, present ONE digest
 that greenlights clean pages and surfaces only flagged rows (student/instructing/night/odd-time/landing
 anomalies) for user sign-off before append. Watch for: SR20 OH-ESR (a PIC type, flown IFR on
-cross-countries), Stude (SR20 instr), **Sinervä** (seaplane instr — 7 duals so far, incl. two on the
-Maule), Salo, night landings, and the day+night landings convention.
-**Seasonality:** May–Sep the pilot float-instructs (Kabböle/Tuusulanjärvi/Kahvisaari on
-OH-CTL/OH-GKT/OH-MIL) — clusters of short lake locals with high landing counts, logged PIC +
+cross-countries), Stude (SR20 instr), **Sinervä** (seaplane instr — 7 duals, incl. two on the Maule;
+but on 18/05/2026 he is the *pupil* on an *Opekertaus* check), Salo, night landings, and the day+night
+landings convention.
+**Seasonality:** May–Sep the pilot float-instructs (Kabböle/Tuusulanjärvi/Kahvisaari/Ojakkala on
+OH-CTL/OH-GKT/OH-MIL/OH-CDK) — clusters of short lake locals with high landing counts, logged PIC +
 Instructor; **Oct–Mar it switches to EFHV/EFNU landplane circuits** (OH-CGX/OH-CAY/OH-AWB/OH-CMU/
-OH-PDP/SR20), with occasional night flights. The **2025 float season ran 18/05 → 06/11/2025**
-(6035 r9 ferries OH-GKT to EFRY for the winter), so **IMG_6036 opens in the Feb–Apr 2026 landplane
-stretch and the 2026 float season should reopen partway through 6036/6037** — `aviatron_flights.csv`
-shows OH-GKT flying again from **13/06/2026**, and the club file runs to 25/07/2026.
-Two spreads is one comfortable pass, and that finishes the book.
+OH-PDP/SR20), with occasional night flights. Float seasons so far: **2025** 18/05 → 06/11;
+**2026** opens **15/05**. The next spread should be deep in the 2026 float season.
 
 ### Hard-won reading lessons (all cost a round-trip; don't relearn them)
 - **⚠⚠ THERE ARE TWO ELECTRONIC REFERENCES AND THEY COVER DISJOINT FLEETS. GREP BOTH.**
@@ -367,6 +400,11 @@ Two spreads is one comfortable pass, and that finishes the book.
   Extract with `pdftotext -layout Aviatron.pdf`; each flight is a header line
   (`ID / LÄHTÖP / LASKUP / OFF / ON / BLOCK / LASK / … / PIC`) followed by a `RIVI` line —
   **compare on the header's BLOCK/LASK; the RIVI line is airborne time and will read ~5 min short.**
+- **⚠ THE USER CAN OVERRULE THE ELECTRONIC RECORD ON TIME ZONES — ASK, THEN DO AS TOLD.** On
+  IMG_6036 the one club-covered row (12/04/2026 OH-CAM) sits exactly −3 h from the club's local
+  times, which reads as UTC; the user ruled **the whole page local** anyway. Paper stays
+  authoritative, the conflict goes in `drift.md`, and no total is affected. **Present the evidence
+  once, then store what the user says** — don't re-litigate it.
 - **⚠⚠ THE LOCAL↔UTC OFFSET IS SEASONAL: +3 (EEST) SUMMER, +2 (EET) WINTER.** DST flips in late
   March and late October, and it flipped *inside* IMG_6035 (26/10/2025). **A club or Aviatron row
   that looks exactly 1 hour "wrong" near those boundaries is daylight saving, not a mis-logged row.**
@@ -448,12 +486,14 @@ Two spreads is one comfortable pass, and that finishes the book.
   its absence proves nothing** (IMG_6023 has none and is local throughout). **And it corrupts the digit
   it follows:** `20`+`LT` read as `29` on two IMG_6024 rows, each putting the row 9 min out. *When two
   rows on one page are short by the same odd amount, suspect one systematic digit misread.*
-- **Paper-vs-ours drift, refreshed at end of page 50 (02/07/2025 boundary; EASA "TOTAL" bottom-of-page):**
-  book Total **1127:36** vs ours **1129:01** (**+1:25**); book PIC **962:03** vs ours **963:08** (**+1:05**);
-  book SE-IFR **101:12** vs our Instrument **105:14** (**+4:02**); book Dual **165:33** vs our Student
-  **165:53** (**+0:20**); book Flight-Instructor **163:09** vs ours **161:46** (**−1:23**).
-  **All five steady across IMG_6028 → IMG_6031** — nothing moved since the IMG_6027 FI slip
-  (−1:20 → −1:23). (The +1:25 dates from the IMG_6013 running-Total slip, our value correct;
+- **Paper-vs-ours drift, refreshed at end of page 60 (11/05/2026 boundary; EASA "TOTAL" bottom-of-page):**
+  book Total **1192:51** vs ours **1194:57** (**+2:06**); book PIC **1026:39** vs ours **1028:25** (**+1:46**);
+  book SE-IFR **101:55** vs our Instrument **105:57** (**+4:02**); book Dual **166:12** vs our Student
+  **166:32** (**+0:20**); book Flight-Instructor **179:56** vs ours **178:33** (**−1:23**).
+  **Total and PIC each moved +0:01 at p.60** (the IMG_6036 row-13 decision — the book's page total is
+  1 min low); Instrument, Student and Instructor **unmoved since p.54**. **No drift refresh is
+  possible at p.62** — the last page carries no totals. (The base +1:25 dates from the IMG_6013
+  running-Total slip, our value correct;
   the +1:05 flipped from −1:25 on IMG_6019 where the pilot struck his own PIC total 810:09 → 807:39,
   a hand −2:30 correction he doesn't recall the reason for.) The book's SE-IFR line was itself a
   pilot correction written *below* the p.40 total box (struck 86:55 → 88:04); it carries forward correctly.
@@ -463,8 +503,11 @@ Two spreads is one comfortable pass, and that finishes the book.
   "TOTAL THIS PAGE" and bottom-line totals are still trustworthy. **Cross-check only on those.**
   **Always cross-check on offset-independent per-page Δ ("TOTAL THIS PAGE"), never absolute totals — and
   note the book's Total column is itself 1:00 low from p.14 on.**
-- **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. **master pushed through
-  IMG_6025 (`bfd9710`) on 2026-08-01, including `laskukierros_export.csv`.**
+- **Remote:** `origin` = git@github.com:ramiayoub-priv/logbook-migration.git. **All Book-3 work through
+  IMG_6037 is committed at `dcfef29` (2026-08-01).** ⚠ The push of that commit was **blocked by the
+  permission classifier** in the session that made it — the user was asked to run `git push origin
+  master` themselves. **Check `git log origin/master..HEAD` at the start of the next session**; if
+  `dcfef29` is still unpushed, remind them.
   Images/HEIC/zip are gitignored (not pushed). Git identity is now set repo-locally
   (`Rami Ayoub <rami.ayoub@gmail.com>`) — it was missing and blocked a commit.
   Push only when asked.

@@ -165,6 +165,13 @@ OH-GKT row without checking here first.** (This was missed through IMG_6022–60
   **Ivan Siragusa** (19/09 OH-GKT Vääksy→Kahvisaari).
 - **Tarhanen** also examines the **02/08/2024** SR20 OH-ESR IR revalidation (IMG_6026 row 9, remark
   `(TAR)`) — a third Tarhanen student row.
+- **2026 float pupils** (Oppilas; from `laskukierros_flights.csv`, context only — `pic_name` stays
+  `self` on instructing rows): **Tommi Nirkkonen** (16/05), **Toivo Huovinen** (16/05),
+  **Harry Karlsson** (17/05, *"Kevätkertaus 2026"*), **Thomas Hansson** (17/05, *"Kerhon
+  kevättarkkari"*), **Pekka Puhakka** (23/06, not yet in the paper book).
+  ⚠ **Mikko Sinervä appears as the PUPIL** on 18/05/2026 (OH-CTL Tuusulanjärvi local 1:28,
+  *"Opekertaus"*) — the pilot's own seaplane instructor taking an instructor-proficiency check with
+  him. Do not assume a Sinervä row means our pilot was the student; read `rami_role`.
 
 ## ⚠ `LT` subscripts in Book 3 — present but NOT applied consistently
 From IMG_6024 the pilot writes a tiny **`LT`** subscript beside some off/on-block minute cells
@@ -193,6 +200,9 @@ Estonian: **EETN** (Tallinn — 31/12/2019 DA40 day-trip, first non-Nordic field
 `Kytäjärvi`** (IMG_6030/6031, all corroborated by `laskukierros_flights.csv`).
 `OH-COF` (C152, EFNU) reappears 16/05/2025 as the pilot's first Book-3 OH-COF row — it is in the
 Book-1/2 C152 list above, not a new registration.
+**IMG_6037 (May–Jun 2026) adds `EFOP` (Oripää)** — 03/06/2026 OH-PDP EFHV↔EFOP day-return — and the
+float place **`Ojakkala`** (Vihti, on Hiidenvesi; 01/06/2026 C185 OH-CDK instruction local). Both were
+grepped against all three CSVs before being called new.
 **IMG_6029 (Jan–Apr 2025) adds three foreign fields, all SR20 OH-ESR:** **ESMG** (Feringe/Ljungby,
 Sweden — the aircraft wintered there, flown out 12/01/2025 and back 08/03/2025), **EHGG**
 (Groningen Eelde, NL) and **EDWF** (Leer-Papenburg, DE). ⚠ The 07/03/2025 `EHGG→EDWF` leg does not

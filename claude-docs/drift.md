@@ -718,6 +718,84 @@ the book added the 27/08/2025 SR20 leg's **0:43** SE-IFR (101:12 → 101:55) and
 book's SE-IFR line had been running 0:43 further behind — the gap simply closes by that leg. No
 cumulative is affected; nothing to correct.
 
+> ⚠ Correction to the paragraph above (2026-08-01): our Cumulative_Instrument at 31/01/2026 is
+> **105:57**, not 105:14 — read it off `logbook_3.csv`, the figure quoted here (and in an earlier
+> `resume.md`) was stale. Against the book's 101:55 the Instrument drift is therefore **+4:02** and
+> it did **not** move at p.58; the "+3:19" reasoning was wrong (we added the same 0:43 the book did).
+
+## IMG_6036/6037 batch (pages 59–62, 06/03/2026–03/06/2026) — appended 2026-08-01
+**29 flights** (6036: 15 · 6037: 14). Both images **sideways → CCW `rotate(90)`**; no `LT` subscripts.
+**Zero block-vs-total warnings on all 29 rows** — every block pair matched its logged time to the
+minute (second batch running to do so, after 6034/6035). IMG_6037 reconciled **exactly**
+(Δtotal/Δpic 11:16). Landings **30** and **56**; both pages' landing cells blank → no paper check.
+**These are the last two photographed spreads. The paper book is NOT finished** — p.62 of 128, and
+p.61/62 has no "TOTAL THIS PAGE" filled in (page still in progress). `logbook_3.csv` therefore stays
+`logbook_3.csv`; do **not** rename it `_final`.
+
+### ⚠ IMG_6036 row 13 — the page total is 1 minute low (our value kept, user-confirmed)
+01/05/2026 OH-PDP EFHV local, off/on **08:24–08:48 = 0:24**, and the book's own SE-VFR *and* PIC cells
+say **0:24**. But its running-Total column adds only **0:23**, and both printed page totals
+(Total 12:17, SE-VFR 12:17, PIC 12:17) inherit that. Our row sum is **12:18**.
+**User decision: keep 0:24** — the block cells and the row's own SE-VFR/PIC cell all agree; the
+running column is the unreliable one (sixth such slip). Consequence: **the paper-vs-ours Total and
+PIC drift each move +0:01** (see below). The batch was appended with `d_total`/`d_pic` set to our
+corrected **12:18**.
+
+### ⚠ IMG_6036 rows 12–15 — the year is written `/25`, the flights are 2026
+The book writes `08/5/25`, `1/5/25`, `3/5/25`, `11/5/25`. **User-confirmed typo — all four are 2026.**
+Pinned independently: the running-Total column runs continuously through them, and IMG_6037 opens
+15.05.**26**. Rows 13 & 14 (01/05, 03/05) also carry **margin arrows** and are **entered out of
+order**, after the 08/05 row — stored as written.
+
+### ⚠⚠ IMG_6036 is stored LOCAL throughout — and that CONFLICTS with the one club record
+**User decision (2026-08-01): the whole of IMG_6036 is local; no `Z` on any of the 15 rows.**
+Only one row on the spread is externally covered — 12/04/2026 OH-CAM EFHV local — and
+`laskukierros_flights.csv` (whose times are local) has it at **09:58–12:10** against the book's
+**06:58–09:10**, i.e. exactly **−3 h**, which reads as UTC. Landings agree (3 = 3), so it is
+certainly the same flight. **Flagged to the user, who ruled the page local anyway; paper stays
+authoritative.** Documented here only — no cumulative is affected. Everything else on the spread is
+OH-PDP / OH-ESR / SR20, absent from both electronic references.
+
+### IMG_6037 — zones are mixed four ways, all user-approved
+| rows | dates | zone | evidence |
+|---|---|---|---|
+| 1–4 | 15–16/05 | **UTC (`Z`)** | club records sit exactly +3 h (r1 16:36–17:16, r2 17:20–18:15, r4's airborne 19:35–19:52) |
+| 5–7 | 17–18/05 | **local** | club matches the book **digit-for-digit** (10:00–10:58, 15:26–16:10, 16:49–18:17) |
+| 8 | 01/06 | **local** | user: *"I flew the Maule first then drove to fly CDK"* |
+| 9 | 01/06 | **UTC (`Z`)** | same — 14:43Z = 17:43 local, after the Maule leg |
+| 10–14 | 03/06 | **local** | user |
+Rows 8 and 9 **overlapped as written** (OH-MIL 14:37–15:34, OH-CDK 14:43–15:48); the user resolved it
+from memory. *A same-day overlap between two different aircraft is still the reliable tell for a
+zone mix — and the answer can be a per-row memory, not a rule.*
+
+### Other IMG_6037 notes
+- **Row 8's type is written `M2`**; every prior OH-MIL row in the CSVs is **`M6`**. User confirms
+  **M6** (Maule, always on floats). Stored `M6`.
+- **Row 4 landings: book 4, club record 3.** User: **book is correct.** Kept 4.
+- **Row 3** (16/05 Kabböle local 0:50, 7 ldg, instructing) has **no club record at all** — the pupil
+  forgot to log it. User will have them enter it. Not an error in our row.
+- **Row 2** book 14:14–15:14Z vs club 17:20–18:15 — 6 min / 1 min apart after the +3 h shift. Paper
+  kept; landings agree (6 = 6).
+- **New airport `EFOP` (Oripää)** and **new place `Ojakkala`** (Vihti, on Hiidenvesi) — both grepped
+  against all three CSVs first, both genuinely new. Row 9 is a **C185 OH-CDK float instruction local
+  at Ojakkala**, 1:05 PIC + 1:05 FI.
+- **Pupils** (from `laskukierros_flights.csv`, context only — `pic_name` stays `self` on instructing
+  rows): r2 **Tommi Nirkkonen**, r4 **Toivo Huovinen**, r5 **Harry Karlsson** (*"Kevätkertaus 2026"*),
+  r6 **Thomas Hansson** (*"Kerhon kevättarkkari"*), r7 **Mikko Sinervä** (*"Opekertaus"* — the
+  seaplane instructor is now the *pupil* on a proficiency check). New names: Huovinen, Karlsson,
+  Hansson.
+- **2026 float season opens 15/05/2026** (r1, OH-CTL EFRY→Tuusulanjärvi) — a fortnight earlier than
+  2025's 18/05.
+
+### Paper-vs-ours drift at 11/05/2026 (end of p.60)
+Book bottoms (p.60): Total **1192:51**, PIC **1026:39**, SE-VFR 1090:56, SE-IFR **101:55**,
+Dual **166:12**, Flight-Instructor **179:56**. Ours at that row: Total **1194:57** (**+2:06**),
+PIC **1028:25** (**+1:46**), Instrument **105:57** (**+4:02**), Student **166:32** (**+0:20**),
+Instructor **178:33** (**−1:23**).
+**Total and PIC each moved +0:01** — entirely the IMG_6036 row-13 decision above. Instrument, Student
+and Instructor are **unmoved since p.54**. **No drift refresh is possible at p.62** — the last page
+carries no totals.
+
 ## Confirmed corrections
 - **IMG_4953 (closeout, pages 110/111) — row-1 landing & instructor rows (user-verified 2026-07-31).**
   Row 1 (27/05/2021 OH-CTL Räyskälä→Vääksy) landings read ambiguously as 10; user confirmed **9**
