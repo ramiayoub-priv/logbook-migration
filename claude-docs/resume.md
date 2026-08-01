@@ -242,8 +242,9 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
   All user-approved. Derive the zone **row by row from the club file**, not per spread.
   **⚠ 6030 row 7 is a DUAL row with `pic_name` left BLANK** — 19/05 OH-CTL Tuusulanjärvi→Hirvijärvi
   0:38: Dual column filled, **PIC blank**, but the name cell still says `AYOUB` (habit, not
-  evidence). Absent from the club file → filed under the other pilot. Likely a seaplane spring
-  check; the instructor's name was never supplied. **`OH-COF` returns** (C152, EFNU, instructing —
+  evidence). Absent from the club file → filed under the other pilot: a seaplane spring
+  check with **PIC = Sinervä** (user-supplied 2026-08-01, filled in after the append — his fifth
+  seaplane dual with the user). **`OH-COF` returns** (C152, EFNU, instructing —
   an existing Book-1/2 reg, not a new one).
   6031 r12 stored **on-block 17:53** (the 5-min water-taxi pattern). New places **Hirvijärvi,
   Loppijärvi, Kytäjärvi**.

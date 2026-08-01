@@ -561,8 +561,11 @@ spreads go back to the familiar Tuusulanjärvi instruction pattern.
   every other row — *the name cell is habit, not evidence; trust the time columns.* It is also the
   only flight of that day absent from the club file, consistent with being filed under the other
   pilot's account. The **return leg 20 minutes later (r8) is PIC + Instructor.** Most likely a
-  seaplane spring check / class-rating revalidation. User approved the batch without supplying a
-  name, so **`pic_name` is stored BLANK** — fill it in if it ever surfaces.
+  seaplane spring check / class-rating revalidation. **`pic_name = Sinervä`** (user-supplied
+  2026-08-01, after the append) — the seaplane instructor's **fifth** dual with him
+  (30/04/2019, 15/07/2020, 13/05/2022, 12/05/2023, 24/08/2023 Maule, 19/05/2025).
+  *Nothing else changed: Student_Time was already 0:38 and every cumulative was already correct;
+  only the name cell was blank.*
 - **6030 row 1's landings cell is blank** (18/04/2025 OH-PDP EFHV local, 1:10). Counted as **1** per
   the IMG_6013 precedent, user-approved — but a 1:10 Arrow local is plausibly circuits, so this is
   the one soft number in the batch. Row-1-blank was pinned by mapping the other 14 landing cells
