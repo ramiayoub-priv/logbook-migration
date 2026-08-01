@@ -14,8 +14,7 @@ Rules live in the repo root **`CLAUDE.md` §0** — read those first, they are n
 
 ## ★★ NEXT SESSION STARTS HERE
 
-**Status: Phase 0 (foundations) in progress.** Nothing is deployed yet. No code ships until the rules
-in `CLAUDE.md` §0 are satisfied — in particular failing-test-first and the ≥80% / 100%-core bar.
+**Status: foundations landed, calculation core done and green.** Nothing is deployed yet.
 
 **Done so far**
 - Full recon of `ayoub.fi` (see `docs/deploy.md` for the shared-tenant map).
@@ -23,9 +22,16 @@ in `CLAUDE.md` §0 are satisfied — in particular failing-test-first and the �
 - Repo rules written (`CLAUDE.md` §0), adapted from the neighbouring `transit` project.
 - Server cleanup done: transit's orphaned Quarkus killed; OpenVPN stopped + disabled at the user's
   request (re-enable with `sudo systemctl enable --now openvpn-server@server`).
+- **Go module + `internal/hhmm` + `internal/timeutil`, both at 100% coverage**, failing-test-first.
+  `make check` runs vet + race tests + both coverage gates.
 
-**Next**: scaffold `backend/` + `frontend/`, then the schema and importer (Task 3) — that is the
-riskiest piece, because it must reproduce 1295 flights and their totals exactly.
+**Toolchain note**: Go is installed at `~/.local/go` on the dev machine (the system had none).
+Prepend `~/.local/go/bin` to `PATH`. The server's Go is 1.13 and is irrelevant — we cross-compile.
+
+**Next**: Task 3, the schema and importer. This is the riskiest piece in the project: it must
+reproduce 1295 flights and their totals exactly, and refuse to complete on any checksum mismatch
+(rule §0.2). Read `docs/data-model.md` first — the schema and the CSV mapping are already specified
+there, including the seed rows that must be skipped and the known data-quality items to surface.
 
 **Open questions awaiting the user**
 - Is the `kraken-predictor-python-2` container on `:8000` still wanted? It is publicly exposed and is
@@ -71,8 +77,8 @@ day · landings night.
 
 | # | Task | Status |
 |---|---|---|
-| 1 | Project rules + app docs | **in progress** |
-| 2 | Scaffold backend + frontend, test harness | not started |
+| 1 | Project rules + app docs | **done** 2026-08-01 |
+| 2 | Scaffold backend + frontend, test harness | **backend done** 2026-08-01; frontend not started |
 | 3 | Schema + importer for 1295 flights (verified) | not started |
 | 4 | API + authentication | not started |
 | 5 | Four frontend pages (mobile-first) | not started |
@@ -160,3 +166,22 @@ Outstanding, not yet actioned: the publicly-exposed `:8000` container, and stale
 which is evaluated *before* ufw's INPUT rules — so `ufw deny` does **not** block a published container
 port. The `:8000` container is published `0.0.0.0:8000`; if it ever needs closing, fix the port
 binding, not the firewall.
+
+### 2026-08-01 — Go's `time.Date` does not signal DST trouble, so we detect it ourselves
+
+Building `internal/timeutil` surfaced a trap worth recording. Go's `time.Date` handles the two DST
+edge cases silently and differently:
+
+- **Spring gap** (a wall clock that never existed): it *normalizes*. Asking for 03:30 on 2024-03-31
+  returns 04:30 with no error. Detected by checking whether the returned value still reads back as
+  what we asked for.
+- **Autumn fold** (a wall clock that happened twice): it returns one of the two instants and the
+  documentation explicitly does not guarantee which. An empirical probe showed it picking the
+  **later** offset (EET), the opposite of this implementation's first assumption — which is exactly
+  how the first version of the fold check passed review and still failed its test.
+
+The fold check therefore probes an hour in **both** directions and flags ambiguity if either shift
+reads back as the same wall clock. That is correct regardless of which offset Go picks, so the code
+does not depend on undocumented behaviour.
+
+Both cases yield `time_origin = unknown` and surface for review rather than being guessed at.
