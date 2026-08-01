@@ -22,11 +22,11 @@ transcribed from paper logbooks by the *other* effort in this repo (`claude-docs
 not replaced by the app). Read `CLAUDE.md` §0 first — those rules are non-negotiable and were written
 for this work specifically.
 
-**Status: feature-complete for v1, green, and LIVE at `https://ayoub.fi/logbook`. But the box is
-BEHIND the repo — it runs an older binary and a 1293-flight database, and the repo is at 1296,
-including the three 28/08/2025 flights. Closing that gap needs TWO owner-run `sudo` commands and two
-rsyncs; the runbook is in "Where the deploy actually stands" below. Read it before touching
-anything.**
+**Status: feature-complete for v1, green, and LIVE at `https://ayoub.fi/logbook` — and as of
+2026-08-02 the box is LEVEL with the repo: current binary (md5-matched), current frontend, the three
+28/08/2025 flights imported, and the no-cache headers in place. The one thing a session cannot read
+is the `flights=1296` startup line; see "Where the deploy actually stands" for what was verified and
+how.**
 
 ### Done (2026-08-01)
 - **Task 2** — `app/backend/` Go module, `internal/hhmm` and `internal/timeutil`. Both 100%.
@@ -222,8 +222,8 @@ a session cannot do it unattended. Read-only survey over SSH works fine with the
 401 unauthenticated, and all seven of the owner's other sites still answer 200. The owner ran
 `install-apache.sh` and created an account.
 
-⚠ **But the deployment is BEHIND the repo.** The box is running the pre-2026-08-01-evening binary
-and a **1293-flight database**. Both are staged and waiting on one command — see below.
+✅ **The deployment caught up on 2026-08-02** — new binary, re-imported database, four-digit form and
+cache headers. What was verified is listed under the runbook below.
 
 ✅ **Done and verified live:**
 - `logbook` system user; `/opt/logbook`, `/var/lib/logbook` (0750), `/var/www/logbook`.
@@ -238,10 +238,27 @@ and a **1293-flight database**. Both are staged and waiting on one command — s
 ✅ **The account** — created interactively with `createuser`. The password has never been in a file
 or a chat session and must stay that way.
 
-⏳ **THE RUNBOOK STILL OUTSTANDING** — four steps, in this order. The two `sudo` ones are the
-owner's; there is no passwordless sudo, and a session cannot run them. Verified as far as it can be
-without sudo: the staged CSVs on the box are **byte-identical (md5) to the repo's**, so the three
-28/08/2025 flights are already sitting there waiting for step 2 to import them.
+✅ **RAN 2026-08-02, and the box is now level with the repo.** What was verified from here afterwards,
+each by an independent check rather than by trusting the script's own output:
+
+- `/opt/logbook/logbook-server` md5 **`d22d8a39b456560e0f76ba1f28fbb821`** — byte-identical to the
+  binary built from this repo's HEAD. `logbook-server.prev` is in place for rollback.
+- `logbook.service` active since 21:05:37 UTC, **28.0 MB** against the 192 MB `MemoryMax`.
+- `/logbook/api/health` **200**, `/logbook/api/flights` without a session **401** — default deny
+  survived the deploy.
+- `index.html` serves `Cache-Control: no-cache, no-store, must-revalidate` + `Pragma` + `Expires: 0`;
+  `sw.js` serves `no-cache`; the live `sw.js` is `logbook-shell-v2` with the `no-store` shell fetch.
+- The live bundle is the four-digit form (`index-C1WjdtsT.js`), and `index.html` points at it.
+- **All seven of the owner's other sites still answer 200.**
+
+⏳ **The one item a session cannot confirm: the `flights=1296` startup line.** The database and the
+unit's journal are readable only by root and the service user, so this must be read off the owner's
+own `update.sh` output, or from the app once signed in. Everything else above was checked from here.
+
+**The runbook, for next time** — four steps, in this order. The two `sudo` ones are the owner's;
+there is no passwordless sudo, and a session cannot run them. Before running it, note that the staged
+CSVs on the box were confirmed **byte-identical (md5) to the repo's**, which is what put the three
+28/08/2025 flights in front of the importer.
 
 ```bash
 # 1. Stage the current build. rami owns /home/rami/logbook-deploy, so no sudo.
