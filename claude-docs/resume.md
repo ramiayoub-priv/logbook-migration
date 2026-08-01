@@ -16,8 +16,31 @@
 > `Cumulative_*` series row by row.** It found **three previously unlogged problems** in the source
 > data — a bad `Instrument_Time` at `logbook_1_final.csv` line 28, eight `DD.MM.YYYY` dates at
 > `logbook_2_final.csv` lines 83–90, and a 5:58 gap between our night time (16:47) and the paper's
-> inked 22:45. **All three are open and waiting on the user**; see the block at the top of
+> inked 22:45. **All are open and waiting on the user**; see the block at the top of
 > `drift.md`. Nothing has been corrected.
+>
+> **Re-investigated the same day — each one is now localised, and a fourth and fifth turned up:**
+> - **Line 28 (instrument):** the 9 min is entirely inside Book 1 (its column sums 3:21, its own
+>   cumulative says 3:12; Books 2–3 chain off 3:12 exactly). The preceding instrument lesson
+>   (line 20, same aircraft & instructor) also logs instrument == the whole flight, so **1:12** is
+>   the reading. **Fixing it moves no total** — every cumulative already reflects 1:12. It matters
+>   because the app *computes* cumulatives from rows (rule 5) and would show 107:14 vs the paper's
+>   107:05.
+> - **Lines 89–90 (dates):** **no electronic source can settle it** — Aviatron has zero OH-PDP rows,
+>   `laskukierros_flights.csv` starts 19/04/2020. Needs the physical page.
+> - **⭐ Night 5:58:** **`22:45` is NOT a mis-add and Book 3 is clean.** The EASA book's carry-in
+>   night is **18:42** vs our Books 1+2 **12:44** — the whole gap is inherited. Book 3 reconciles
+>   exactly: 18:42 + our 4:03 = **22:45**. So the missing night time is in the **old paper books'
+>   night column**, not in Book 3 and not in the addition.
+> - **NEW — line 102 of `logbook_2_final.csv` reads `OK-PDP`**, a one-off OCR typo for `OH-PDP`
+>   (creates a phantom aircraft in the app). Also: **`SE-GKT` (Book 1) and `OH-GKT` are the same
+>   airframe** re-registered — the app must not split them.
+> - **NEW — line 97** (`10/05/2018` OH-DBS) sits exactly one hour off Aviatron while the same day's
+>   other row matches to the minute. No total affected.
+>
+> **⚠ `Night_Time` comes from the book's night column and nothing else — never infer it from clock
+> times, sunset or time zones** (user, 2026-08-01). A solar calculation was used once, only to rank
+> which paper rows are worth re-reading, and no computed value went into any CSV.
 >
 > This also means the CSVs now have a machine-checked invariant: run
 > `cd app/backend && go run ./cmd/logbookctl import -dry-run -csv ../..` after any append. It re-runs

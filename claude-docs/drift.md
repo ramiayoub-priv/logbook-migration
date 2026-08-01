@@ -2,13 +2,21 @@
 
 Log every correction that alters a row later rows built on. Fix cumulatives from that row forward.
 
-## 🔎 OPEN — three items found by the app importer (2026-08-01)
+## 🔎 OPEN — items found by the app importer (2026-08-01), re-investigated 2026-08-01
 
 Building the app's importer (`app/backend/internal/csvbook`) put every row of all three CSVs through
 a row-by-row reconciliation of all seven `Cumulative_*` series plus a set of per-row invariants. Over
 1293 flights it found **one cumulative break and two formatting problems that had never been logged**.
+A follow-up pass on 2026-08-01 **localised all three** and turned up **a fourth defect** (item 4).
 None has been corrected — the paper book is the authority and these are the user's to rule on.
 Full context in `app/docs/data-model.md`.
+
+> **⚠ METHOD NOTE — how night time is and is not determined (user, 2026-08-01).**
+> **`Night_Time` comes from the book's night column and nothing else.** If a row is marked night on
+> paper it is night; if it is not marked, it is not night. **Never infer night time from clock times,
+> sunset, twilight or time zones, and never write a computed value into a row.** A solar calculation
+> was used *once*, on 2026-08-01, purely to rank *which paper rows are worth re-reading* for item 3 —
+> it is a page-finding aid, not evidence, and no value it produced has entered or may enter the CSVs.
 
 ### 1. `logbook_1_final.csv` line 28 — instrument time exceeds flight time
 `28/09/2011 · C152 OH-COF · EFHF → EFHF · 08:22–09:34`
@@ -22,8 +30,32 @@ Full context in `app/docs/data-model.md`.
   line 28 in our series is therefore 9 minutes low relative to the rows.
 - This is the **only** break in all seven series across all 1293 flights — everything else reconciles
   exactly, including `Cumulative_SEP_Sea` (407:39) row by row.
-- ⏸ **Awaiting the user.** Fix is a one-character change to the row, then rebuild
-  `Cumulative_Instrument` from line 28 forward (+9 min).
+
+**Re-investigated 2026-08-01 — the case for `1:12` is now strong, and the fix costs nothing:**
+- **The 9 minutes live entirely inside Book 1.** Book 1's `Instrument_Time` column sums to **3:21**
+  but its own last `Cumulative_Instrument` is **3:12**. Books 2 and 3 then chain off 3:12 perfectly:
+  3:12 + Book 2's column 61:56 = **65:08** (Book 2's last cumulative, exact), and 65:08 + Book 3's
+  column 41:57 = **107:05** (exact). So one row, one column, one book — nothing else is involved.
+- **`Total_Time` is not the wrong cell.** Three independent cells agree on 1:12 (`Off_Block`/`On_Block`
+  08:22–09:34, `Block_Time`, `Total_Time`) and `Cumulative_Total` reconciles across all 1293 rows.
+  The duration is solid, so `Instrument_Time` cannot exceed 1:12 whatever the truth is.
+- **Precedent one row earlier in the same training block.** Line 20 (`15/09/2011`, same C152 OH-COF,
+  same instructor Martevuo) logs `Instrument_Time 1:00` on a `Total_Time 1:00` flight — **instrument
+  == the whole flight**, the standard PPL basic-instrument lesson. Line 28 is the second such lesson
+  and its cumulative advances by exactly its whole flight time. `1:12` fits that pattern; `1:21` is a
+  digit transposition of it.
+- **⚠ Why this matters for the app, not just for tidiness.** Rule 5 says cumulative totals are
+  **computed from the rows, never stored** — so the app derives instrument time by summing
+  `Instrument_Time` and will show **107:14**, 9 minutes above the **107:05** that every stored
+  cumulative carries and that the user inked on paper at p.62 (SE-IFR 105:57 at that point).
+  **Until this row is fixed the app and the paper book cannot agree on instrument time.**
+- **The fix has zero downstream effect.** Every `Cumulative_Instrument` value in all three books, and
+  the inked p.62 figure, *already* reflect 1:12. Changing the row to 1:12 makes the column agree with
+  the cumulative; **no cumulative needs rebuilding and no total moves.** (The earlier note here said
+  "rebuild from line 28 forward (+9 min)" — that was backwards; the cumulatives are already right.)
+- ⏸ **Awaiting the user.** Recommended: `1:21` → `1:12`, single cell, nothing else touched.
+  Book 1's page images are not in the repo (gitignored, and not on this disk), so this cannot be
+  read back off paper without the physical book.
 
 ### 2. `logbook_2_final.csv` lines 83–90 — dates written `DD.MM.YYYY`
 Eight consecutive rows from one transcription batch use dots instead of slashes:
@@ -35,6 +67,21 @@ Eight consecutive rows from one transcription batch use dots instead of slashes:
 - The importer accepts them and flags them; the CSV itself is unchanged. ⏸ **A normalisation pass to
   `DD/MM/YYYY` is the user's call.**
 
+**Re-investigated 2026-08-01 — no electronic source can settle lines 89–90; the paper is the only way.**
+- **Aviatron contains no `OH-PDP` row at all** (0 of 126 — it covers the pilot's own/Blue Skies fleet:
+  GKT, PIF, DBS, DBE, TIL). **`laskukierros_flights.csv` starts 19/04/2020**, two years too late.
+  Both references were checked directly; neither has any coverage of these two flights.
+- **`OH-PDP`'s own history gives no bracket either** — its first flight in the books is 23/03/2017,
+  well before either candidate date, so an April reading is not excluded by the aircraft.
+- What still stands, and it is decent: **all eight dotted rows come from one transcription batch and
+  six of them are unambiguously day-first** (21, 30, 19, 22, 22, 22) — a batch does not switch date
+  format halfway. And 4 May sits correctly in book order between line 88 (`22.04.2018`) and line 91
+  (`07/05/2018`), whereas 5 April would be ~3 weeks out of order.
+- ⏸ **Still worth the one look.** The two rows are an evening out-and-back to Lahti:
+  `EFHF→EFLA 17:15–18:04 (0:49)` and `EFLA→EFHF 18:49–19:40 (0:51)`, P28A OH-PDP, cumulative
+  Total 474:07 then 474:58. **If the paper says 5 April, two rows move by a month** (row order only —
+  no total changes, since the totals do not depend on the date).
+
 ### 3. Night time — the paper's 22:45 does not match the CSV's 16:47
 - The `Night_Time` column sums to **16:47** over all three books (Book 1 9:04 · Book 2 3:40 ·
   Book 3 4:03).
@@ -45,6 +92,81 @@ Eight consecutive rows from one transcription batch use dots instead of slashes:
 - ⏸ **Awaiting the user.** Either the paper's night column carries time our rows do not, or 22:45 was
   a mis-add. Note that the **59 night landings** inked at p.62 were derived from these same rows, so
   if the night *time* is wrong the landing split below may need revisiting too.
+
+**⭐ SOLVED-BY-HALVES 2026-08-01 — `22:45` IS NOT A MIS-ADD, AND BOOK 3 IS CLEAN.**
+The gap is **entirely inherited from Books 1–2** and was already on paper before Book 3 opened:
+
+| | our `Night_Time` | paper | Δ |
+|---|---|---|---|
+| Books 1 + 2 (9:04 + 3:40) | **12:44** | EASA "TOTAL PREVIOUS PAGES" night **18:42** | **−5:58** |
+| Book 3 | **4:03** | 22:45 − 18:42 = **4:03** | **0 — exact** |
+| p.62 inked total | 16:47 | **22:45** | −5:58 |
+
+- **18:42 + 4:03 = 22:45 to the minute.** The paper is internally consistent: the pilot carried 18:42
+  into the EASA book in 2021 and added exactly the night time our Book-3 rows carry. **So 22:45 was
+  correctly added and there is nothing wrong anywhere in Book 3** — its seven night rows account for
+  the whole Book-3 movement. The p.62 figure is not the defect; it faithfully reflects a carry-in we
+  never reconciled.
+- **The entire 5:58 is unreconciled Book-1/Book-2 night time**, and it predates the migration: the
+  discrepancy is between the *old paper books' night column* and *our transcription of it*. The
+  18:42 carry-in has been sitting in this file since 2026-07-31 (see the Book-3 start cross-check
+  below) — it was recorded as a Total/PIC/SE-IFR/Dual/Instructor check and the night line was never
+  compared. Every other column on that carry-in was checked; night was the one that was not.
+- **Most likely reading: rows in Books 1–2 whose night column we did not transcribe.** All three
+  books together hold only 22 rows with any night time, so 5:58 is roughly six ordinary evening
+  circuits' worth — a small number of missed cells, not a systematic error.
+
+⏸ **Awaiting the user — and this one genuinely needs the paper.** Books 1 and 2 page images are
+**not in the repo** (gitignored) and are not on this disk, so the night column cannot be re-read here.
+
+**Shortlist of Book-1 rows to re-read — A PAGE-FINDING AID ONLY, NOT EVIDENCE.** These are rows that
+carry **no `Night_Time`** in our CSV. They are listed *only* so the physical book can be opened at the
+right pages; **the book's night column is the sole authority and decides every one of them.** Six of
+them are evening flights whose durations happen to sum to **5:39 of the 5:58** — suggestive of where
+to look, and nothing more:
+
+| line | date | reg | route | block | total |
+|---|---|---|---|---|---|
+| 111 | 21/01/2013 | OH-CTM | EFHF local | 18:41–19:58 | 1:17 |
+| 173 | 25/02/2014 | OH-KLS | EFHF local | 18:31–19:26 | 0:55 |
+| 237 | 15/09/2014 | OH-CMO | EFLA→EFHF | 20:27–21:18 | 0:51 |
+| 245 | 09/12/2014 | OH-KAM | EFHF local | 17:18–18:30 | 1:12 |
+| 246 | 20/12/2014 | OH-CMO | EFHF local | 16:28–17:15 | 0:47 |
+| 250 | 01/02/2015 | OH-CAV | EFHF local | 17:21–17:58 | 0:37 |
+
+Also worth a glance while the book is open, all Book 1: line 107 (`09/11/2012` OH-CWB), line 177
+(`26/03/2014` OH-TIL EFSI→EFHF), line 255 (`16/03/2015` OH-CMO). And the five **partial**-night rows
+listed in the p.62 landing-split table further down already have a night value — if any of those is
+short on paper, that closes part of the 5:58 too.
+
+**Knock-on if any of these rows does carry night time on paper:** its landings become night landings,
+so the inked **59 night / 3335 day** split at p.62 moves. `Cumulative_Landings` (the sum) is
+unaffected either way — only the split. Correct p.62 rather than the CSV, per the note further down.
+
+### 4. `logbook_2_final.csv` line 102 — registration typo `OK-PDP` (found 2026-08-01)
+`17/05/2018 · P28A · EFRY → EFHF · 18:51–19:35 · 0:44`
+- The registration reads **`OK-PDP`** (Czech prefix) where every other row reads `OH-PDP`. It is the
+  **return leg of the out-and-back on line 101** (`17/05/2018` OH-PDP `EFHF→EFRY` 17:57–18:43), so
+  the aircraft is not in doubt.
+- **This is the exact OCR failure `resume.md` warns about** — it cites `OK-PDP` in the stale ollama
+  output `logbook-2-csv/logbook_IMG_4920.csv` as an example of untrusted output. **It survived into
+  `logbook_2_final.csv`.**
+- **Consequence for the app:** the aircraft table is keyed on registration, so this row creates a
+  **phantom one-flight aircraft `OK-PDP`** and detaches 0:44 from OH-PDP's totals.
+- Only 3 registrations in 1293 rows fail the `OH-XXX` pattern; the other two are genuine —
+  **`SE-LWI`** (one flight) and **`SE-GKT`** (14 rows, `11/06/2015`–`06/09/2016`), which is the
+  pilot's own aircraft under its **Swedish registration before it became `OH-GKT`** (first OH-GKT row
+  `16/06/2018`; the two never overlap). ⚠ **`SE-GKT` and `OH-GKT` are the same airframe** — the app
+  must not treat them as two aircraft. Not a defect, but it needs handling.
+- ⏸ **Awaiting the user.** Recommended: `OK-PDP` → `OH-PDP`. No time value changes.
+
+### 5. Minor — `logbook_2_final.csv` line 97 sits one hour off Aviatron (found 2026-08-01)
+`10/05/2018 · C150 OH-DBS · EFLA local · 08:15–09:27 · 1:12` (student, Ravantti).
+Aviatron id **9843** has the same aircraft, date and **identical 1:12 block**, but at **09:15–10:27**
+— exactly one hour later. The **other** OH-DBS row that day (line 98, 13:46–14:45) matches Aviatron
+id 9852 **to the minute**, so this is not a time-zone offset (that would move both rows); it is a
+one-hour slip on one cell, in the book or in transcription. **No total is affected** — the duration
+is right either way. ⏸ Documented only; the paper decides.
 
 ### Not defects — confirmed by the same sweep
 - **18 rows are genuinely out of date order** across the three books (e.g. Book 1 line 269,
