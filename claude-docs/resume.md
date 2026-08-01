@@ -332,7 +332,7 @@ and grep the club CSV):
 following the Book-1/2 convention and refresh this file's project summary.
 **Check orientation first** — image
 orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, 6012–6021 were all
-already upright, and **6022–6031 were all sideways (CCW `rotate(90)`)**. Never assume —
+already upright, and **6022–6035 have all been sideways (CCW `rotate(90)`)**. Never assume —
 thumbnail first. **Also scan the block-minute cells for the tiny `LT` subscript** (see below).
 Quickest check: `Image.open(p).resize((1024,768))` and eyeball
 which way is up; then crop the two pages at high res (the original is ~2048×1536). Transcribe all rows,
@@ -344,16 +344,17 @@ just whether. **On IMG_6022 the answer was a per-aircraft rule** ("all local exc
 before applying such a rule wholesale.
 **Hybrid-batch pace works well:** transcribe 2–3 spreads/pass, tool-reconcile each, present ONE digest
 that greenlights clean pages and surfaces only flagged rows (student/instructing/night/odd-time/landing
-anomalies) for user sign-off before append. Watch for: SR20 OH-ESR (now a PIC type, flown IFR on
-cross-countries), Stude (SR20 instr), Sinervä + **Salo** (instructors), night landings, and the day+night
-landings convention. **Seasonality:** May–Sep the pilot float-instructs (Kabböle/Tuusulanjärvi/Kahvisaari
-on OH-CTL/OH-GKT/OH-MIL) — clusters of short lake locals with high landing counts, logged PIC +
-Instructor; **Oct–Mar it switches to EFHV landplane circuits** (OH-CGX/OH-CAY/OH-AWB/OH-CMU) with
-night flights. **The 2024 float season closed on p.43 (16/10/2024) and 6029 is an all-landplane
-winter spread — expect the 2025 float season to reopen somewhere on IMG_6030/6031** (the club file
-shows OH-CTL flying again from 18/05/2025, with pupils Puhakka, Nirkkonen, Kere, Salo, Storgårds).
-Then continue IMG_6030…6037 at that pace (each spread is
-~15 flights — sizeable, so 1–2 spreads per pass is plenty).
+anomalies) for user sign-off before append. Watch for: SR20 OH-ESR (a PIC type, flown IFR on
+cross-countries), Stude (SR20 instr), **Sinervä** (seaplane instr — 7 duals so far, incl. two on the
+Maule), Salo, night landings, and the day+night landings convention.
+**Seasonality:** May–Sep the pilot float-instructs (Kabböle/Tuusulanjärvi/Kahvisaari on
+OH-CTL/OH-GKT/OH-MIL) — clusters of short lake locals with high landing counts, logged PIC +
+Instructor; **Oct–Mar it switches to EFHV/EFNU landplane circuits** (OH-CGX/OH-CAY/OH-AWB/OH-CMU/
+OH-PDP/SR20), with occasional night flights. The **2025 float season ran 18/05 → 06/11/2025**
+(6035 r9 ferries OH-GKT to EFRY for the winter), so **IMG_6036 opens in the Feb–Apr 2026 landplane
+stretch and the 2026 float season should reopen partway through 6036/6037** — `aviatron_flights.csv`
+shows OH-GKT flying again from **13/06/2026**, and the club file runs to 25/07/2026.
+Two spreads is one comfortable pass, and that finishes the book.
 
 ### Hard-won reading lessons (all cost a round-trip; don't relearn them)
 - **⚠⚠ THERE ARE TWO ELECTRONIC REFERENCES AND THEY COVER DISJOINT FLEETS. GREP BOTH.**
