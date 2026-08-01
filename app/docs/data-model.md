@@ -149,25 +149,49 @@ This must be a test case.
 
 ## Statistics
 
-Every figure the statistics page reports, over a `From`–`To` range on `flight_date`:
+**Implemented in `internal/stats` (100% covered), not in SQL.** The rows are loaded in `seq` order
+and aggregated in Go, so there is one place where a figure is derived and it is the same code the
+PDF will use. Nothing is stored (rule §0.5).
 
-| Metric | Derivation |
-|---|---|
-| Seaplane PIC | `SUM(pic_minutes)` where `class` ends `_SEA` |
-| Seaplane instructor | `SUM(instructor_minutes)` where `class` ends `_SEA` |
-| Landplane PIC | `SUM(pic_minutes)` where `class` ends `_LAND` |
-| Landplane instructor | `SUM(instructor_minutes)` where `class` ends `_LAND` |
-| Dual | `SUM(dual_minutes)` |
-| Total | `SUM(total_minutes)` |
-| Night | `SUM(night_minutes)` |
-| Instrument | `SUM(instrument_minutes)` |
-| Landings sea | `SUM(landings_day + landings_night)` where `_SEA` |
-| Landings land | `SUM(landings_day + landings_night)` where `_LAND` |
-| Landings day | `SUM(landings_day)` |
-| Landings night | `SUM(landings_night)` |
+Every figure the statistics page reports, over a `From`–`To` range on `flight_date`, with the JSON
+field `GET /logbook/api/stats` returns it as. **All durations are integer minutes**; the frontend
+formats H:MM.
+
+| Metric | JSON | Derivation |
+|---|---|---|
+| Seaplane PIC | `sea_pic` | `pic_minutes` where the class is `_SEA` |
+| Seaplane instructor | `sea_instructor` | `instructor_minutes` where `_SEA` |
+| Landplane PIC | `land_pic` | `pic_minutes` where not `_SEA` |
+| Landplane instructor | `land_instructor` | `instructor_minutes` where not `_SEA` |
+| Dual | `dual` | `dual_minutes` |
+| Total | `total` | `total_minutes` |
+| Night | `night` | `night_minutes` |
+| Instrument | `instrument` | `instrument_minutes` |
+| Landings sea | `landings_sea` | `landings_day + landings_night` where `_SEA` |
+| Landings land | `landings_land` | `landings_day + landings_night` where not `_SEA` |
+| Landings day | `landings_day` | `landings_day` |
+| Landings night | `landings_night` | `landings_night` |
+
+Also returned: `flights`, `sea_total`, `land_total`, `instructor`, `pic`, and **`landings_unverified`**
+— how many flights in the range still carry an inferred day/night landing split. That last one is
+how the app tells the truth about Task 8 instead of presenting `0` night landings as verified.
+
+**Land is the default**, not sea: a class added to the vocabulary later cannot silently inflate the
+seaplane figures a rating depends on. Being wrong in that direction shows up as a land discrepancy.
 
 Note the two landing splits partition the same total on different axes — sea+land and day+night must
-each sum to the same grand total. That is a cheap and effective invariant: **assert it in a test.**
+each sum to the same grand total, and sea+land time must reconstitute `total`. Those invariants are
+asserted both on fixtures and **against all 1293 real flights**
+(`internal/stats/realdata_test.go`), which is where a single misclassified row would show up.
+
+### Cumulative totals for the EASA PDF
+
+`stats.Paginate(flights, 15)` walks **`seq`** — never `flight_date`, because 18 rows across the three
+books are genuinely out of date order — and returns each page's rows plus the paper's three-row
+block: `ThisPage` (TOTAL THIS PAGE), `Previous` (TOTAL PREVIOUS PAGES) and `Total`. The 1293 flights
+give **87 pages**, the last holding 3 rows, and the last page's `Total` equals the whole logbook.
+Asserted against the real books. This is the rule §0.5 replacement for the CSVs' `Cumulative_*`
+columns.
 
 ## Known data-quality items
 
@@ -175,31 +199,34 @@ The importer surfaces these and **never auto-fixes them** (rule §0.2). Every on
 `discrepancies` table and printed by `logbookctl import`, with a book and line number so it is
 traceable to a paper page.
 
-**61 discrepancies over 1293 flights, in eight kinds** (56 when first written; the 2026-08-01
-night reconciliation added six night rows, which each raise a `landings_unverified` flag, and
-fixing `OK-PDP` removed one `registration_format`). The counts are asserted in
+**61 discrepancies over 1293 flights, in six live kinds** (56 when first written). The 2026-08-01
+reconciliation moved several: eight new night rows each raise a `landings_unverified` flag, fixing
+`OK-PDP` removed one `registration_format`, and the line-28 ruling closed the only
+`cumulative_break` and the only `component_exceeds_total`. The counts are asserted exactly in
 `internal/csvbook/realdata_test.go`, so a new occurrence in a future Book 3 batch becomes a failing
-test rather than something that slips through.
+test rather than something that slips through. **The two closed kinds stay in that assertion at
+zero** rather than being deleted, so a regression fails loudly.
 
 | kind | n | what it is |
 |---|---:|---|
-| `landings_unverified` | 22 | rows carrying `Night_Time`; the day/night landing split was inferred (Task 8) |
-| `registration_format` | 16 | not Finnish `OH-xxx`: `SE-GKT` ×14 (real), `SE-LWI` ×1 (real), `OK-PDP` ×1 (a slip) |
+| `landings_unverified` | 30 | rows carrying `Night_Time`; the day/night landing split was inferred (Task 8). Every night row in the books: 20 in Book 1, 3 in Book 2, 7 in Book 3 |
+| `registration_format` | 15 | not Finnish `OH-xxx`: `SE-GKT` ×14 (real), `SE-LWI` ×1 (real). Was 16 before the `OK-PDP` fix |
 | `date_format` | 8 | Book 2 lines 83–90 transcribed `DD.MM.YYYY` — see below |
 | `unknown_aircraft_type` | 4 | type `C192` on `OH-CTL` ×2 and `OH-GKT` ×2; not a real Cessna type |
 | `type_conflict` | 3 | one registration written with two types: `OH-CTL`, `OH-GKT`, `OH-CMU` |
-| `cumulative_break` | 1 | Book 1 line 28 — see below |
-| `component_exceeds_total` | 1 | the same row |
 | `block_total_mismatch` | 1 | 08/09/2025, block 0:45 vs total 0:38 (already known and correct) |
+| `cumulative_break` | **0** | was 1 (Book 1 line 28) until the owner ruled on it — see below |
+| `component_exceeds_total` | **0** | the same row |
 
 Notes on the individual items:
 
-- **Book 1 line 28 (28/09/2011, `OH-COF`, EFHF local) — NEW, found building the importer.** The row
-  has `Total_Time` **1:12** but `Instrument_Time` **1:21** — more instrument time than flight time,
-  which is impossible — while its `Cumulative_Instrument` advances by exactly the 1:12 the flight
-  lasted. `1:21` is almost certainly a transposition of `1:12`. **Not corrected.** Consequence:
-  summing the rows gives instrument **107:14**, while the CSV's own `Cumulative_Instrument` ends at
-  **107:05**. The app's totals follow the rows, so it reports 107:14 until the owner rules.
+- ~~**Book 1 line 28 (28/09/2011, `OH-COF`, EFHF local)**~~ — **✅ closed 2026-08-01.** The row had
+  `Total_Time` **1:12** but `Instrument_Time` **1:21** — more instrument time than flight time,
+  which is impossible — while its `Cumulative_Instrument` advanced by exactly the 1:12 the flight
+  lasted. The importer surfaced it rather than correcting it (rule §0.2); the owner ruled that
+  **1:12** is the reading and the CSV was fixed. Instrument **107:14 → 107:05**, which is what the
+  `Cumulative_Instrument` column always said, so **no cumulative moved.** This was the only
+  `cumulative_break` and the only `component_exceeds_total` in the corpus, and both are now zero.
 - **Book 2 lines 83–90 — dates written `DD.MM.YYYY`, NEW.** Eight consecutive rows from a single
   transcription batch. Read day-first, which six of the eight prove on their own (day > 12) and which
   the chronological bracket 15/03 → … → 07/05 confirms. **The two `04.05.2018` rows (89, 90) cannot be
@@ -213,28 +240,30 @@ Notes on the individual items:
   are genuinely different aircraft whose registrations differ only in the last letter, so this needs
   the user's eye rather than a guess.
 - **`SE-GKT` → `OH-GKT`** — the same airframe re-registered. Two `aircraft` rows, linked via `notes`.
-- **28 rows with `Night_Time`** (was 22 before the 2026-08-01 night reconciliation) — day/night
-  landing split unverified (Task 8). ⚠ **The split inked at p.62 (59 night / 3335 day) is now
-  stale and must be recomputed**; `Cumulative_Landings` is unaffected, only the split.
+- **30 rows with `Night_Time`** (was 22, then 28, then 30 as the 2026-08-01 night reconciliation
+  progressed) — day/night landing split unverified (Task 8). ⚠ **The split inked at p.62
+  (59 night / 3335 day) is stale and recomputes to `68 / 3326`**; the landing *sum* 3394 never
+  moved, so this is a correction to the paper, not to the CSV.
 
-### Night time: reconciled against the paper 2026-08-01 — 1:55 still open
+### Night time: ✅ closed against the paper, 2026-08-01
 
 The `Night_Time` column summed to **16:47** across all three books against **22:45** inked at page 62
 — a **5:58** gap `claude-docs/drift.md` had recorded as *"supplied but not read back"*.
 
-**Resolved down to 1:55 the same day.** The gap was entirely inherited from Books 1–2: the EASA book
-carried **18:42** into Book 3 against our 12:44, and Book 3 itself reconciled exactly
-(18:42 + 4:03 = 22:45), so 22:45 was never a mis-add. The owner then read the paper's `Yölentoaika`
+**It is now 22:45, equal to the paper, Δ 0:00.** The gap was entirely inherited from Books 1–2: the
+EASA book carried **18:42** into Book 3 against our 12:44, and Book 3 itself reconciled exactly
+(18:42 + 4:03 = 22:45), so 22:45 was never a mis-add. The owner read the paper's `Yölentoaika`
 column back and photographed seven Book-1 spreads; because the column's `Siirto` figures chain
 continuously, it becomes a page-by-page ledger that pins each entry to a row. Six values were added
-and one was found sitting on the wrong row. **Night is now 20:50**, and our running total matches the
-paper's `Siirto` at every checkpoint through 30/11/2013.
+and one was found sitting on the wrong row, taking night to **20:50**.
 
-⏸ **The residual 1:55 is one unphotographed page range** — pp. 52–69 (Mar–Aug 2014), where the book
-runs 9:12 → 11:07 and our CSV has nothing. Tracked as item E at the top of `claude-docs/drift.md`.
+The last **1:55** closed with the p.52/53 photograph (`IMG_6048`): **25/02/2014 OH-KLS 0:55**
+(full night) and **26/03/2014 OH-TIL 1:00 of 2:01**. That spread's own `Yölentoaika` runs `Siirto`
+**9:12 → 11:07**, and 11:07 is exactly p.71's `Siirto` — so pages 54–69 carry no night at all and the
+**column is closed, not merely sampled.**
 
-This remains a migration question about the paper, not an import question: the import's job is
-fidelity to the CSV, and it reports whatever the rows say.
+⚠ **Never infer night time from clock times, sunset or time zones** (owner, 2026-08-01). The book's
+night column is the only authority.
 
 ## Verification: what "verified" means here
 
@@ -248,8 +277,9 @@ Two separate checks, deliberately not conflated:
 2. **Consistency** — does the source data agree with itself? All seven `Cumulative_*` series are
    recomputed row by row and compared to the columns the transcription maintained. A break is
    *reported*, not fatal: it is a pre-existing property of the paper record, and refusing to import
-   because of it would leave the owner with no application at all. Exactly one break survives over
-   1293 rows (Book 1 line 28, above).
+   because of it would leave the owner with no application at all. **All seven series now reconcile
+   with zero breaks over 1293 rows** — the single break (Book 1 line 28) closed when the owner ruled
+   on it. The test asserts zero, which is the stronger claim the corrected data supports.
 
 Row-by-row rather than end-totals, on both: an end-total can be passed by two cancelling errors, and
 a break with no line number is not actionable.
@@ -261,6 +291,9 @@ assumption the split could be "inferred later from `Night_Time`". It cannot be i
 flight with night time may still have landed by day, and vice versa.
 
 The importer therefore seeds `landings_day = Landings`, `landings_night = 0`, and sets
-`landings_verified = 0` on the 22 rows carrying night time. Those get read off the page images in
+`landings_verified = 0` on the **30** rows carrying night time. Those get read off the page images in
 Task 8. Everything else is `landings_verified = 1` — a day flight's landings are unambiguously day
 landings.
+
+The API surfaces this as `landings_unverified` in the statistics summary, so the app can say the
+night-landing figure is not yet read off the paper rather than presenting `0` as a verified truth.

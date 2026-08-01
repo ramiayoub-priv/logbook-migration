@@ -7,6 +7,21 @@
 > (`claude-docs/`) remains the source of truth for **the CSV migration only**. The non-negotiable
 > rules that govern both live in the repo root **`CLAUDE.md` §0** — read those first.
 >
+> **App status (2026-08-01): the whole backend is done** — schema, verified importer, calculation
+> core, API and authentication. Nothing is deployed and there is no frontend yet. **If you are here
+> to do migration work, you do not need any of it** — except one thing:
+>
+> ```bash
+> cd app/backend && go test -count=1 ./...   # after ANY append to logbook_3.csv
+> ```
+>
+> The backend asserts the exact totals and discrepancy counts of these CSVs, so **appending flights
+> will make it fail — that is the test doing its job.** Confirm the deltas against `drift.md`, then
+> update the constants in `internal/csvbook/realdata_test.go` and
+> `internal/stats/realdata_test.go` **in the same commit as the CSV change**, stating the delta.
+> Never adjust a constant first and reconcile afterwards. ⚠ `go test` caches: without `-count=1` a
+> green run can be stale, which has already hidden five real failures once.
+>
 > The two efforts share the dataset: the app imports `logbook_1_final.csv`, `logbook_2_final.csv`
 > and `logbook_3.csv`. So the migration's conventions — the `Z` suffix, `Total_Time` being the
 > figure the book totals on, the paper being authoritative — are now load-bearing for the app too.

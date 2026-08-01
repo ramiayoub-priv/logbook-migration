@@ -30,7 +30,7 @@ Nothing is deployed. There is no frontend yet, and that is the next task.**
   `internal/auth` (Argon2id + session tokens), `internal/ratelimit` (login throttling),
   `internal/store/auth.go` (users + sessions), `cmd/server` (the router, middleware and operator
   CLI). **Every control in `docs/security.md` is implemented and has the test that fails if it is
-  removed** — see the map at the bottom of that file. `make check` is green at **88.3%** overall
+  removed** — see the map at the bottom of that file. `make check` is green at **88.9%** overall
   with **six packages at 100%**.
   Verified live, not only in tests: the running server serves all nine frozen paper figures exactly.
 - Recon of `ayoub.fi` → `docs/deploy.md` has the full shared-tenant map. **The box is shared with the
@@ -287,8 +287,8 @@ day · landings night.
 | 5 | Four frontend pages (mobile-first) | not started |
 | 6 | Three PDF exports (EASA clone + table + stats) | not started |
 | 7 | PWA + deploy to `ayoub.fi/logbook` | not started |
-| 8 | Backfill landings day/night for the 22 night rows | not started — the 22 rows are already flagged `landings_unverified` in the DB and listed by `logbookctl import`. `claude-docs/drift.md` has the analysis: 17 rows are full-night and certain (50 landings); **9 of the 59 night landings are estimates** from five partial-night rows, and two exact sources exist on paper but were never read. |
-| 9 | Rule on the three open source-data problems | **blocked on the owner** — see the ⏸ block at the top of this file |
+| 8 | Backfill landings day/night for the **30** night rows | not started — all 30 are flagged `landings_unverified` in the DB, listed by `logbookctl import`, and surfaced by the API as `landings_unverified` in the stats summary. `claude-docs/drift.md` has the analysis. The p.62 split recomputes to **68 night / 3326 day** (the sum 3394 is unchanged); six of those 68 are estimates from three multi-landing partial-night rows, range 65–72. |
+| 9 | Rule on the open source-data problems | **mostly closed** 2026-08-01 — two of the three ruled and fixed. One item left (`logbook_2_final.csv` lines 89–90) and it needs the physical page; it moves no total. See the ⏸ block at the top. |
 
 ---
 
@@ -440,7 +440,8 @@ with no line number is not actionable.
 **Result: 1293 flights, 39 aircraft, 56 discrepancies, all nine checksums matching.** Exactly one
 cumulative break survives across 1293 rows and seven series.
 *(Figures as of this entry. After the 2026-08-01 owner rulings they are **38 aircraft, 61
-discrepancies** — see the task board above; the single cumulative break is unchanged.)*
+discrepancies, and ZERO cumulative breaks** — the one break was Book 1 line 28, which the owner
+ruled on and the CSV was corrected. The test now asserts zero.)*
 
 ### 2026-08-01 — Sea/land comes from the registration, and it is verified rather than assumed
 
@@ -472,17 +473,20 @@ The reconciliation swept all 1293 rows and found three things nobody had logged.
 `claude-docs/drift.md` and `docs/data-model.md`, and all are the owner's to rule on (rule §0.2).
 
 1. **`logbook_1_final.csv` line 28** — `Instrument_Time` 1:21 on a flight totalling 1:12. Impossible;
-   the cumulative column advances by 1:12, so the row is the outlier. Our instrument total is
-   therefore 107:14 against the column's 107:05.
+   the cumulative column advances by 1:12, so the row is the outlier.
+   **✅ Closed the same day:** the owner ruled 1:12 and the CSV was fixed. Instrument 107:14 →
+   **107:05**, which is what the column always said, so no cumulative moved. This was the corpus's
+   only `cumulative_break` and only `component_exceeds_total`; both are now **zero**.
 2. **`logbook_2_final.csv` lines 83–90** — dates written `DD.MM.YYYY`. Read day-first, which six of
    the eight settle themselves and the chronological bracket confirms; the two `04.05.2018` rows are
    flagged for a look at the paper.
 3. **Night time 16:47 (ours) vs 22:45 (inked at p.62)** — a 5:58 gap on the one p.62 figure that
    `drift.md` records as never having been read back.
-   **Update, same day: resolved down to 1:55.** The importer's job here was only to surface the gap;
-   the owner then read the paper's night column back and photographed seven Book-1 spreads, which
-   turned it into a page-by-page ledger. Night is now **20:50** and the residual is one unphotographed
-   page range. *The flag was worth raising precisely because nobody had ever compared that column.*
+   **✅ Closed the same day.** The importer's job here was only to surface the gap; the owner then
+   read the paper's night column back and photographed seven Book-1 spreads, which turned it into a
+   page-by-page ledger (16:47 → 20:50), and the p.52/53 photograph closed the last 1:55.
+   **Night is 22:45 = the paper, Δ 0:00.** *The flag was worth raising precisely because nobody had
+   ever compared that column.*
 
 The dotted dates are the interesting judgement call. Refusing would have blocked 1291 sound rows over
 a separator; silently normalising would have hidden a real inconsistency. Accepting with a loud,
@@ -527,7 +531,7 @@ Chosen: store canonical `*_utc`, **plus** the raw string exactly as written on p
 "needs review" list rather than being guessed at. Rejected "convert and discard the raw" — a bad DST
 guess would then be unauditable and unrecoverable on a legal record.
 
-### 2026-08-01 — EASA PDF covers all 1295 flights, not just Book 3
+### 2026-08-01 — EASA PDF covers all 1293 flights, not just Book 3
 
 Books 1 and 2 are an older, non-EASA paper format; only Book 3 is EASA. The user chose a single
 continuous EASA-format logbook over all three books (~87 pages at 15 rows/page), because that is what
@@ -544,8 +548,9 @@ flight instructor, dual, instructor-STD) · OTHER (landings day/night, remarks).
 The EASA book **does** split LANDINGS into DAY and NIGHT; our 26-column CSV only ever stored the sum
 (`claude-docs/reference.md` says the split would be "inferred later from `Night_Time`"). The stats
 page needs both. Schema therefore carries `landings_day` + `landings_night` + a `landings_verified`
-flag; the importer seeds everything as day and flags the **22 rows carrying `Night_Time`** for
-backfill from the page images (Task 8). Bounded and small.
+flag; the importer seeds everything as day and flags the rows carrying `Night_Time` for backfill
+from the page images (Task 8). That was 22 rows when this was written and is **30** now, after the
+night reconciliation of the same day. Bounded and small.
 
 ### 2026-08-01 — Server security: findings, and one correction
 
