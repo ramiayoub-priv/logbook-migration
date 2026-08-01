@@ -248,14 +248,38 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
   an existing Book-1/2 reg, not a new one).
   6031 r12 stored **on-block 17:53** (the 5-min water-taxi pattern). New places **Hirvijärvi,
   Loppijärvi, Kytäjärvi**.
-- **Last row in `logbook_3.csv`:** `02/07/2025 · P28A · OH-PDP · EFHV → EFHV ·
-  15:00Z–15:13Z · Total 0:13 · PIC 0:13 · 3 landings`
+- **Twenty-sixth & twenty-seventh spreads done:** `IMG_6032` (pages 51–52, 15 flights
+  **01/07/2025–21/07/2025**) and `IMG_6033` (pages 53–54, 15 flights **21/07/2025–15/08/2025**),
+  verified & appended 2026-08-01. **Both SIDEWAYS — CCW `rotate(90)`** (6022–6033 all sideways).
+  No `LT` subscripts. **All 30 rows UTC (`Z`)** — every covered row sits exactly 3 h behind local.
+  All six cross-checks exact *after two corrections* (6032: Δtotal **13:47**/Δpic 13:47/Δinstr
+  **7:01**; 6033: Δtotal **13:37**/Δpic 13:37/Δinstr **6:31**). Landings sum **40** and **65**.
+  **⚠⚠ AVIATRON COVERS `OH-GKT` THROUGH 07/2026 — the docs badly undersold it.** It is *not* just
+  the CB-IR/OH-PIF reference: it holds **every OH-GKT float row**, exactly what the club file can
+  never reach. It arbitrated **8 of 8** GKT rows here. **Grep it alongside `laskukierros_flights.csv`,
+  not after it** (`pdftotext -layout Aviatron.pdf`; compare on the header line's **BLOCK/LASK**, the
+  `RIVI` line under it is airborne time).
+  **⚠ 6032 row 11 — a real book error, not a misread:** 08/07 OH-GKT Kahvisaari→Kelvenne written
+  `16:36`/**0:57**/**7 ldg** and carried through the running column *and* page total; Aviatron 35472
+  says `15:53–16:30`, **0:37**, **4 ldg** (user: *"a real mistake, Aviatron is authoritative"*).
+  **0:57 / 7 ldg is exactly the preceding OH-GKT row** (17/06/2025, IMG_6031 r12) — *figures copied
+  down a row; suspect that whenever time AND landings both duplicate the previous same-reg row.*
+  That same Aviatron record **retro-validates IMG_6031 r12's inferred on-block 17:53.**
+  **⚠ 6032 row 13 — fifth running-Total slip:** a 1:38 flight added as 0:38, so the book's printed
+  page Total/PIC 13:07 are 1:00 low. Caught because the **directly-summed FI column hit 7:01 exactly**.
+  **6033 row 8 on-block corrected** 17:28 → **17:32Z** (Aviatron 36429; its 1:01/6 ldg were right).
+  **6032 row 14 = `09/07/2025`, entered out of order** (user-confirmed; single-digit 9).
+  **⚠ `EFSA` was NOT new** — I called it new off `reference.md`'s airport list; Savonlinna is in the
+  books 6 times since 2012. **That list is a hand note, not derived from the CSVs — grep the three
+  CSVs before calling anything new.** Instructing: 8 rows on 6032, 6 on 6033.
+- **Last row in `logbook_3.csv`:** `15/08/2025 · P28A · OH-PDP · EFSA → EFHV ·
+  11:53Z–13:47Z · Total 1:54 · PIC 1:54 · 1 landing`
 - **Cumulative totals at that row (our continuous series, seeded from Book 2):**
-  - Cumulative_Total **1129:01** · Cumulative_PIC **963:08** · Cumulative_Student **165:53**
-  - Cumulative_Instrument **105:14** · Cumulative_SEP_Sea **359:35**
-  - Cumulative_Landings **3117** (= day+night; runs ahead of book's day-only count — see drift.md)
-  - Cumulative_Instructor **161:46**
-- **`logbook_3.csv` has 374 data rows** (+ header + seed row = 376 lines).
+  - Cumulative_Total **1156:25** · Cumulative_PIC **990:32** · Cumulative_Student **165:53**
+  - Cumulative_Instrument **105:14** · Cumulative_SEP_Sea **375:15**
+  - Cumulative_Landings **3222** (= day+night; runs ahead of book's day-only count — see drift.md)
+  - Cumulative_Instructor **175:18**
+- **`logbook_3.csv` has 404 data rows** (+ header + seed row = 406 lines).
 
 ### Book-3 conventions (locked 2026-07-31 with user)
 - **Same 26-col schema.** EASA→our-schema mapping: **Dual (Oppilas) → Student_Time**;
@@ -272,9 +296,12 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
 - **Tooling:** `logbook_tools.py <batch.json> --csv logbook_3.csv [--append]` (new `--csv` flag targets
   Book 3; defaults to Book 2). Block-vs-total diffs ≤5 min now warn instead of blocking append.
 
-## Next action — Book 3, IMG_6032 (pages 51–52)
-Process **`IMG_6032`** next (continues from 02/07/2025 — the club file already shows the next
-flights: 01/07/2025 OH-CTL Tuusula↔Hiidenvesi with Puhakka, then 02/07 OH-CAM EFHV→EFJO→EFNU→EFHV).
+## Next action — Book 3, IMG_6034 (pages 55–56)
+Process **`IMG_6034`** next (continues from 15/08/2025). **Both electronic references forward-check
+this stretch:** `laskukierros_flights.csv` has OH-CTL at Inkoo/Tuusula 08–10/09, 19/09, 28/09,
+30/09 and OH-CAM at EFHV 20/10 + 12/12 (a **night** flight, `ldg_night 3`); `Aviatron.pdf` has
+**OH-GKT** at Kahvisaari 22/08, 19/09, 03/10 ×2, 17/10 ×2, 31/10 (with a *Koskinen*), 01/11, 06/11.
+**Grep both before transcribing.**
 **Check orientation first** — image
 orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, 6012–6021 were all
 already upright, and **6022–6031 were all sideways (CCW `rotate(90)`)**. Never assume —
@@ -301,6 +328,26 @@ Then continue IMG_6030…6037 at that pace (each spread is
 ~15 flights — sizeable, so 1–2 spreads per pass is plenty).
 
 ### Hard-won reading lessons (all cost a round-trip; don't relearn them)
+- **⚠⚠ THERE ARE TWO ELECTRONIC REFERENCES AND THEY COVER DISJOINT FLEETS. GREP BOTH.**
+  `laskukierros_flights.csv` = **club** aircraft (CTL/CAM/CAY/CGX/CMU/COK/AWB/TIL).
+  `Aviatron.pdf` = the **pilot's own / Blue Skies** aircraft — **`OH-GKT`**, `OH-PIF`, `OH-DBS`,
+  `OH-TIL`, `OH-DBE` — **126 flights running to 07/2026**. Together they cover nearly every row of
+  Book 3's float season. I spent IMG_6022–6031 treating Aviatron as a stale CB-IR artefact and
+  telling the user "OH-GKT isn't in the club file, so there's no record" — it was in the repo the
+  whole time. On IMG_6032/6033 it arbitrated **8 of 8** GKT rows and exposed a real book error.
+  Extract with `pdftotext -layout Aviatron.pdf`; each flight is a header line
+  (`ID / LÄHTÖP / LASKUP / OFF / ON / BLOCK / LASK / … / PIC`) followed by a `RIVI` line —
+  **compare on the header's BLOCK/LASK; the RIVI line is airborne time and will read ~5 min short.**
+- **⚠ THE BOOK ITSELF CAN BE WRONG ON A ROW, NOT JUST MISREAD — AND IT COPIES DOWN.** IMG_6032 r11
+  was written 0:57 / 7 landings and carried through the running column *and* the page total, so it
+  was internally consistent and passed every arithmetic check; Aviatron says 0:37 / 4. **0:57 / 7 is
+  exactly the previous OH-GKT row's figures.** *When a row's time and its landing count both
+  duplicate the previous same-registration row, suspect a copy-down before trusting it —
+  self-consistency inside the book proves nothing.*
+- **⚠ `reference.md`'s "airports/places seen" and registration lists are hand-maintained running
+  notes, NOT derived from the CSVs.** I announced EFSA as a new airport off that list; Savonlinna is
+  in the finished books **6 times since 2012**. **`grep` `logbook_1_final.csv`, `logbook_2_final.csv`
+  and `logbook_3.csv` before calling any place, airport or registration new.**
 - **When a block time doesn't match the logged flight time, do NOT assume which cell is wrong.** On
   IMG_6016 one row's off-block was correct and one row's on-block was correct — guessing would have
   gotten one backwards. Present both readings and let the user pick.

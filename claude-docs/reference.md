@@ -113,18 +113,30 @@ It is also **UTF-16** as served (the committed copy was converted to UTF-8).
 - ⚠ A few rows are junk: e.g. `2026-05-16` Kabböle→Kabböle has `00:00-00:00`, `block_min 0`. Sanity
   check before leaning on a row.
 
-## Aviatron.pdf — electronic cross-reference (NOT the source of truth)
+## Aviatron.pdf — the OTHER electronic cross-reference (⚠ covers `OH-GKT` to 07/2026)
 `Aviatron.pdf` (repo root, tracked) is an electronic-logbook export of the **Blue Skies aviation
-aircraft only**: `OH-PIF` (IR trainer), `OH-GKT` (= re-registered SE-GKT seaplane), `OH-DBS`,
-`OH-TIL`, `OH-DBE`. 126 flights, 05/2018→07/2026, **all times UTC**. Columns include exact
-off/on-block, landings, syllabus codes (`CB-IR/n`), instructor (PIC column), student (OPPILAS =
-"Ayoub, Rami"), and remarks (approach types, "CB-IR course completed").
+aircraft only**: `OH-PIF` (IR trainer), **`OH-GKT`** (= re-registered SE-GKT seaplane), `OH-DBS`,
+`OH-TIL`, `OH-DBE`. 126 flights, 05/2018→07/2026, **all times UTC**.
 
-- **The paper logbook is authoritative** (user decision). Aviatron is a cross-check only.
-- Use it to: resolve unreadable Zulu times, confirm instructor names, and enrich `Remarks`.
-- **Known to differ from paper:** block times by ~1–2 min, landings (Aviatron often counts more),
-  and Aviatron omits solo/non-course flights. Do NOT rewrite paper-based rows to match Aviatron;
-  flag material discrepancies to the user instead.
+⚠⚠ **This is the counterpart to `laskukierros_flights.csv`, not a legacy artefact.** The two cover
+**disjoint fleets** — laskukierros has the club aircraft, Aviatron has the pilot's own. Between them
+they cover nearly every Book-3 float row. **`OH-GKT` rows appear ONLY here**, and they run all the
+way to July 2026, so Aviatron forward-checks every remaining OH-GKT row in the book.
+**Grep both references before transcribing a spread; never tell the user "there is no record" for an
+OH-GKT row without checking here first.** (This was missed through IMG_6022–6031.)
+
+**Extracting it:** `pdftotext -layout Aviatron.pdf out.txt`. Each flight is **two stacked records**:
+- the **header** line — `ID · LÄHTÖP · LASKUP · OFF · ON · BLOCK · LASK · SYLLABUS · TYPE · … · PIC` —
+  this is the **block** record and the one to compare against (`BLOCK` = block time, `LASK` = landings);
+- a **`RIVI`** line beneath it — `RIVI · ILMA-ALUS · OUT · IN · AIR · HLÖM` — this is **airborne**
+  time and will read ~5 min shorter. Do not cross-check against it.
+
+- **The paper logbook is authoritative by default** (user decision) — Aviatron is a cross-check, and
+  discrepancies get flagged, not silently applied. **But the user may rule a row a genuine book error
+  and direct us to take Aviatron's figures** (done for 08/07/2025 OH-GKT — see `drift.md` IMG_6032).
+- Use it to: resolve unreadable/overwritten Zulu times, settle landing counts on OH-GKT float rows,
+  confirm instructor names, and enrich `Remarks`.
+- **Known to differ from paper:** block times by ~1–2 min, and Aviatron omits solo/non-course flights.
 
 ## Instructors / other-pilot names (pic_name for non-PIC rows)
 - **Autere** — IR instructor for the pilot's OH-PIF student flights (student time + instrument).
@@ -191,6 +203,13 @@ Plus lakes for seaplane ops (Tuusulanjärvi, Hiidenvesi, Räyskälä, Gumbostran
 Keilaniemi, Vuosaari, Kelvenne, Kahvisaari).
 Finnish regs are `OH-xxx`. **Flag anything that breaks this pattern** (e.g. `OK-PDP` is almost
 certainly an OCR error for `OH-PDP`).
+
+⚠⚠ **The place / airport / registration lists above are hand-maintained running notes — they are NOT
+derived from the CSVs and they have gaps.** `EFSA` (Savonlinna) was absent from them despite being
+flown 6 times since 2012 (`15/08/2012` OH-CWB EFLP↔EFSA; `12/05/2018` and `18–19/07/2020` OH-PDP
+EFHF↔EFSA). **Before calling any place, airport or registration "new", grep all three CSVs**
+(`logbook_1_final.csv`, `logbook_2_final.csv`, `logbook_3.csv`) — those are the only authority on
+what has been flown before.
 
 ## Sanity checks (report, don't silently fix)
 - On-block minus off-block should ≈ Block_Time ≈ Total_Time.

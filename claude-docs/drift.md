@@ -589,6 +589,63 @@ Flight-Instructor **163:09**. Ours: Total **1129:01** (**+1:25**), PIC **963:08*
 Instrument **105:14** (**+4:02**), Student **165:53** (**+0:20**), Instructor **161:46** (**−1:23**).
 **Unmoved across four consecutive spreads now** (IMG_6028 → IMG_6031).
 
+## IMG_6032/6033 batch (pages 51–54, 01/07/2025–15/08/2025) — appended 2026-08-01
+Both spreads **sideways** (CCW `rotate(90)`), no `LT` subscripts. **All six cross-checks exact after
+two corrections** (6032: Δtotal **13:47** / Δpic 13:47 / Δinstr **7:01**; 6033: Δtotal **13:37** /
+Δpic 13:37 / Δinstr **6:31**). Landings cells blank on both → ours sum **40** and **65**.
+All 30 rows **UTC (`Z`)** — every club- and Aviatron-covered row sits exactly 3 h behind local.
+
+- **⚠⚠ AVIATRON COVERS `OH-GKT` THROUGH 07/2026 — the docs undersold it badly.** `reference.md`
+  described `Aviatron.pdf` mainly as the CB-IR / `OH-PIF` cross-reference; in fact its 126 flights
+  include **every OH-GKT float row**, i.e. exactly the rows `laskukierros_flights.csv` can never
+  reach (club fleet only). On this batch it arbitrated **8 of 8** GKT rows and caught a real book
+  error. **Grep it alongside the club file, not after it** — extract once with
+  `pdftotext -layout Aviatron.pdf`. Its records give block **and** airborne times: the flight header
+  line (`ID / LÄHTÖP / OFF / ON / BLOCK / LASK`) is the block record; the `RIVI` line under it is the
+  airborne time. Compare against **BLOCK/LASK**, not the RIVI figures.
+- **⚠ 6032 row 11 — the book over-logged a flight by 0:20 and its landings by 3.**
+  08/07/2025 OH-GKT Kahvisaari→Kelvenne. Book: on-block `16:36`, **0:57**, **7 ldg**, and it carried
+  the 0:57 through both the running column and the page total — so this is the **pilot's own error,
+  not a misread**. Aviatron **35472**: `15:53–16:30 UTC`, block **0:37**, **4 landings**. Stored as
+  Aviatron (user-directed: *"row 11 seems like a real mistake, here are the authoritative ones"*).
+  **Probable cause: 0:57 / 7 ldg is exactly the preceding OH-GKT row** — 17/06/2025 Kahvisaari local
+  (IMG_6031 r12, itself Aviatron-confirmed at 16:56–17:53, 0:57, 7). The figures look **copied down
+  one row**. *When a row's time and landings both duplicate the previous same-registration row,
+  suspect a copy-down before trusting it.*
+  ⚠ Note this also **retro-validates IMG_6031 r12's inferred on-block 17:53** — Aviatron 35236 has
+  that flight at 16:56–17:53 exactly. The inference was right.
+- **⚠ 6032 row 13 — running-Total slip, the fifth.** 14/07/2025 OH-CTL Tuusulanjärvi local is a
+  **1:38** flight (club: 98 min block; Aviatron n/a), but the running column adds it as 0:38
+  (1138:54 → 1139:32), so the printed page **Total and PIC of 13:07 are both 1:00 low**.
+  Caught by the **directly-summed Flight-Instructor column reconciling at 7:01 exactly**, which only
+  works with row 13 at 1:38. Slip list is now p.14 −1:00, p.21 −1:52, p.23 −0:36, p.26 PIC −2:30,
+  **p.52 −1:00**.
+  Net of both errors our page is **13:47** vs the book's printed 13:07: **+1:00 − 0:20**.
+- **6033 row 8 on-block corrected** 17:28 → **17:32Z** (12/08/2025 OH-GKT Kahvisaari local).
+  Aviatron 36429; the book's logged 1:01 and 6 landings were right, only the cell was 4 min out.
+- **Six GKT rows confirmed digit-for-digit** by Aviatron: 6032 r12 (35473), 6033 r4 (36200),
+  r5 (36201), r9 (36459), r10 (36460), r11 (36461). **The 17 landings on 13/08 in 1:15 are real.**
+- **6032 row 14 is `09/07/2025`, entered out of order** between the 14/07 and 21/07 rows
+  (user-confirmed). Single-digit `9`, not `19`. OH-PDP is in neither electronic record.
+- **6033 row 1's on-block cell is overwritten** → resolved **09:15Z** (club: 11:40–12:15 local,
+  35 min = the book's logged 0:35).
+- **Residual warning:** 6033 r2 (23/07/2025 OH-PDP EFLA→EFHV) cells give 0:23, book logs **0:25**.
+  No record either way; logged time kept, page totals reconcile on it.
+- **⚠ `EFSA` was NOT a new airport** — I called it new off `reference.md`'s "airports seen" list.
+  Savonlinna appears **6 times** in the finished books (`15/08/2012` OH-CWB EFLP↔EFSA;
+  `12/05/2018` and `18–19/07/2020` OH-PDP EFHF↔EFSA). **That list is a hand-maintained running note,
+  not derived from the CSVs — `grep` the three CSVs before calling any place or registration new.**
+- Instructing rows all corroborated: 6032 has **8** (club pupils Puhakka ×6, Joukanen, Kere),
+  6033 has **6** (Puhakka, Kere + the four Kahvisaari GKT details, Aviatron-confirmed).
+  15/08/2025 is a four-leg OH-PDP day EFHV→EFNU→EFJO→EFSA→EFHV.
+
+### Paper-vs-ours drift at 15/08/2025 (end of p.54)
+Book bottoms (p.54): Total **1154:20**, PIC **988:47**, SE-IFR **101:12**, Dual **165:33**,
+Flight-Instructor **176:41**. Ours: Total **1156:25** (**+2:05**), PIC **990:32** (**+1:45**),
+Instrument **105:14** (**+4:02**), Student **165:53** (**+0:20**), Instructor **175:18** (**−1:23**).
+**Total and PIC each moved +0:40** (= the p.52 slip +1:00, less the row-11 over-log −0:20).
+Instrument, Student and Instructor unmoved since IMG_6027.
+
 ## Confirmed corrections
 - **IMG_4953 (closeout, pages 110/111) — row-1 landing & instructor rows (user-verified 2026-07-31).**
   Row 1 (27/05/2021 OH-CTL Räyskälä→Vääksy) landings read ambiguously as 10; user confirmed **9**
