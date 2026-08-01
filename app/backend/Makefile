@@ -7,8 +7,14 @@ GO      ?= go
 BIN     := dist/logbook-server
 PKG     := ./...
 
-# Packages where a bug means a wrong legal record. These must be at 100%.
-CORE    := internal/hhmm internal/timeutil internal/csvbook internal/stats
+# Packages where a bug means a wrong legal record -- or an exposed one. These
+# must be at 100%.
+#
+# internal/auth is here for the second reason. CLAUDE.md rule 0.6 names the
+# calculation core, but app/docs/security.md requires every control to have a
+# test that fails if the control is removed, and in a credential primitive an
+# untested branch is an authentication bypass. Same bar, different failure.
+CORE    := internal/hhmm internal/timeutil internal/csvbook internal/stats internal/auth
 
 MIN_TOTAL := 80
 
