@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ramiayoub/logbook/backend/internal/csvbook"
+	"github.com/ramiayoub/logbook/backend/internal/entry"
 	"github.com/ramiayoub/logbook/backend/internal/stats"
 	"github.com/ramiayoub/logbook/backend/internal/store"
 )
@@ -307,6 +308,65 @@ func (s *Server) handleFlights(w http.ResponseWriter, r *http.Request) {
 		out = append(out, toFlightJSON(f))
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"flights": out, "count": len(out)})
+}
+
+// handleCreateFlight writes one hand-entered flight.
+//
+// This is the only endpoint in the application that adds to the legal record,
+// and it is deliberately narrow. It does not update, it does not delete, and
+// it cannot touch a row that came from the paper books: those live under a
+// different source_book and a different band of seq numbers, and the only
+// thing that writes them is the operator CLI, which has no HTTP route at all.
+//
+// The division of labour: internal/entry decides whether the submission makes
+// sense, internal/store decides where it goes in the book. Neither of them
+// knows about HTTP, so the rules that protect the record are tested without a
+// request in the way.
+func (s *Server) handleCreateFlight(w http.ResponseWriter, r *http.Request) {
+	var draft entry.Draft
+	if err := decodeJSON(r, &draft); err != nil {
+		// Includes the unknown-field case: a field the server does not
+		// understand means the client and the server disagree about what is
+		// being written, and on a legal record that is not a guess to make.
+		writeError(w, http.StatusBadRequest, "malformed request")
+		return
+	}
+
+	flight, err := entry.Validate(draft, s.now())
+	if err != nil {
+		var fieldErrs entry.Errors
+		if errors.As(err, &fieldErrs) {
+			// Every problem at once, each naming its field, so the form can
+			// highlight the controls instead of printing a sentence.
+			writeJSON(w, http.StatusBadRequest, map[string]any{
+				"error":  "this flight cannot be logged as written",
+				"fields": fieldErrs,
+			})
+			return
+		}
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	stored, err := s.db.AddFlight(flight)
+	if err != nil {
+		if errors.Is(err, store.ErrDuplicateFlight) {
+			// 409 rather than a silent success: the pilot has to know whether
+			// the flight in the book is the one they just typed.
+			writeError(w, http.StatusConflict,
+				"this flight is already in the logbook -- same date, aircraft and off-block time")
+			return
+		}
+		s.log.Error("adding a flight", "error", err)
+		writeError(w, http.StatusInternalServerError, "could not write the flight")
+		return
+	}
+
+	c := callerOf(r)
+	s.log.Info("flight added", "user", c.User.Username,
+		"seq", stored.Seq, "date", stored.Date, "reg", stored.AircraftReg)
+
+	writeJSON(w, http.StatusCreated, map[string]any{"flight": toFlightJSON(stored)})
 }
 
 func (s *Server) handleAircraft(w http.ResponseWriter, r *http.Request) {

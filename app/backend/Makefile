@@ -15,8 +15,17 @@ PKG     := ./...
 # requires every control to have a test that fails if the control is removed,
 # and in a credential primitive an untested branch is an authentication bypass.
 # Same bar, different failure.
+#
+# internal/entry is here for the first reason: it is the only gate between a
+# hand-typed form and the legal record, and an untested branch in it is a bad
+# row written on the pilot's authority.
+#
+# internal/pdfmodel is here because rule 0.6 names "PDF totals" explicitly: the
+# EASA export is the copy of the record an authority reads. It is a separate
+# package from internal/pdfbook, which draws the documents, precisely so this
+# bar can apply to the arithmetic without also applying to fpdf's error paths.
 CORE    := internal/hhmm internal/timeutil internal/csvbook internal/stats \
-           internal/auth internal/ratelimit
+           internal/auth internal/ratelimit internal/entry internal/pdfmodel
 
 MIN_TOTAL := 80
 
@@ -73,6 +82,35 @@ build:
 	    $(GO) build -trimpath -ldflags="-s -w" -o dist/$$name ./$$c || exit 1; \
 	done
 	@ls -lh dist/
+
+# --- Scratch database --------------------------------------------------------
+#
+# For trying things out -- entering flights, poking the API -- without touching
+# the real logbook.
+#
+# THE ISOLATION BOUNDARY IS THE FILE, NOT THE ACCOUNT. This app is
+# single-tenant by design: the flights table has no owner column and AddFlight
+# does not record who wrote a row, so a second user account would write into
+# exactly the same logbook. A separate database file is the only thing that
+# actually keeps test flights away from the real record.
+#
+# Rebuilt from the CSVs in one command, so it can be deleted at any time.
+SCRATCH ?= /tmp/logbook-scratch.db
+
+.PHONY: scratch
+scratch: build
+	@rm -f $(SCRATCH) $(SCRATCH)-wal $(SCRATCH)-shm
+	@$(GO) run ./cmd/logbookctl import -db $(SCRATCH) -csv ../.. -note "scratch database" >/dev/null
+	@echo "Scratch database at $(SCRATCH), rebuilt from the CSVs."
+	@echo "Create an account on it with:"
+	@echo "    ./dist/server createuser ramitest -db $(SCRATCH)"
+	@echo "Then run the API against it with:"
+	@echo "    ./dist/server -db $(SCRATCH) -addr 127.0.0.1:8099 \\"
+	@echo "                  -origin http://localhost:5173 -insecure-cookie"
+
+.PHONY: scratch-clean
+scratch-clean:
+	rm -f $(SCRATCH) $(SCRATCH)-wal $(SCRATCH)-shm $(SCRATCH).*.bak
 
 .PHONY: clean
 clean:

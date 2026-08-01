@@ -24,6 +24,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/ramiayoub/logbook/backend/internal/ratelimit"
 	"github.com/ramiayoub/logbook/backend/internal/store"
@@ -57,6 +58,16 @@ type Config struct {
 	// reason to turn it off is a plain-HTTP local development server.
 	SecureCookie bool
 	Logger       *slog.Logger
+	// Now is the source of "today" for the new-flight form's future-date
+	// check. Injectable so that the check is tested against a fixed instant
+	// rather than against the day the suite happens to run -- a test that
+	// starts failing when the calendar catches up is a test nobody trusts.
+	// Defaults to time.Now.
+	Now func() time.Time
+	// HolderName is the licence holder's name, printed on the exported PDFs.
+	// It is presentation only -- no figure depends on it -- so an empty value
+	// simply leaves the documents unnamed rather than failing anything.
+	HolderName string
 }
 
 // RouteInfo describes one mounted endpoint. Exported so the default-deny test
@@ -83,6 +94,9 @@ func NewServer(db *store.DB, cfg Config) *Server {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
+	if cfg.Now == nil {
+		cfg.Now = time.Now
+	}
 	s := &Server{
 		db:      db,
 		cfg:     cfg,
@@ -100,14 +114,21 @@ func NewServer(db *store.DB, cfg Config) *Server {
 	s.private("POST", "/logout", s.handleLogout)
 	s.private("GET", "/me", s.handleMe)
 	s.private("GET", "/flights", s.handleFlights)
+	s.private("POST", "/flights", s.handleCreateFlight)
 	s.private("GET", "/aircraft", s.handleAircraft)
 	s.private("GET", "/stats", s.handleStats)
 	s.private("GET", "/discrepancies", s.handleDiscrepancies)
+	s.private("GET", "/export/easa.pdf", s.handleExportEASA)
+	s.private("GET", "/export/table.pdf", s.handleExportTable)
+	s.private("GET", "/export/statistics.pdf", s.handleExportStatistics)
 	s.private("GET", "/sessions", s.handleSessions)
 	s.private("DELETE", "/sessions/{id}", s.handleRevokeSession)
 
 	return s
 }
+
+// now is the current instant, from the injectable clock.
+func (s *Server) now() time.Time { return s.cfg.Now() }
 
 // Routes reports what is mounted. Used by the default-deny test.
 func (s *Server) Routes() []RouteInfo {

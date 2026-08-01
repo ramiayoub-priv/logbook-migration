@@ -47,6 +47,21 @@ const (
 	ClassTMG     Class = "TMG"
 )
 
+// ValidClass reports whether c is in the vocabulary the schema's CHECK
+// constraint accepts.
+//
+// It lives here because this package owns the vocabulary. The new-flight form
+// needs the same answer the importer does, and a second copy of the list
+// somewhere else is a list that eventually disagrees with the database and
+// turns a valid flight into a failed insert.
+func ValidClass(c Class) bool {
+	switch c {
+	case ClassSEPLand, ClassSEPSea, ClassMEPLand, ClassMEPSea, ClassTMG:
+		return true
+	}
+	return false
+}
+
 // seaplaneRegistrations are the registrations flown on floats, from
 // claude-docs/reference.md.
 //

@@ -19,6 +19,9 @@ const (
 	testOrigin   = "https://ayoub.fi"
 )
 
+// testToday is the harness's fixed "now".
+var testToday = time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC)
+
 // harness is a server wired to a fresh database with one user and two flights.
 type harness struct {
 	*Server
@@ -44,6 +47,9 @@ func newHarness(t *testing.T) *harness {
 	srv := NewServer(db, Config{
 		Origin:       testOrigin,
 		SecureCookie: true,
+		// Pinned, so the new-flight form's future-date check is tested against
+		// a fixed today rather than against the day the suite runs.
+		Now: func() time.Time { return testToday },
 	})
 	return &harness{Server: srv, db: db, t: t}
 }
@@ -658,6 +664,23 @@ func decode(t *testing.T, w *httptest.ResponseRecorder, into any) {
 	t.Helper()
 	if w.Code != http.StatusOK {
 		t.Fatalf("status %d, body %s", w.Code, w.Body.String())
+	}
+	if ct := w.Header().Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
+		t.Fatalf("Content-Type %q, want application/json", ct)
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), into); err != nil {
+		t.Fatalf("decoding %s: %v", w.Body.String(), err)
+	}
+}
+
+// decodeStatus is decode for a response that is deliberately not a 200 -- a
+// 201 from the new-flight endpoint, or a 400 carrying field errors. decode
+// keeps its own 200 assertion because for every read endpoint that assertion
+// is part of what is being tested.
+func decodeStatus(t *testing.T, w *httptest.ResponseRecorder, want int, into any) {
+	t.Helper()
+	if w.Code != want {
+		t.Fatalf("status %d, want %d; body %s", w.Code, want, w.Body.String())
 	}
 	if ct := w.Header().Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
 		t.Fatalf("Content-Type %q, want application/json", ct)

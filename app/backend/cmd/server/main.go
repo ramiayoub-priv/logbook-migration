@@ -39,6 +39,7 @@ flags and their environment variables:
   -db     LOGBOOK_DB      path to the SQLite file      (default /var/lib/logbook/logbook.db)
   -addr   LOGBOOK_ADDR    listen address               (default 127.0.0.1:8081)
   -origin LOGBOOK_ORIGIN  the site's scheme and host   (default https://ayoub.fi)
+  -holder LOGBOOK_HOLDER  licence holder's name, printed on the exported PDFs
   -insecure-cookie        drop the Secure flag; local plain-HTTP development only
 `
 
@@ -56,6 +57,7 @@ func run(args []string) error {
 		dbPath   = fs.String("db", env("LOGBOOK_DB", "/var/lib/logbook/logbook.db"), "SQLite file")
 		addr     = fs.String("addr", env("LOGBOOK_ADDR", "127.0.0.1:8081"), "listen address")
 		origin   = fs.String("origin", env("LOGBOOK_ORIGIN", "https://ayoub.fi"), "site origin")
+		holder   = fs.String("holder", env("LOGBOOK_HOLDER", ""), "licence holder's name for the PDF exports")
 		insecure = fs.Bool("insecure-cookie", false, "drop Secure on the session cookie")
 	)
 
@@ -99,6 +101,7 @@ func run(args []string) error {
 	srv := NewServer(db, Config{
 		Addr:         *addr,
 		Origin:       *origin,
+		HolderName:   *holder,
 		SecureCookie: !*insecure,
 		Logger:       logger,
 	})

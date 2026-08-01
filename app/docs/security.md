@@ -114,10 +114,22 @@ Apache already absorb.
 - **Keep the dependency tree near-empty.** Prefer the Go stdlib. Every dependency added must be
   justified in `APP.md`. The intended total is single digits: `modernc.org/sqlite`,
   `golang.org/x/crypto` (Argon2id), `go-pdf/fpdf`.
-  - **Direct dependencies as of 2026-08-01**: `modernc.org/sqlite`, `golang.org/x/crypto`
-    (Argon2id), `golang.org/x/term` (reading a password without echoing it — the alternative is a
-    password in the shell history and the process list of a shared box). `go-pdf/fpdf` arrives with
-    Task 6. Everything else in `go.mod` is indirect, pulled in by `modernc.org/sqlite`.
+  - **Direct backend dependencies as of 2026-08-01 — four**: `modernc.org/sqlite`,
+    `golang.org/x/crypto` (Argon2id), `golang.org/x/term` (reading a password without echoing it —
+    the alternative is a password in the shell history and the process list of a shared box), and
+    **`github.com/go-pdf/fpdf` v0.9.0**, added with Task 6. Everything else in `go.mod` is indirect,
+    pulled in by `modernc.org/sqlite`.
+  - **Why `fpdf` is justified**: the EASA export is a fixed 15-row grid with absolutely positioned
+    cells, which is what the format is. The alternative that renders HTML — headless Chrome — is a
+    300 MB+ browser on a 2 GB box shared with the owner's other sites, executing a rendering engine
+    on request; that is a far larger attack surface and a far larger memory lever than a pure-Go
+    drawing library. `fpdf` is pure Go with **no dependencies of its own**, so it adds exactly one
+    node to the tree, and it keeps `CGO_ENABLED=0` and the single static binary. It also embeds the
+    cp1252 map, so no font or encoding file has to ship beside the binary.
+- **The frontend's dependencies are build-time only.** Node never runs on the server: `npm run
+  build` produces static files that Apache serves. The runtime bundle is React and React DOM and
+  nothing else — routing is ~40 lines in `src/router.tsx` rather than a routing library, because a
+  six-page app with no nested routes would be buying a supply-chain decision for a switch statement.
 - **No secrets in the repo, ever** — enforced by review and by keeping config in environment
   variables read at startup.
 - The service runs as a **dedicated unprivileged user**, never root, with systemd hardening
@@ -159,3 +171,10 @@ bypass.
 | Security headers | Asserted on a 200, a 401 **and a 404** — the places they are most often forgotten. | `TestSecurityHeadersAreOnEveryResponse` |
 | No empty-logbook lie | A failed read is a 500 with no schema in the message, never a 200 with an empty list. | `TestAReadFailureIs500AndNotAnEmptyLogbook` |
 | Handler can't skip auth | `callerOf` panics rather than serving a zero-value user, if a handler is ever mounted without `requireSession`. | `TestCallerOfPanicsWithoutASession` |
+| **Write path is authenticated + CSRF-checked** | `POST /flights` with no `Origin`, and from a foreign origin, → 403. It is also covered automatically by the default-deny enumeration above. | `TestCreatingAFlightRequiresAnOrigin` |
+| **Write path rejects unknown fields** | A body carrying a field the server does not model → 400, rather than a silently ignored value on a legal record. | `TestAnUnknownFieldIsRejectedRatherThanIgnored` |
+| **No duplicate flights** | The same flight submitted twice → 409, and the count does not move. | `TestASubmittedFlightCannotBeSubmittedTwice` |
+| **A rejected write stores nothing** | An invalid draft leaves the flight count exactly where it was. | `TestNothingIsStoredWhenAFlightIsRejected` |
+| **Exports are private** | The three `/export/*.pdf` routes are in the default-deny enumeration and answer 401 without a session. | `TestEveryRouteIsPrivateUnlessExplicitlyPublic` |
+| **The frontend never touches the cookie** | The fetch layer sends `credentials: 'same-origin'` on every call and no `Authorization` header; nothing reads `document.cookie`. | `src/api.test.ts` |
+| **The login page stays uninformative** | The page shows one message for every credential failure and must not name the cause — undoing the uniform-response control in the UI would be just as much of a username oracle. | `src/pages/pages.test.tsx` |

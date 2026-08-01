@@ -571,3 +571,19 @@ func assertDiscrepancy(t *testing.T, lb *Logbook, kind Kind, row int) Discrepanc
 	t.Fatalf("no %s discrepancy on row %d; got %+v", kind, row, lb.Discrepancies)
 	return Discrepancy{}
 }
+
+// ValidClass guards the new-flight form against writing a class the schema's
+// CHECK constraint would reject. The vocabulary lives in this package because a
+// second copy elsewhere is one that eventually disagrees with the database.
+func TestValidClass(t *testing.T) {
+	for _, c := range []Class{ClassSEPLand, ClassSEPSea, ClassMEPLand, ClassMEPSea, ClassTMG} {
+		if !ValidClass(c) {
+			t.Errorf("ValidClass(%q) = false; it is in the schema's CHECK list", c)
+		}
+	}
+	for _, c := range []Class{"", "SEP_AMPHIB", "sep_land", "GLIDER"} {
+		if ValidClass(c) {
+			t.Errorf("ValidClass(%q) = true; the insert would fail the CHECK constraint", c)
+		}
+	}
+}

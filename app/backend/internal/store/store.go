@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/ramiayoub/logbook/backend/internal/csvbook"
+	"github.com/ramiayoub/logbook/backend/internal/entry"
 	"github.com/ramiayoub/logbook/backend/internal/timeutil"
 
 	// Pure-Go SQLite. No CGO, which is what makes the server a single static
@@ -168,10 +169,18 @@ func (db *DB) Import(lb *csvbook.Logbook, note string) (Result, error) {
 
 	// Replace rather than merge. A merge would leave a row that disappeared
 	// from the CSVs alive in the database as a phantom total.
-	for _, table := range []string{"flights", "aircraft", "discrepancies"} {
+	for _, table := range []string{"aircraft", "discrepancies"} {
 		if _, err := tx.Exec("DELETE FROM " + table); err != nil {
 			return res, fmt.Errorf("store: clearing %s: %w", table, err)
 		}
+	}
+	// Flights are cleared only where the importer owns them. Rows typed into
+	// the app carry source_book 0, are not in any CSV, and would be destroyed
+	// by an unqualified DELETE -- and this import runs again every time the
+	// migration effort appends a page to logbook_3.csv. Losing them is exactly
+	// what CLAUDE.md rule 0.2 forbids.
+	if _, err := tx.Exec("DELETE FROM flights WHERE source_book <> ?", entry.HandEnteredBook); err != nil {
+		return res, fmt.Errorf("store: clearing the imported flights: %w", err)
 	}
 
 	aircraftID, err := insertAircraft(tx, lb.Aircraft)
@@ -182,6 +191,9 @@ func (db *DB) Import(lb *csvbook.Logbook, note string) (Result, error) {
 		return res, err
 	}
 	if err := insertDiscrepancies(tx, lb.Discrepancies); err != nil {
+		return res, err
+	}
+	if err := relinkHandEntered(tx); err != nil {
 		return res, err
 	}
 
@@ -313,6 +325,12 @@ type querier interface {
 //
 // COALESCE because SUM over no rows is NULL, and an empty range is a real
 // case: importing an empty logbook must give zeros, not an error.
+//
+// Scoped to the imported rows. The question these checksums answer is "is the
+// database what the CSVs say", and a flight typed into the app is in no CSV --
+// counting it would make the import fail verification on its own correct work,
+// and the only way to pass would be to delete the pilot's flight. The
+// hand-entered rows are guarded instead by AddFlight's own constraints.
 const totalsQuery = `
 	SELECT COUNT(*),
 	       COUNT(DISTINCT seq),
@@ -324,12 +342,12 @@ const totalsQuery = `
 	       COALESCE(SUM(instructor_minutes), 0),
 	       COALESCE(SUM(CASE WHEN class = 'SEP_SEA' THEN total_minutes ELSE 0 END), 0),
 	       COALESCE(SUM(landings_day + landings_night), 0)
-	FROM flights`
+	FROM flights WHERE source_book <> ?`
 
 func readBackTotals(q querier) (csvbook.Totals, error) {
 	var t csvbook.Totals
 	var distinctSeq int
-	err := q.QueryRow(totalsQuery).Scan(
+	err := q.QueryRow(totalsQuery, entry.HandEnteredBook).Scan(
 		&t.Flights, &distinctSeq, &t.Total, &t.PIC, &t.Dual,
 		&t.Instrument, &t.Night, &t.Instructor, &t.SEPSea, &t.Landings,
 	)

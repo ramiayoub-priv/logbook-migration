@@ -82,10 +82,57 @@ asked for: preselect sea, allow override when the configuration changed.
 | `landings_day`, `landings_night` | INTEGER | See the gap note below. |
 | `landings_verified` | INTEGER | `0` = the day/night split was inferred, not read from paper. Drives the review list. |
 | `remarks` | TEXT | |
-| `source_book`, `source_row` | INTEGER | Provenance: which CSV and which line. Makes any figure traceable back to paper. |
+| `source_book`, `source_row` | INTEGER | Provenance: which CSV and which line. Makes any figure traceable back to paper. **`source_book = 0` marks a flight typed into the app** — see below. |
 
 ### `users`, `sessions`
 See `security.md`.
+
+## Hand-entered flights: two disjoint bands (2026-08-01, Task 5)
+
+`POST /flights` writes flights that were never on paper. They share the `flights` table with the
+imported rows, and the whole design turns on keeping the two populations apart, because **the
+importer replaces its own rows on every run** and the migration effort re-imports every time a page
+is appended to `logbook_3.csv`.
+
+| | Imported | Hand-entered |
+|---|---|---|
+| `source_book` | 1, 2 or 3 | **0** |
+| `source_row` | line in that CSV | an app-local counter, 1, 2, 3… |
+| `seq` | 1..N, **reassigned on every import** | **from 1 000 000 up**, allocated once and never changed |
+| Written by | `logbookctl import` | `POST /flights` → `store.AddFlight` |
+| `landings_verified` | `0` where night time forced an inference | always `1` — the pilot typed the split |
+
+Three consequences, each of which is a test:
+
+1. **The import's `DELETE` is scoped to `source_book <> 0`.** An unqualified delete would destroy
+   every app-entered flight the next time somebody transcribed a page — the exact loss rule §0.2
+   forbids. `TestHandEnteredFlightsSurviveAReimport`.
+2. **The import's checksums are scoped the same way.** They answer "is the database what the CSVs
+   say", and a flight that is in no CSV would make that question unanswerable — the import would
+   fail verification on its own correct work, and the only way to pass would be to delete the
+   pilot's flight. `TestImportVerificationIgnoresHandEnteredRows`.
+3. **The seq bands cannot collide.** Book 3 is still being transcribed, so any hand-entered `seq`
+   inside 1..N is a collision waiting for the migration to catch up to it. The bands are disjoint by
+   three orders of magnitude, and the higher band also sorts app-entered flights after every page of
+   the paper books, which is where a flight flown today belongs.
+   `TestHandEnteredSeqCannotCollideWithTheImporter`.
+
+One repair runs on every import: replacing the `aircraft` table sets `aircraft_id` to NULL on the
+hand-entered rows that referenced it (`ON DELETE SET NULL`), so the importer **re-links them by
+registration** afterwards. Without it a flight typed in the app quietly loses its aircraft link the
+first time a page is transcribed, and never gets it back. `TestAReimportRelinksHandEnteredFlights`.
+
+**Validation lives in `internal/entry`**, which is pure and held to 100%. Its posture is the
+opposite of the importer's, deliberately: the importer surfaces a problem and imports the row anyway
+because the paper is authoritative and nobody can be asked, whereas nothing on the write path is
+authoritative yet and the pilot is standing at the form. So a draft that does not make sense is
+**refused with the field named**, not stored with a flag. In particular an ambiguous local time — a
+DST gap or fold, or a pair that mixes zones — is refused with a message asking for a Zulu time,
+rather than being stored as `time_origin = unknown`.
+
+The one duplicate guard: a flight matching an existing `(flight_date, aircraft_reg, off_block_raw)`
+is refused with **409**. That is the double-tapped submit button on a phone, and two identical rows
+in a legal record inflate a licence total.
 
 ## CSV → DB mapping
 

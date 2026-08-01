@@ -56,7 +56,16 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dis
 `CGO_ENABLED=0` is what makes this work: `modernc.org/sqlite` is pure Go, so the result is a static
 binary with no libc dependency and no build step on the target.
 
-Frontend: `npm run build` → static files → rsync to `/var/www/logbook/`.
+Frontend:
+```bash
+cd app/frontend
+npm ci            # Node is a BUILD-time dependency only; it never runs on the server
+npm run check     # tsc --noEmit + vitest -- the frontend's equivalent of `make check`
+npm run build     # -> app/frontend/dist/  (~169 KB JS, 53 KB gzipped)
+rsync -a --delete app/frontend/dist/ rami@ayoub.fi:/var/www/logbook/
+```
+`vite.config.ts` sets `base: '/logbook/'`, so every asset URL is built with that prefix. Building
+without it produces a page that 404s every asset behind the Apache `Alias`.
 
 ## Apache
 
@@ -101,6 +110,9 @@ Restart=always
 RestartSec=5
 Environment=LOGBOOK_ADDR=127.0.0.1:9002
 Environment=LOGBOOK_DB=/var/lib/logbook/logbook.db
+# Printed on the exported PDFs. Without it the documents are unnamed, which is
+# valid but not what an authority wants to receive.
+Environment=LOGBOOK_HOLDER=Rami Ayoub
 
 # hardening
 NoNewPrivileges=true
@@ -124,6 +136,14 @@ PDF generation of the full 1295-flight logbook. **Measure the real peak and reco
 The previous binary is kept as `/opt/logbook/logbook-server.prev`. Rollback is a copy plus
 `systemctl restart logbook` — no rebuild. The database is backed up before any migration, so a schema
 change is reversible too.
+
+## ⚠ `-origin` must match what the browser actually sends
+
+The CSRF check compares the `Origin` header byte for byte, so the value has to be the exact
+scheme+host the page was loaded from — `https://ayoub.fi` in production, and `http://localhost:5173`
+against the Vite dev server. A mismatch fails every mutating request with a 403 and nothing else,
+which reads like a broken login rather than a working control. `-insecure-cookie` must never appear
+in the production unit; the server already refuses to combine it with an `https://` origin.
 
 ## Verification after every deploy
 

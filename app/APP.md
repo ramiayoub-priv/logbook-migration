@@ -22,140 +22,138 @@ transcribed from paper logbooks by the *other* effort in this repo (`claude-docs
 not replaced by the app). Read `CLAUDE.md` §0 first — those rules are non-negotiable and were written
 for this work specifically.
 
-**Status: the whole backend is done and green — data, calculation core, API and authentication.
-Nothing is deployed. There is no frontend yet, and that is the next task.**
+**Status: the application is feature-complete for v1 and green — backend, API, PDFs and frontend.
+Nothing is deployed. Deployment (Task 7) is the next task.**
 
 ### Done (2026-08-01)
-- **Task 4 — the API and authentication.** `internal/stats` (aggregations + EASA pagination),
-  `internal/auth` (Argon2id + session tokens), `internal/ratelimit` (login throttling),
-  `internal/store/auth.go` (users + sessions), `cmd/server` (the router, middleware and operator
-  CLI). **Every control in `docs/security.md` is implemented and has the test that fails if it is
-  removed** — see the map at the bottom of that file. `make check` is green at **88.9%** overall
-  with **six packages at 100%**.
-  Verified live, not only in tests: the running server serves all nine frozen paper figures exactly.
-- Recon of `ayoub.fi` → `docs/deploy.md` has the full shared-tenant map. **The box is shared with the
-  owner's other sites; do not disturb them.**
-- Stack chosen: Go + SQLite + React/Vite (Decision Log §5).
-- `CLAUDE.md` §0 rules written, adapted from the neighbouring `transit` project.
-- Server cleanup, both reversible: transit's orphaned Quarkus killed (it runs on its own VM now);
-  OpenVPN stopped + disabled at the owner's request.
-- **Task 2** — `app/backend/` Go module with `internal/hhmm` (H:MM ↔ integer minutes) and
-  `internal/timeutil` (the single UTC-conversion authority). Both 100%, failing-test-first.
-- **Task 3 — the schema and the importer.** `internal/csvbook` (CSV → domain, 100%),
-  `internal/store` (SQLite schema + verified import, 85%), `cmd/logbookctl` (the operator CLI).
-  **All 1293 flights import and verify.** `make check` is green at 94.5% overall.
+- **Task 2** — `app/backend/` Go module, `internal/hhmm` and `internal/timeutil`. Both 100%.
+- **Task 3** — the schema and importer. All **1293** flights import and verify.
+- **Task 4** — the API and authentication. Every control in `docs/security.md` has the test that
+  fails if it is removed.
+- **Task 5b** — **`POST /flights`**, the only write path into the legal record. `internal/entry`
+  validates (pure, 100%); `store.AddFlight` allocates book order. See the decision log: the load-
+  bearing part is that a hand-entered flight **survives the next CSV re-import**.
+- **Task 6** — the **three PDFs**. `internal/pdfmodel` (cells and totals, pure, 100%) +
+  `internal/pdfbook` (rendering). Verified against the real logbook: 87 EASA pages, totals block
+  reconciling, Finnish place names intact.
+- **Task 5** — the **frontend**, `app/frontend/`. Six pages behind a login gate. 43 tests green,
+  and driven in a real browser against the live API — including logging a flight end to end,
+  watching the duplicate be refused, and confirming zero horizontal overflow on a 390px phone.
 
-### What exists in `app/backend/` — the whole map
+### The whole map
 ```
-cmd/logbookctl/      the operator CLI: `import` and `verify`. A separate binary from the
-                     server on purpose, so a destructive op on a legal record can never be
-                     reached over HTTP.
-internal/hhmm/       H:MM <-> integer minutes. Durations are minutes everywhere inside the
-                     app; H:MM is parsed at the edges only.            [core, 100%]
-internal/timeutil/   THE single UTC-conversion authority. Do not re-implement time
-                     conversion anywhere else (rule 0.4). Handles the Z suffix, the
-                     midnight roll, and both DST edges.                [core, 100%]
-internal/csvbook/    CSV -> domain records + the audit. Pure, no database. Skips the seed
-                     rows, derives sea/land, reconciles all seven Cumulative_* series row
-                     by row, emits Discrepancy values.                 [core, 100%]
-internal/store/      schema.sql (embedded), the verified import, the read queries, and
-                     auth.go: users and sessions.                          [81%]
-internal/stats/      Summarize (the statistics page's twelve figures), Range/Filter, and
-                     Paginate (the EASA page-totals block). Computed at call time,
-                     never stored -- rule 0.5.                            [core, 100%]
-internal/auth/       Argon2id passwords and session tokens. Knows nothing of HTTP or the
-                     database, so the part that must be cryptographically right is
-                     tested exhaustively on its own.                      [core, 100%]
-internal/ratelimit/  Login throttling, per-IP and per-account, exponential backoff.
-                     In memory, bounded, evicts the stalest key.          [core, 100%]
-cmd/server/          The API and the operator CLI (createuser/passwd/users/disable/
-                     enable). Table-driven router: a handler cannot be mounted without
-                     the auth wrapper, and Routes() lets the test enumerate what is
-                     really there.                                              [74%]
+app/backend/
+  cmd/logbookctl/    the operator CLI: `import` and `verify`. Separate binary from the server on
+                     purpose, so a destructive op on a legal record cannot be reached over HTTP.
+  cmd/server/        the API, the export handlers, and the operator CLI (createuser/passwd/users/
+                     disable/enable). Table-driven router: a handler cannot be mounted without the
+                     auth wrapper, and Routes() lets the test enumerate what is really there.  [76%]
+  internal/hhmm/       H:MM <-> minutes. Minutes everywhere inside; H:MM at the edges.  [core, 100%]
+  internal/timeutil/   THE single UTC-conversion authority. Do not re-implement time
+                       conversion anywhere else (rule 0.4).                            [core, 100%]
+  internal/csvbook/    CSV -> domain + the audit. Pure, no database.                   [core, 100%]
+  internal/entry/      Validates a HAND-TYPED flight. Pure. The opposite posture to csvbook:
+                       it refuses rather than surfaces -- see the decision log.        [core, 100%]
+  internal/store/      schema.sql, the verified import, the read queries, auth.go, and
+                       handentry.go (AddFlight + the seq band + the reimport relink).      [83%]
+  internal/stats/      Summarize, Range/Filter, Paginate. Computed, never stored.      [core, 100%]
+  internal/pdfmodel/   Every cell and every total of the three PDFs. Pure -- rule 0.6
+                       names "PDF totals" as calculation core.                         [core, 100%]
+  internal/pdfbook/    Draws them with go-pdf/fpdf.                                        [~95%]
+  internal/auth/       Argon2id + session tokens. Knows nothing of HTTP or the DB.     [core, 100%]
+  internal/ratelimit/  Login throttling, per-IP and per-account.                       [core, 100%]
+
+app/frontend/
+  src/api.ts         the fetch layer. credentials:'same-origin' and NOTHING else -- the cookie is
+                     HttpOnly, so JavaScript cannot read it and must not try.
+  src/auth.tsx       who is signed in (asked of the server, never cached) + useApi. Any 401
+                     anywhere drops the app to the login page.
+  src/router.tsx     ~40 lines instead of a routing library (rule 0.3).
+  src/format.ts      H:MM and UTC dates. The ONLY place minutes become H:MM.
+  src/pages/         Login, Table, Statistics, NewFlight, Export, Review, Sessions, RangePicker.
 ```
-`make cover-core` enforces 100% on everything marked `[core]`. That list is the code where a
-bug means a wrong legal record — **or an exposed one**: `internal/auth` and `internal/ratelimit`
-are on it because in a credential primitive an untested branch is an authentication bypass.
-`internal/store` is held to the 80% bar, not 100%, because it is I/O; `cmd/server` likewise,
-where the untested remainder is `main()` and the listen loop.
+`make cover-core` enforces 100% on everything marked `[core]` — the code where a bug means a wrong
+legal record, or an exposed one.
 
 ### How to run things
 ```bash
 export PATH=$HOME/.local/go/bin:$PATH   # Go 1.26 lives here; the system had none
+
 cd app/backend
 make check      # vet + race tests + both coverage gates. This is the bar.
-make build      # cross-compiled static binaries into dist/ (builds every cmd/*)
+make build      # static binaries into dist/ (builds every cmd/*)
 
-# Import the CSVs. -dry-run reports and writes nothing; use it first.
+cd app/frontend
+npm install
+npm run check   # tsc --noEmit + vitest
+npm run build   # static files into dist/
+
+# --- Trying things out safely -------------------------------------------------
+# THE ISOLATION BOUNDARY IS THE DATABASE FILE, NOT THE ACCOUNT. This app is
+# single-tenant: `flights` has no owner column, so a second user account writes
+# into the same logbook. Use a scratch file instead.
+cd app/backend
+make scratch                                    # rebuilds /tmp/logbook-scratch.db from the CSVs
+./dist/server createuser ramitest -db /tmp/logbook-scratch.db    # needs a real terminal
+./dist/server -db /tmp/logbook-scratch.db -addr 127.0.0.1:8099 \
+              -origin http://localhost:5173 -insecure-cookie -holder "Rami Ayoub"
+cd ../frontend && npm run dev                   # http://localhost:5173/logbook/
+make scratch-clean                              # throw it away
+
+# Import the real CSVs. -dry-run reports and writes nothing; use it first.
 go run ./cmd/logbookctl import -dry-run -csv ../..
-go run ./cmd/logbookctl import -db /tmp/logbook.db -csv ../.. -note "why"
-go run ./cmd/logbookctl verify -db /tmp/logbook.db -csv ../..
-
-# Run the API locally, end to end.
-./dist/server createuser rami -db /tmp/logbook.db        # prompts; needs a real terminal
-./dist/server -db /tmp/logbook.db -addr 127.0.0.1:8099 \
-              -origin http://localhost -insecure-cookie  # -insecure-cookie is dev-only
-curl -s -c ck.txt -X POST localhost:8099/logbook/api/login \
-     -H 'Content-Type: application/json' -H 'Origin: http://localhost' \
-     -d '{"username":"rami","password":"..."}'
-curl -s -b ck.txt localhost:8099/logbook/api/stats
+go run ./cmd/logbookctl verify  -db <path> -csv ../..
 ```
+
+⚠ **`-origin` must match exactly what the browser sends.** Against `npm run dev` that is
+`http://localhost:5173`, not `http://localhost`. Getting it wrong makes login fail with a 403 and
+nothing else — the CSRF check doing its job. This cost real time on 2026-08-01.
+
 ⚠ **`go test` caches.** After the CSVs change, a green `make check` proves nothing until you have
-run `go test -count=1 ./...` — this exact trap hid five real failures on 2026-08-01 (Decision Log).
+run `go test -count=1 ./...` — this exact trap hid five real failures on 2026-08-01.
 
-⚠ **Run the server before calling a backend task done.** The whole suite was green while
-`createuser -db` silently pointed at the production database. See the Decision Log entry.
+⚠ **Run the thing before calling a task done.** A green suite has now twice missed what thirty
+seconds of running found: the `createuser -db` bug in Task 4, and in Task 5/6 the broken PDF column
+headers, the clipped totals labels, the date fields overflowing a phone, and the aircraft relink
+lost on re-import. None of those were visible from the tests.
 
-The server's own Go is 1.13 and irrelevant — we cross-compile (`CGO_ENABLED=0`), producing an
-11 MB static binary. Three direct dependencies, all justified in `docs/security.md`:
-`modernc.org/sqlite` (pure Go, no CGO — that is what makes the static binary possible),
-`golang.org/x/crypto` (Argon2id) and `golang.org/x/term` (no-echo password prompt). Keep it that
-way (rule §0.3).
-
-**The import is idempotent, backs up first (`VACUUM INTO`), and refuses to commit on any checksum
-mismatch.** Re-run it freely. **There is no committed database** — it is generated, and
-`app/.gitignore` keeps `*.db` and `*.bak` out of the repo. Nothing you need is only in a database
-file; rebuild it from the CSVs in one command.
+**There is no committed database** — it is generated, and `app/.gitignore` keeps `*.db` and `*.bak`
+out of the repo. Nothing you need is only in a database file; rebuild it from the CSVs in one
+command.
 
 ### The numbers the import produces — memorise these
 ```
 flights 1293 | total 1219:35 | pic 1053:03 | dual 166:32 | instrument 107:05
 night 22:45  | instructor 189:41 | seaplane 407:39 | landings 3439 | aircraft 38
+discrepancies 61 | EASA export 87 pages
 ```
-**These now equal the figures inked at paper page 62, which the owner has frozen** — no change,
+**These equal the figures inked at paper page 62, which the owner has frozen** — no change,
 migration or app, may move them (`claude-docs/resume.md`). All seven `Cumulative_*` series reconcile
 with **zero breaks**.
 
 Asserted in `internal/csvbook/realdata_test.go` and again, by a different code path, in
-`internal/stats/realdata_test.go` — along with the exact count of each discrepancy kind. **If one of them changes unexpectedly, the import is wrong until proven otherwise —
-do not adjust the expectation to make the test pass.**
+`internal/stats/realdata_test.go`. **If one of them changes unexpectedly, the import is wrong until
+proven otherwise — do not adjust the expectation to make the test pass.**
 
-⚠ **The one legitimate reason for those tests to fail: `logbook_3.csv` is still growing.** The
-migration effort (`claude-docs/`) appends flights to it page by page, and Book 3 is **not finished**.
-When it grows, `realdata_test.go` fails — that is the test doing its job, not a regression. The
+⚠ **The one legitimate reason for those tests to fail: `logbook_3.csv` is still growing.** Book 3 is
+**not finished**. When it grows, `realdata_test.go` fails — that is the test doing its job. The
 correct response is:
 
 1. Run `go run ./cmd/logbookctl import -dry-run -csv ../..` and read the report.
-2. Confirm the new totals are the *expected* deltas for the rows that were appended — `drift.md`
-   records a per-page Δ for every batch, so cross-check against that, not against a feeling.
+2. Confirm the new totals are the *expected* deltas — `drift.md` records a per-page Δ for every
+   batch, so cross-check against that, not against a feeling.
 3. Only then update the constants, **in the same commit as the CSV change**, with the delta stated
    in the commit message.
 
-Never update a constant first and reconcile afterwards. The whole value of these tests is that they
-fail before anyone notices a wrong total.
+Never update a constant first and reconcile afterwards.
 
 ### ⏸ THE DATA IS RECONCILED — one paper-side item is left, and it is not an app task
-`claude-docs/resume.md` is the authority on this; do **not** re-validate the books on spec.
+`claude-docs/resume.md` is the authority; do **not** re-validate the books on spec.
 
 - **`logbook_2_final.csv` lines 89–90** (`04.05.2018` ×2), dated `DD.MM.YYYY`. Affects **row order
-  only**, moves no total, and **no electronic source can settle it** (Aviatron holds zero OH-PDP
-  rows; the club file starts 19/04/2020). Needs the physical page.
+  only**, moves no total, and **no electronic source can settle it**. Needs the physical page.
 - Also paper-side: the **p.62 inked landing split** `59 night / 3335 day` recomputes to
   **`68 / 3326`**. The landing *sum* 3394 never moved. **Correct the paper, not the CSV.**
-
-Everything else the importer surfaced on 2026-08-01 is closed and the owner has **frozen the
-end-of-book-3 cumulatives**: night `22:45`, instrument `107:05`, and all seven `Cumulative_*` series
-reconciling with zero breaks. Nothing in the app may move those figures.
 
 ### The API surface, as built
 All under **`/logbook/api/`** — not `/api/`, which on `ayoub.fi` is taken by a stale transit proxy.
@@ -167,79 +165,75 @@ GET    /health             public   exactly {"status":"ok"} and nothing else
 POST   /logout             private  revokes this session, clears the cookie
 GET    /me                 private  {user_id, username}
 GET    /flights   ?from&to private  {flights:[...], count} in seq order
+POST   /flights            private  a hand-entered flight -> 201; 400 with per-field errors; 409 duplicate
 GET    /aircraft           private  the derived seed list for the new-flight form
-GET    /stats     ?from&to private  {summary:{...twelve figures + landings_unverified}, range}
+GET    /stats     ?from&to private  {summary:{...}, range}
 GET    /discrepancies      private  the "needs review" list, 61 rows today
 GET    /sessions           private  the revocable device list; `current` marks the caller
 DELETE /sessions/{id}      private  revoke one, scoped to the owner
+GET    /export/easa.pdf        private  the whole logbook, EASA format. IGNORES from/to on purpose.
+GET    /export/table.pdf       ?from&to private
+GET    /export/statistics.pdf  ?from&to private
 ```
 `from`/`to` are inclusive `YYYY-MM-DD`. An unparseable one is a **400**, never an ignored filter.
 
 **Operator CLI** (no HTTP route exists for any of it, by design):
 `./dist/server createuser|passwd|users|disable|enable <name> -db <path>`.
 
-### Next task: #5, the four frontend pages
-Nothing in the backend blocks it. Read `docs/security.md` for the cookie contract before writing the
-fetch layer — the session cookie is `HttpOnly`, so **JavaScript cannot read it and must not try**;
-send `credentials: 'same-origin'` and let the browser carry it. Every mutating request needs an
-`Origin` header, which the browser sets automatically for real fetches.
+### Next task: #7, PWA + deploy to `ayoub.fi/logbook`
+`docs/deploy.md` has the full shared-tenant map, the Apache stanza, the systemd unit and the
+rollback. Nothing in the app blocks it. What deployment still needs:
 
-The four pages are in §2 above: **Table**, **Statistics**, **New flight**, **Export**. Two of the
-four are read-only against endpoints that already exist. Note the gaps:
-
-- **New flight has no endpoint yet.** `POST /flights` does not exist — writing to a legal record
-  needs its own design pass (validation, the seq assignment, and how a hand-entered row is
-  distinguished from an imported one in `source_book`/`source_row`). Do that deliberately.
-- **Export (Task 6) has no endpoint yet** either. `stats.Paginate` is written and tested — it
-  produces the EASA page blocks (15 rows, TOTAL THIS PAGE / PREVIOUS / TOTAL, 87 pages over the
-  1293 flights) — but nothing renders a PDF.
-- The frontend should surface **`landings_unverified`** wherever it shows night landings. It is 30
-  today and it is how the app tells the truth about Task 8 rather than implying a verified split.
-
-**The `discrepancies` table is already populated** (**61 rows**) and is what the frontend's "needs
-review" list reads. It is rewritten on every import, so an item that gets resolved in the CSV simply
-disappears — there is no second place to update.
+- A **manifest and service worker** for the home-screen install (the PWA half of Task 7). Offline
+  *writes* are explicitly out of v1 scope.
+- `LOGBOOK_HOLDER` set in the unit, or the exported PDFs carry no name. `-origin` must be
+  `https://ayoub.fi`, and `-insecure-cookie` must **never** appear in the unit.
+- The frontend build rsynced to `/var/www/logbook/`, the binary to `/opt/logbook/`.
+- **Before touching the box, re-read `CLAUDE.md` §0.3.** It is shared with the owner's other sites;
+  changes to Apache, ufw, systemd or Docker are additive, reversible, and verified from a second
+  connection before the first is closed. **Never risk port 22.**
 
 ### Open questions awaiting the owner
 - Is the `kraken-predictor-python-2` container on `:8000` still wanted? Publicly exposed, up 2 years,
-  and now the box's largest memory consumer (~759 MB / 38%).
+  and the box's largest memory consumer (~759 MB / 38%).
 - Prune the stale ufw rules for `30814` and `19132` (nothing listens on either)?
 - **Rotate the `rami` sudo password** once deployment is done — it was pasted into a chat session on
   2026-08-01 and must be treated as compromised. Tracked in `docs/security.md`.
+- Task 8 (backfill the 30 inferred landing splits from the page images) is still open and is the
+  only thing standing between the app and a fully verified night-landing figure.
 
 ### Traps already paid for — do not rediscover these
 - **It is 1293 flights, not 1295.** 1295 is the CSV *row* count; Books 2 and 3 each open with the
-  previous book's final row as a cumulative seed, and those two are skipped. Earlier drafts of this
-  file said 1295.
-- **Sea vs land comes from the registration, not the type.** The book only started writing `C172sea`
-  from IMG_6022 and is inconsistent after that. Verified: the registration rule reproduces
-  `Cumulative_SEP_Sea` row by row at all 1293 rows.
+  previous book's final row as a cumulative seed, and those two are skipped.
+- **A hand-entered flight lives in a different `seq` band (1 000 000+) and carries `source_book = 0`.**
+  Both are load-bearing: the importer keys on `source_book` to know which rows it may delete, and
+  the bands are disjoint because the importer renumbers 1..N on every run. See `docs/data-model.md`.
+- **Sea vs land comes from the registration, not the type.** Verified row by row at all 1293 rows.
 - **The books are not in date order** — 18 rows go backwards. Order on `seq`, never on `flight_date`.
-- **Go's `time.Date` is silent on both DST edges, in different ways.** See the 2026-08-01 entry in the
-  Decision Log. `internal/timeutil` already handles it; do not "simplify" that check.
-- **Docker bypasses ufw.** A published container port is not closed by a firewall rule. See
-  `docs/deploy.md`.
-- **`/api/` on `ayoub.fi` is already taken** by a stale transit proxy, which is why our API lives at
-  `/logbook/api/`.
+- **Go's `time.Date` is silent on both DST edges, in different ways.** `internal/timeutil` handles
+  it; do not "simplify" that check.
+- **fpdf is non-deterministic by default** — it writes font objects in Go map order. `SetCatalogSort(true)`
+  plus a fixed creation date is what makes two exports of the same logbook byte-identical.
+- **fpdf's `CellFormat` ignores `\n`.** A multi-line column heading must be placed line by line, or
+  it draws straight through the neighbouring columns.
+- **CSS grid items default to `min-width: auto`**, which is why two date inputs overflowed a 390px
+  phone until `.row > * { min-width: 0 }`.
+- **Docker bypasses ufw.** A published container port is not closed by a firewall rule.
+- **`/api/` on `ayoub.fi` is already taken** by a stale transit proxy, hence `/logbook/api/`.
 - **Port 22 is under constant attack** (fail2ban: 50,264 bans). Never risk it.
-- **`go test` caches, so a green `make check` can be a lie** after the CSVs move. Use `-count=1`.
-  This hid five real failures on 2026-08-01.
 - **Go's `flag` package stops parsing at the first non-flag argument**, so a flag written after a
-  positional is silently dropped. `cmd/server` parses in a loop (`parseFlagsAnywhere`) because
-  `createuser rami -db /tmp/x.db` was otherwise aiming at the production database.
-- **A green test suite is not a substitute for running the server.** The bug above survived 22
-  passing HTTP tests and died in the first thirty seconds of a live smoke test.
+  positional is silently dropped. `cmd/server` parses in a loop for this reason.
 
 ### Where the reasoning lives
 Do not re-derive these — they are argued out in the Decision Log below (§5), all dated 2026-08-01:
-the stale test cache · **table-driven default deny** · **Argon2id at 19 MiB and why not 64** ·
-**the decoy hash on the unknown-user path** · **sessions as rows, token returned with its hash** ·
-**the rate limiter's stalest-key eviction** · **minutes on the wire, and 500 over an empty 200** ·
-**the smoke test that caught the `-db` bug** ·
-stack choice · cumulatives computed not stored · the time model · the EASA PDF covering all three
-books · the landings day/night gap · the server security findings · Go's `time.Date` DST behaviour ·
-**the two-verifications design** · **sea/land from the registration** · **the derived aircraft list**
-· **the three open source-data problems**.
+**a hand-entered flight surviving the next import** · **the write path refusing where the importer
+surfaces** · **the EASA layout read off the page** · **the frontend and what it refuses to hide** ·
+**a second account does not isolate test data** · the stale test cache · table-driven default deny ·
+Argon2id at 19 MiB · the decoy hash · sessions as rows · the rate limiter's stalest-key eviction ·
+minutes on the wire · the smoke test that caught the `-db` bug · stack choice · cumulatives computed
+not stored · the time model · the EASA PDF covering all three books · the landings day/night gap ·
+the server security findings · Go's `time.Date` DST behaviour · the two-verifications design ·
+sea/land from the registration · the derived aircraft list · the three open source-data problems.
 
 ---
 
@@ -281,18 +275,140 @@ day · landings night.
 | # | Task | Status |
 |---|---|---|
 | 1 | Project rules + app docs | **done** 2026-08-01 |
-| 2 | Scaffold backend + frontend, test harness | **backend done** 2026-08-01; frontend not started |
+| 2 | Scaffold backend + frontend, test harness | **done** 2026-08-01 — backend `make check`, frontend `npm run check` (tsc + vitest) |
 | 3 | Schema + importer for 1293 flights (verified) | **done** 2026-08-01 |
 | 4 | API + authentication | **done** 2026-08-01 — `internal/stats`, `internal/auth`, `internal/ratelimit`, `store/auth.go`, `cmd/server`. Every `docs/security.md` control implemented with the test that fails if it is removed. Verified live against the real 1293 flights. |
-| 5 | Four frontend pages (mobile-first) | not started |
-| 6 | Three PDF exports (EASA clone + table + stats) | not started |
-| 7 | PWA + deploy to `ayoub.fi/logbook` | not started |
+| 5 | Four frontend pages (mobile-first) | **done** 2026-08-01 — plus the auth UI. Six pages: Flights, Statistics, New flight, Export, Review, Devices, behind a login gate. React + TS + Vite, `app/frontend/`. 43 frontend tests green. Verified in a real browser against the live API, including logging a flight end to end. |
+| 5b | `POST /flights` — the write path | **done** 2026-08-01 — `internal/entry` (validation, pure, 100%), `store.AddFlight`, the hand-entered `seq` band, the duplicate guard, and the import scoping that stops a re-import deleting app-entered flights. |
+| 6 | Three PDF exports (EASA clone + table + stats) | **done** 2026-08-01 — `internal/pdfmodel` (the cells and totals, pure, 100%) + `internal/pdfbook` (rendering, `go-pdf/fpdf`). Live against the real logbook: **87 EASA pages**, totals block reconciling, Finnish place names intact. |
+| 7 | PWA + deploy to `ayoub.fi/logbook` | not started — **this is the next task.** Nothing is deployed; the app has only ever run locally. |
 | 8 | Backfill landings day/night for the **30** night rows | not started — all 30 are flagged `landings_unverified` in the DB, listed by `logbookctl import`, and surfaced by the API as `landings_unverified` in the stats summary. `claude-docs/drift.md` has the analysis. The p.62 split recomputes to **68 night / 3326 day** (the sum 3394 is unchanged); six of those 68 are estimates from three multi-landing partial-night rows, range 65–72. |
 | 9 | Rule on the open source-data problems | **mostly closed** 2026-08-01 — two of the three ruled and fixed. One item left (`logbook_2_final.csv` lines 89–90) and it needs the physical page; it moves no total. See the ⏸ block at the top. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-01 — Task 5b: a flight typed into the app must survive the next import
+
+The importer replaces the flights table on every run, and the migration effort re-imports every
+time a page is appended to `logbook_3.csv`. So the first design question for `POST /flights` was not
+validation — it was **how a hand-entered row avoids being deleted by the next transcription batch**.
+Left unsolved, the app would have silently destroyed the owner's own entries within a week, which is
+precisely the loss rule §0.2 forbids.
+
+The answer is two disjoint populations in one table, keyed on `source_book`: paper rows carry 1–3,
+app rows carry **0**. Three things follow, and each is a test rather than a convention.
+The import's `DELETE` is scoped to `source_book <> 0`. The import's **checksums** are scoped the
+same way — they answer "is the database what the CSVs say", and counting a flight that is in no CSV
+would make the import fail verification on its own correct work, where the only way to pass would be
+to delete the pilot's flight. And `seq`, which the importer reassigns 1..N on every run, is
+allocated to app rows from a separate band at **1 000 000**; Book 3 is still being transcribed, so
+any hand-entered `seq` inside 1..N is a collision waiting for the migration to catch up to it. The
+high band also sorts app-entered flights after every page of the paper books, which is where a
+flight flown today belongs.
+
+One repair was found by running it rather than by reasoning: replacing the `aircraft` table nulls
+`aircraft_id` on the hand-entered rows through `ON DELETE SET NULL`, so a flight typed in the app
+lost its aircraft link the first time a page was transcribed and never got it back. The importer now
+re-links by registration. The live re-import reported `1293 linked, 1 unlinked` — that one row is
+what exposed it.
+
+### 2026-08-01 — The write path refuses where the importer surfaces
+
+`internal/entry` validates a hand-entered flight and its posture is the deliberate **opposite** of
+`internal/csvbook`'s. The importer surfaces a problem and imports the row anyway, because the paper
+is authoritative and nobody can be asked about a 14-year-old page. Nothing on the write path is
+authoritative yet and the pilot is standing at the form — so a draft that does not make sense is
+refused, with the field named, rather than stored with a flag on it. Surfacing a discrepancy and
+creating one are different acts.
+
+The sharpest case is an ambiguous local time. On an imported row a DST gap or fold is stored with
+`time_origin = unknown` and surfaces for review; here it is **refused with a message asking for a
+Zulu time**, because manufacturing an unaudited instant when the true one is one question away would
+be inventing a fact about a legal record.
+
+Three other decisions worth keeping. **`total_time` is required, not derived** from the off/on-block
+clock: it is the figure the whole logbook adds up and a licence application is written from, so the
+form prefills it from the clock as a one-tap suggestion but the server never invents it. **Every
+problem is reported at once**, each naming its field, because a twenty-field form that reveals one
+mistake per submission is a form that gets abandoned — and an abandoned form means the flight is not
+logged at all. And a resubmission of the same `(date, aircraft, off-block)` is a **409**: that is the
+double-tapped submit button on a phone, and two identical rows inflate a licence total.
+
+### 2026-08-01 — Task 6: the EASA layout was read off the page, not off the standard
+
+The layout came from photographing `logbook-3/IMG_6025.JPEG` and reading it, which corrected two
+assumptions this file previously recorded. The paper is a **two-page spread** of 15 rows — GENERAL
+plus TOTAL/NIGHT/SE-VFR/SE-IFR on the left, the remaining function columns plus LANDINGS and REMARKS
+on the right — rendered here onto one A4 landscape sheet so that one PDF page is one logbook page.
+
+Two mappings are judgement calls, both made conservatively:
+
+- **SINGLE ENGINE IFR is always blank.** The CSVs carry no flight-rules column, and instrument time
+  is not a substitute for one — `OH-COF` and `OH-CTH` are C152s with instrument time logged under
+  the hood. Deriving an IFR figure from it would be manufacturing data. This is also exactly what
+  the owner's own pages do: all single-engine time goes in SE-VFR.
+- **The per-row TOTAL column carries the flight's own time**, not a running total. The owner writes
+  a running total there by hand (1027:29 → 1028:14 → …, which is how the page was decoded), but an
+  authority reads that column as per-flight, and the TOTAL THIS PAGE / PREVIOUS / TOTAL block below
+  is where a cumulative belongs. Both conventions are satisfied on the page.
+
+The package is split in two so the coverage rule can mean something: `internal/pdfmodel` computes
+every cell and every total and is **pure and at 100%**, because rule §0.6 names "PDF totals" as
+calculation core; `internal/pdfbook` draws, and lives at the 80% bar with fpdf's error paths.
+
+Rendering is **deterministic** — same flights, same bytes — which took a fixed creation date *and*
+`SetCatalogSort(true)`, because fpdf writes its font objects by ranging over a Go map and two
+renders otherwise differ in object order. Without that, a diff between two exports cannot
+distinguish "the record changed" from "it was regenerated".
+
+`go-pdf/fpdf` is the fourth direct dependency and is justified in `docs/security.md`: it is pure Go
+with no dependencies of its own, versus a 300 MB headless browser executing a rendering engine on a
+2 GB shared box.
+
+### 2026-08-01 — Task 5: the frontend, and what it refuses to hide
+
+Six pages behind a login gate: Flights, Statistics, New flight, Export, Review, Devices. React +
+TypeScript + Vite, built to static files; Node never runs on the server.
+
+The session is an HttpOnly cookie the page cannot read, so **"am I signed in?" is answered by asking
+the server** (`GET /me`) rather than by any local flag. That costs one request at startup and it is
+the honest answer — a cached "signed in" boolean would survive a revoked session and show an empty
+logbook with no explanation. Any 401 from anywhere drops the whole app back to the login page.
+
+Three places where the UI is deliberately not smoother than the truth:
+
+- **A failed read is never an empty list.** "You have flown nothing" because the phone lost signal is
+  the silent corruption rule §0.2 forbids, so a network failure renders as an error.
+- **The 30 inferred landing splits are marked** — an asterisk on the row, and a paragraph on the
+  statistics page naming the count. A page that printed the night-landing figure plainly would be
+  claiming a verification nobody has done.
+- **The login page stays uninformative.** The server answers a wrong username and a wrong password
+  identically and in the same time; a UI that said "no such user" would undo that control, so there
+  is a test asserting the message does not.
+
+Routing is ~40 lines rather than a routing library (rule §0.3): six pages, no nested routes, no
+route parameters. Real `<a href>` links, so middle-click and long-press work.
+
+### 2026-08-01 — A second account does NOT isolate test data; a second file does
+
+Raised by the owner while Task 5 was being verified: keep `rami` for the real logbook and use a
+`ramitest` account for experimenting with flight entry.
+
+**A second account would not have isolated anything.** This app is single-tenant by design (§2, "not
+in v1: multi-user sharing"): `flights` has no owner column and `AddFlight` does not record who wrote
+a row, so a flight entered by `ramitest` lands in the same logbook as `rami`'s and is
+indistinguishable from it. Authentication here is a gate on the front door, not a partition.
+
+The isolation boundary is **the database file**. `make scratch` therefore rebuilds a throwaway
+database from the CSVs at `/tmp/logbook-scratch.db` and prints the two commands to put an account on
+it and run the API against it; `make scratch-clean` removes it. The scratch file is rebuilt from the
+CSVs in one command, so it can be deleted at any moment without losing anything.
+
+Recorded because the instinct — "make another user" — is the natural one and is wrong here, and
+because the right answer stops being obvious the moment this app grows a second real user.
+
 
 ### 2026-08-01 — `make check` was green on a stale test cache, and the suite was actually red
 
