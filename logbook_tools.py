@@ -22,7 +22,9 @@ batch.json schema (list of pages):
       {"date":"12/02/2019","type":"C152","reg":"OH-CRA","dep":"EFHF","arr":"EFHF",
        "off":"13:14","on":"14:32","total":"1:18","land":4}
        # optional per-flight: "student": true, "pic_name": "Name",
-       #   "instructor": "0:30", "instrument": "0:12", "night": "0:20"
+       #   "instructor": "0:30", "instrument": "0:12", "night": "0:20",
+       #   "takeoff": "15:45Z", "landing": "16:20Z"  (airborne pair; off/on stay
+       #     the block pair), "block": "0:45" (only if Block_Time != Total_Time)
     ]}]
 By default every flight is PIC/self. Seaplane SEP_Sea is auto-detected by reg.
 """
@@ -98,7 +100,8 @@ def main():
             cl += int(f['land'])
             pt += tot; pp += pic_t; pl += int(f['land']); ps += stu_t; pins += ins_t
             row = [f['date'], f['type'], f['reg'], f['dep'], f['arr'], f.get('off',''),
-                f.get('on',''), '', '', f['total'], f['total'], f.get('instrument',''),
+                f.get('on',''), f.get('takeoff',''), f.get('landing',''),
+                f.get('block', f['total']), f['total'], f.get('instrument',''),
                 f.get('night',''), fmt(pic_t) if pic_t else '', fmt(stu_t) if stu_t else '',
                 f.get('instructor',''), f.get('pic_name','self'), str(f['land']), '',
                 fmt(ct), fmt(cp), fmt(cs), fmt(ci), fmt(csea), str(cl), fmt(cins)]

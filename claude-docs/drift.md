@@ -1080,6 +1080,120 @@ All three match ours exactly on times *and* landings, so they are the same fligh
 - The 26/12/2021 row is the `OH-CMU`/`OH-CMV` pair again. Note its times reconcile **exactly** as
   UTC+2, so that row's `Z` is genuinely correct — only the registration is in question.
 
+## ⚠⚠ MISSING-FLIGHTS BATCH — 15 rows entered into the CSV **BEFORE** the paper book (2026-08-01)
+**This is the first batch in the whole project that runs the other way round: the user dictated
+15 flights that had never been written into the paper logbook, we appended them to `logbook_3.csv`
+first, and he then transcribes them onto paper from our table.** There is no page image, no
+"TOTAL THIS PAGE" and no page cross-check — the `paper` block in `batch_missing_2026.json` is empty.
+Batch file: **`batch_missing_2026.json`** (tracked). Dates **12/06/2026 → 30/07/2026**.
+
+**The user's stated plan:** row 1 (12/06 OH-ESR EFNU→EFIK) fills the **last free row of page 62**;
+the remaining 14 open a fresh spread (**pages 63–64**); he then **rewrites the book's carried totals
+to match ours, closing the standing paper-vs-ours drift for good.** Expect the next spread photo to
+show corrected "TOTAL PREVIOUS PAGES" figures — **do not treat that as a book error.**
+
+### Sources & how each row was settled
+- **Aviatron confirmed 5 OH-GKT rows to the minute** (13/06, 26/06, both 11/07, 12/07) and **fixed
+  two of them.** The user's dictated on-block/landing pairs had **slipped one row down** — the 26/06
+  row carried the 13/06 row's `11:56/12:02`, and the 11/07 Mäntyharju row carried the 26/06 row's
+  `13:26/13:34`. Stored per Aviatron: 26/06 → `13:26/13:34` (block 1:03, air 0:49); 11/07
+  Kahvisaari→Mäntyharju → `10:17/10:27` (block 1:04, air 0:45). *Same copy-down failure mode as
+  IMG_6032 r11 — when a dictated or written pair duplicates the previous same-reg row, check it.*
+- **laskukierros confirmed OH-CAM (29/06) and OH-TIL (25/07) digit-for-digit.**
+- **⚠ Date corrected: the OH-CAM EFHV local is `29/06/2026`, not the 26/06 the user dictated**
+  (user chose the club record). Note 26/06 was *also* internally coherent — GKT at Kahvisaari
+  15:31–16:34 local, drive to EFLA, PDP EFLA→EFHV 17:35, CAM local 19:02 — so the chain argument
+  did **not** settle it; the club record did.
+- **⚠ ZONE CONFLICT, user ruled UTC: 25/07/2026 OH-TIL EFTP local.** Stored `06:56Z–08:04Z` per the
+  user. But `laskukierros_flights.csv` — whose times are **local** — holds exactly `06:56–08:04`.
+  Either the club row was entered in UTC by mistake (precedent: 06/08/2024 OH-CTL) or the flight was
+  06:56 local. Aviatron has **no OH-TIL row after 2021**, so there is no independent check.
+  Same shape as the IMG_6036 ruling: present once, store what the user says, log it here.
+- **Two 23/06/2026 OH-CTL instructing rows the user had not listed** (pupil **Pekka Puhakka**) were
+  surfaced from the club file and added at his instruction: Tuusulanjärvi local 1:13 / 9 ldg and
+  Karhusaari→Pellinki 0:28 / 1 ldg, both **local**, both PIC + Instructor.
+- **30/06/2026 OH-CTL Tuusulanjärvi local** (sent mid-turn) has **no record in either reference** —
+  it stands on the user's figures alone: block `11:47–12:57` = **1:10**, airborne 0:58, 7 ldg,
+  PIC + Instructor, local.
+- **12/06/2026 OH-ESR ×2 and the two OH-PDP rows have no electronic record** (neither fleet covers
+  SR20 or PDP). As dictated.
+
+### ⚠ Airborne times are stored for the first time at scale — `Takeoff`/`Landing` now populated
+The user dictated **both** pairs (`off-block/takeoff – landing/on-block`), so on **all 15 rows**:
+`Off_Block`/`On_Block` + `Block_Time` = the block pair, **`Takeoff`/`Landing` = the airborne pair**,
+and **`Total_Time` = the block time** (what the book totals on — unchanged convention). Before this
+batch only one row in any book used those columns (08/09/2025, IMG_6034 r6). `logbook_tools.py` was
+extended this session with optional **`takeoff`**, **`landing`** and **`block`** batch fields to
+support it. **`Block_Time == Total_Time` on all 15**, so no cumulative behaves differently.
+
+### Two rows where the block pair was derived, not dictated
+The user gave **airborne** times only and said to pad ~5 min per side:
+| row | dictated (airborne) | stored block | total |
+|---|---|---|---|
+| 12/06/2026 OH-ESR EFNU→EFIK | `15:45–16:20Z` | **15:40Z–16:25Z** | 0:45 |
+| 26/06/2026 OH-PDP EFLA→EFHV | `17:35–18:05` local | **17:30–18:10** | 0:40 |
+His wording differed slightly ("+/- 5 minutes per side" vs "+/- 5 minutes total on either side");
+both were read as **5 min each side**. Flag if a later record contradicts either.
+
+### Roles & totals contributed
+Instructing (PIC + Instructor): 12/06 OH-ESR EFNU→EFIK 0:45, both 23/06 OH-CTL (1:13 + 0:28),
+30/06 OH-CTL 1:10, 30/07 OH-GKT 1:00 → **Instructor +4:36**. The 12/06 *return* leg (EFIK→EFNU) is
+**PIC only** per the user — an instructing outbound with a non-instructing return; as dictated.
+Instrument: 25/07 OH-TIL **1:08** (club `ifr_min 68` = the whole flight). No dual, no night.
+SEP_Sea **+9:22** (OH-GKT 6:31 + OH-CTL 2:51). Landings **+48**.
+
+### Still flown-but-unrecorded after this batch
+Nothing known. Both references are now fully consumed: `laskukierros_flights.csv` ends **25/07/2026**
+and Aviatron ends **12/07/2026**, and every row in each that postdates the paper book is in the CSV.
+⚠ **6037 r3 (16/05/2026 Kabböle local 0:50) is still missing from the club file** — the pupil never
+logged it; our row is correct as is.
+
+## 🏁 PAPER DRIFT CLOSED AT PAGE 62 (2026-08-01) — the book now carries OUR figures
+The user wrote the corrected totals at the bottom of **page 62** and confirmed them back:
+**Total 1206:58 · SE-VFR 1101:01 · SE-IFR 105:57 · PIC 1040:26 · FI 185:50 · Dual 166:32 ·
+Day landings 3335 · Night landings 59.** (Night time **22:45** was supplied but not read back.)
+**Every paper-vs-ours drift is therefore zero from p.62 onward.** The historical offsets
+(Total +2:06, PIC +1:46, SE-IFR +4:02, Dual +0:20, FI −1:23 at p.60) are now closed by hand.
+**Do not re-apply them to any later page, and do not read a p.62-or-later book total as evidence of
+a new slip until it has been cross-checked against `logbook_3.csv` directly.**
+
+Accounting for the Total +2:06 that was corrected (fully decomposed):
+**+0:25** inherited at the Book-2→Book-3 handover · **+1:00** p.14 (10/08/2022 OH-PIF Tarhanen row
+1:55 entered as 0:55 in the running column) · **+1:00** p.52 (6032 r13, a 1:38 flight added as 0:38) ·
+**−0:20** p.52 (6032 r11, 08/07/2025 OH-GKT — book 0:57, Aviatron 0:37, user ruled Aviatron) ·
+**+0:01** p.60 (6036 r13, 0:24 added as 0:23).
+**PIC +1:46 does NOT decompose** — its history runs −0:27 at handover → −1:25 by p.20 → **+1:05 from
+p.26**, where the pilot struck his own PIC total 810:09 and carried 807:39, an undocumented −2:30 hand
+correction he does not recall the basis for → +1:45 at p.54 → +1:46 at p.60. Our per-page Δpic
+reconciled exactly on p.26 and p.28, which is why our figure was kept. **That 2:30 remains unexplained
+and is now baked into the paper book as well.**
+
+### ⚠ The day/night landing split written at p.62 is PART INFERRED — 9 of the 59 nights
+`Landings` stores the **sum**; the night split is inferred from `Night_Time` (see `reference.md`).
+Across all three books there are **22 rows with night time**. **17 are full-night**
+(`Night_Time == Total_Time`) → all their landings are night, **50 landings, certain**. Book 3's seven
+(24 landings) are corroborated row-by-row by the transcription notes above.
+**The remaining 9 are estimates** from five partial-night rows — all evening departures from EFHF,
+so the night portion is at the *end* and each row's **final** landing is certainly night; how many
+earlier ones fall after night onset is not recoverable from the CSV:
+
+| date | reg | off–on | total / night | ldg | night ldg | basis |
+|---|---|---|---|---|---|---|
+| 15/11/2012 | OH-KAS | 14:38–15:42 | 1:04 / 0:24 | 5 | **2** | night = last 24 of 64 min; ~13 min/circuit |
+| 25/03/2013 | OH-CTH | 18:50–20:03 | 1:13 / 0:20 | 1 | **1** | single landing, at the end — certain |
+| 11/11/2013 | OH-COF | 17:00–18:00 | 1:00 / 0:30 | 4 | **2** | night = exactly the second half |
+| 26/03/2020 | OH-STL | 16:35–18:38 | 2:03 / 0:50 | 3 | **1** | night = last 40%; only the final landing is safe |
+| 11/02/2021 | OH-STL | 17:27–19:40 | 2:13 / 1:55 | 3 | **3** | night starts 18 min after off-block |
+
+**Range: night 55–66, day 3328–3339.** The user adopted the midpoint estimate (**59 / 3335**) and
+inked it. **Two exact sources still exist and were offered but not used:** (a) the Day/Night landings
+columns on paper for those five rows — Book 1 ×3, Book 2 ×2 — which our transcription never captured,
+and (b) the book's own printed day-only cumulative at p.60 plus the 59 all-day landings of pp.61–62.
+**If either is ever read, correct p.62 rather than assuming the CSV is wrong** — `Cumulative_Landings`
+(the sum) is unaffected either way; only the split moves.
+⚠ Assumes no row has night landings without night time logged. The reverse happened on 05/03/2024
+(book put 3 night landings in the day column), so the columns do get crossed.
+
 ## Standing discrepancy — paper landing count (RESOLVED 17/04/2020)
 The paper logbook's **cumulative landing count ran ahead of the true count** for most of Books 1–2
 (at the historical IMG_4910 checkpoint paper showed 1051 vs correct 1050, paper +1). **This closed on

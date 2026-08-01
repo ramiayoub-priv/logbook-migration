@@ -7,14 +7,18 @@ pic_name, Landings, Remarks, Cumulative_Total, Cumulative_PIC, Cumulative_Studen
 Cumulative_Instrument, Cumulative_SEP_Sea, Cumulative_Landings, Cumulative_Instructor`
 
 - All values are quoted. Dates are `DD/MM/YYYY`. Times are `H:MM`/`HH:MM`.
-- **`Off_Block`/`On_Block` vs `Takeoff`/`Landing`, and `Block_Time` vs `Total_Time`.** These are four
-  distinct columns and they finally diverged on **08/09/2025** (IMG_6034 r6) — the only such row so
-  far. The pilot had written the **airborne** times into the book's off/on-block cells; the club
-  record had both pairs, and the user chose to store the block pair. Convention:
-  `Off_Block`/`On_Block` + `Block_Time` = gate-to-gate; `Takeoff`/`Landing` = airborne;
-  **`Total_Time` is always the flown time the book totals on** — never adjust it to match a block
-  time, or the page Δ and every downstream cumulative break. Everywhere else `Block_Time ==
-  Total_Time` and `Takeoff`/`Landing` are empty.
+- **`Off_Block`/`On_Block` vs `Takeoff`/`Landing`, and `Block_Time` vs `Total_Time`.** Four distinct
+  columns. Convention: `Off_Block`/`On_Block` + `Block_Time` = gate-to-gate; `Takeoff`/`Landing` =
+  airborne; **`Total_Time` is always the flown time the book totals on** — never adjust it to match a
+  block time, or the page Δ and every downstream cumulative break.
+  - `Block_Time != Total_Time` on exactly **one** row, **08/09/2025** (IMG_6034 r6): the pilot wrote
+    the **airborne** times into the book's off/on-block cells; the club record had both pairs and the
+    user chose to store the block pair.
+  - `Takeoff`/`Landing` are **populated on 16 rows**: that one, plus all **15 rows of the
+    missing-flights batch** (12/06/2026–30/07/2026), where the user dictated both pairs. On those 15,
+    `Block_Time == Total_Time == ` the block figure and the airborne pair sits in `Takeoff`/`Landing`.
+  - Everywhere else `Block_Time == Total_Time` and `Takeoff`/`Landing` are empty.
+  - `logbook_tools.py` takes optional **`takeoff`**, **`landing`** and **`block`** batch fields.
 - **Time zone: transcribe times exactly as written in the paper book (a mix of local/UTC).**
   Do NOT convert while digitizing. A future app (to be built after all logbooks are entered) will
   normalize everything to UTC. So an apparent clock collision across two rows (e.g. a water landing
@@ -168,7 +172,8 @@ OH-GKT row without checking here first.** (This was missed through IMG_6022–60
 - **2026 float pupils** (Oppilas; from `laskukierros_flights.csv`, context only — `pic_name` stays
   `self` on instructing rows): **Tommi Nirkkonen** (16/05), **Toivo Huovinen** (16/05),
   **Harry Karlsson** (17/05, *"Kevätkertaus 2026"*), **Thomas Hansson** (17/05, *"Kerhon
-  kevättarkkari"*), **Pekka Puhakka** (23/06, not yet in the paper book).
+  kevättarkkari"*), **Pekka Puhakka** (23/06 ×2 — in `logbook_3.csv` via the missing-flights batch,
+  **not yet on paper**).
   ⚠ **Mikko Sinervä appears as the PUPIL** on 18/05/2026 (OH-CTL Tuusulanjärvi local 1:28,
   *"Opekertaus"*) — the pilot's own seaplane instructor taking an instructor-proficiency check with
   him. Do not assume a Sinervä row means our pilot was the student; read `rami_role`.

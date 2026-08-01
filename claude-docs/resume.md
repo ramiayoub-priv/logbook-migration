@@ -320,14 +320,38 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
   **Mikko Sinervä as the *pupil*** on an *Opekertaus* proficiency check. 6037 r3 has **no club record**
   — the pupil forgot to log it; the user will have them enter it. 6037 r8's type is written `M2`;
   user confirms **M6**. 6037 r4 landings book 4 vs club 3 — **book correct** (user).
-- **Last row in `logbook_3.csv`:** `03/06/2026 · P28A · OH-PDP · EFHV → EFLA ·
-  16:02–16:35 (local) · Total 0:33 · PIC 0:33 · 1 landing`
+- **⚠⚠ MISSING-FLIGHTS BATCH APPENDED 2026-08-01 — 15 rows that are NOT YET IN THE PAPER BOOK.**
+  First time the project ran in reverse: the user **dictated** 15 flights (**12/06/2026 → 30/07/2026**)
+  that he had never written down, we appended them to `logbook_3.csv` first, and **he transcribes them
+  onto paper from our table.** No page image, no "TOTAL THIS PAGE", no page cross-check — the `paper`
+  block in **`batch_missing_2026.json`** is empty. **His plan: row 1 fills the last free row of
+  page 62, the other 14 open pages 63–64, and he then rewrites the book's carried totals to match
+  ours to close the standing drift.** So the next spread photo should show *corrected* "TOTAL
+  PREVIOUS PAGES" figures — **that is intentional, not a book error.** Full account in `drift.md`.
+  - **Aviatron confirmed 5 OH-GKT rows to the minute and fixed 2** — the user's dictated on-block
+    pairs had **slipped one row down** (26/06 carried 13/06's, 11/07 carried 26/06's).
+  - **⚠ OH-CAM EFHV local is `29/06/2026`, not the 26/06 dictated** (user took the club record;
+    26/06 was *also* a coherent chain, so only the record settled it).
+  - **⚠ 25/07/2026 OH-TIL stored `Z` per the user, but the club file — whose times are LOCAL — holds
+    `06:56–08:04` digit-for-digit.** No Aviatron OH-TIL row after 2021. Conflict logged, not resolved.
+  - **Two 23/06/2026 OH-CTL instructing rows** (pupil **Pekka Puhakka**) came from the club file, not
+    the user's list; added at his instruction. **30/06/2026 OH-CTL has no record in either reference.**
+  - **⚠ `Takeoff`/`Landing` are now populated on all 15 rows** (the user dictated both pairs).
+    `Off_Block`/`On_Block` + `Block_Time` = block pair, `Takeoff`/`Landing` = airborne,
+    **`Total_Time` = the block time** as always. `logbook_tools.py` gained optional
+    **`takeoff` / `landing` / `block`** batch fields for this.
+- **Last row in `logbook_3.csv`:** `30/07/2026 · C172 · OH-GKT · Kahvisaari → Kahvisaari ·
+  15:40Z–16:40Z (block) · 15:45Z–16:31Z (airborne) · Total 1:00 · PIC 1:00 · Instructor 1:00 ·
+  7 landings` — **not yet on paper.**
 - **Cumulative totals at that row (our continuous series, seeded from Book 2):**
-  - Cumulative_Total **1206:13** · Cumulative_PIC **1039:41** · Cumulative_Student **166:32**
-  - Cumulative_Instrument **105:57** · Cumulative_SEP_Sea **398:17**
-  - Cumulative_Landings **3391** (= day+night; runs ahead of book's day-only count — see drift.md)
-  - Cumulative_Instructor **185:05**
-- **`logbook_3.csv` has 463 data rows** (+ header + seed row = 465 lines).
+  - Cumulative_Total **1219:35** · Cumulative_PIC **1053:03** · Cumulative_Student **166:32**
+  - Cumulative_Instrument **107:05** · Cumulative_SEP_Sea **407:39**
+  - Cumulative_Landings **3439** (= day+night; runs ahead of book's day-only count — see drift.md)
+  - Cumulative_Instructor **189:41**
+- **At the end of paper page 62** (i.e. after only the first missing row, 12/06 OH-ESR EFNU→EFIK):
+  Total **1206:58** · PIC **1040:26** · Instrument **105:57** · Student **166:32** ·
+  Instructor **185:50** · Landings **3394**.
+- **`logbook_3.csv` has 478 data rows** (+ header + seed row = 480 lines).
 
 ### Book-3 conventions (locked 2026-07-31 with user)
 - **Same 26-col schema.** EASA→our-schema mapping: **Dual (Oppilas) → Student_Time**;
@@ -344,21 +368,31 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
 - **Tooling:** `logbook_tools.py <batch.json> --csv logbook_3.csv [--append]` (new `--csv` flag targets
   Book 3; defaults to Book 2). Block-vs-total diffs ≤5 min now warn instead of blocking append.
 
-## Next action — ⏸ CAUGHT UP. Waiting on new photos.
-**Every photographed spread of Book 3 is transcribed** (`IMG_6007`–`IMG_6037`, pages 1–62). There is
-nothing to process until the user photographs more pages.
+## 🏁 PAPER DRIFT CLOSED AT PAGE 62 (2026-08-01)
+The user inked our figures at the bottom of p.62: **Total 1206:58 · SE-VFR 1101:01 · SE-IFR 105:57 ·
+PIC 1040:26 · FI 185:50 · Dual 166:32 · Day ldg 3335 · Night ldg 59** (night time 22:45).
+**All paper-vs-ours drift is zero from p.62 on** — every historical offset (Total +2:06, PIC +1:46,
+SE-IFR +4:02, Dual +0:20, FI −1:23) was corrected by hand. **Do not re-apply them.** Full
+decomposition + the ⚠ **9-of-59 inferred night landings** in `drift.md`.
+
+## Next action — ⏸ THE CSV IS AHEAD OF THE PAPER. Waiting on the user.
+**Every photographed spread is transcribed** (`IMG_6007`–`IMG_6037`, pages 1–62) **and the CSV now runs
+15 flights *ahead* of the book** (the missing-flights batch above, 12/06/2026–30/07/2026). The user is
+writing those 15 onto paper — 1 row closes page 62, 14 open pages 63–64 — and **rewriting the book's
+carried totals to our figures to close the drift.** Nothing to process until he photographs the result.
+
+**When the pages 63–64 photo arrives it is a VERIFICATION pass, not a transcription pass.** Compare the
+image against the 15 rows already in `logbook_3.csv`; the paper is copied *from* us this time, so a
+mismatch means a writing slip on paper, not a bad CSV row. Expect the page totals to be:
+**Δtotal 12:37** (= SE-VFR 11:29 + SE-IFR 1:08) · **Δpic 12:37** · **Δinstr 3:51** · **Δland 45**
+for the 14 rows on the new spread (page 62's single added row is Total/PIC/FI 0:45, 3 ldg).
 
 **⚠ Book 3 is NOT finished — do not rename `logbook_3.csv` to `logbook_3_final.csv`.** The paper book
-runs to page 128 and we are at **p.62**; p.61/62 has no "TOTAL THIS PAGE" filled in because the page
-is still in progress. The Book-1/2 `_final` rename only applies to a *closed* book.
+runs to page 128 and we are at **p.62**. The Book-1/2 `_final` rename only applies to a *closed* book.
 
-**What's already flown but not yet in the book** (both references run ahead of the paper — useful for
-sanity-checking the next batch, not for appending):
-- `laskukierros_flights.csv`: **23/06/2026 ×2** (OH-CTL, Tuusula local + Karhusaari→Pellinki, pupil
-  Pekka Puhakka), **29/06/2026** OH-CAM EFHV local, **25/07/2026** OH-TIL EFTP local (IFR 1:08).
-- Aviatron (`OH-GKT`): **13/06** EFRY→Kahvisaari 1:02, **26/06** Kahvisaari local 1:03 (9 ldg),
-  **11/07** Kahvisaari→Mäntyharju 1:04 + Mäntyharju→Leikonvesi 1:05, **12/07/2026**
-  Leikonvesi→Kahvisaari 1:17. *OH-GKT has not appeared in the paper book since 06/11/2025.*
+**Nothing else is known-flown-but-unrecorded.** Both references are fully consumed:
+`laskukierros_flights.csv` ends **25/07/2026**, Aviatron ends **12/07/2026**, and every row in either
+that postdates the paper book is now in the CSV. Re-pull them before assuming that still holds.
 - **⚠ 6037 r3 (16/05/2026 Kabböle local 0:50) is missing from the club file** — the pupil forgot to
   log it and the user is chasing them; it may appear in a future pull. Our row is correct as is.
 
