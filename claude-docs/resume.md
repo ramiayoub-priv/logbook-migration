@@ -45,9 +45,12 @@
 >   - ✅ **`26.01.2015` was a DATE ERROR, not a missing flight** — line 249 read `28/01/2015`; the
 >     paper says `26.1`. Fixed. Page 74/75 cross-checks exactly (`Cumulative_Total` 264:27 and
 >     landings 571 both equal the paper), so no Book-1 flight is missing.
->   - ⏸ **3:03 left: 1:55 in pages 52–69** (Mar–Aug 2014, not yet photographed — night runs 9:12 at
->     p.51 to 11:07 at p.71) **+ 1:08 on p.74/75** where the user's dictation and the photograph
->     disagree about which rows carry `0:30` and `0:38` (no total affected either way).
+>   - ✳️ Applied on the user's ruling *"go with the photo read"*: **05.01.2015 OH-KAM 0:30**
+>     (line 247) and **26.01.2015 OH-STL 0:38** (line 248, full night). This supersedes his earlier
+>     dictated list, which put those two values one row apart; totals identical either way.
+>   - ⏸ **1:55 LEFT, IN ONE PLACE: pages 52–69** (Mar–Aug 2014, not yet photographed — the book's
+>     night runs **9:12** at p.51 to **11:07** at p.71 and our CSV has nothing in between).
+>     **Photographing those spreads closes the night column completely.**
 >   - **⚠ The p.62 day/night landing split (59/3335) is now out of date** — recompute it once the
 >     night column closes.
 >   - **Reading method for Book-1/2 pages:** `Yölentoaika` = night, `Kokonaisaika` = running total,

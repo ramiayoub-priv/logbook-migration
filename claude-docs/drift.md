@@ -182,10 +182,12 @@ across all of them**, which turns the night column into a page-by-page ledger:
 | 50/51 | 8:12 | 9:12 | 1:00 | 14.12.2013 OH-COF (full night) | ✅ already ours |
 | **52–69** | **9:12** | **11:07** | **1:55** | **not photographed** | ⏸ **THE ONLY GAP LEFT** |
 | 70/71 | 11:07 | 11:58 | **0:51** | **15.09.2014 OH-CMO** EFLA→EFHF (0:51, full night) | ✳️ **APPLIED** line 237 |
-| 74/75 | 11:58 | 13:53 | 1:55 | 0:30 + 0:38 (**item D**) + 0:37 ✅ + 0:10 ✳️ | ⏸ D open |
+| 74/75 | 11:58 | 13:53 | 1:55 | 05.01 **0:30** + 26.01 STL **0:38** + 01.02 0:37 + 25.02 0:10 | ✳️ **ALL APPLIED** |
 
 **Our running night now equals the paper's `Siirto` at every checkpoint through 30/11/2013**
-(5:29, 6:46, 7:06, 8:12 — all exact). Night total **16:47 → 19:42**.
+(5:29, 6:46, 7:06, 8:12 — all exact) **and page 74/75 contributes its full 1:55**. Night total
+**16:47 → 20:50**. The *only* residual is item E's 1:55, which simply carries through every
+checkpoint after p.51 as a constant offset — exactly what a single missing block looks like.
 
 - ✳️ **⚠ `0:24` WAS ON THE WRONG ROW — MOVED.** Page 35 puts the `0 24` beside the `Päällikkö 0 56`
   entry on the row whose `Kokonaisaika` is **117:55** — that is **09.11.2012 OH-CWB EFHF local
@@ -202,8 +204,9 @@ across all of them**, which turns the night column into a page-by-page ledger:
 - Minor, no action: p.51 writes the 14.12.2013 OH-COF block as **17:09–18:09**; ours says
   **17:07–18:07**. Duration 1:00 either way and no total moves.
 
-#### ⏸ Still open — the remaining 3:03
-`22:45 − 19:42 = 3:03` = **1:08 (item D) + 1:55 (pages 52–69)**. Nothing else is missing.
+#### ⏸ Still open — 1:55, in one place
+`22:45 − 20:50 = 1:55`, all of it **item E** below. Every other night row in all three books is now
+reconciled against the paper's own night column.
 
 **E. 📄 PAGES 52–69 ARE THE LAST GAP — 1:55 of night, between `25.02.2014` and `30.08.2014`.**
 Page 51 ends at night **9:12** (25.02.2014) and page 71 carries **11:07** in (before 30.08.2014), so
@@ -212,27 +215,14 @@ still zero outside the 15.09 row above. **Photographing the spreads covering Mar
 whole item.** Read it the same way: the `Yölentoaika` entry pairs with the `Päällikkö` value on its
 visual line, and `Kokonaisaika` pins the row.
 
-**D. ⚠ Which rows carry the `0:30` and the `0:38`? — a genuine conflict, unresolved.**
-The page's night column contributes **1:55** (`Yölentoaika` 11:58 → 13:53), made of four entries:
-**0:30, 0:38, 0:37, 0:10**. Two are settled (0:37 → 1.2 CAV, 0:10 → 25.2 leg 2). The other two are
-read differently by the two sources we have:
-
-| | `0:30` | `0:38` |
-|---|---|---|
-| **user's dictation** | 26.1 **STL** (line 248, 0:38 flight) | 26.1 **CMO** (line 249, 0:47 flight) |
-| **the photograph** | **5.1 KAM** (line 247, 0:57 flight) | 26.1 **STL** (line 248, 0:38 flight) |
-
-Both readings sum to 1:55, so the page total cannot discriminate. The photo reading pairs `0 30`
-on the same visual line as the `0 57` PIC entry (the 5.1 flight) and leaves the 26.1 CMO row's night
-cell empty. **Not applied. The user's own read of the book decides.**
-
-⚠ **The six later spreads have since validated that same-line pairing method on eight independent
-rows** — every already-confirmed value (0:20, 0:36, 0:30, 1:00, 0:37, 0:10) landed on the right row,
-and on page 35 it **caught a real error in our CSV** that nothing else had (the 0:24 sitting one row
-low). That does not overrule the user, but it is why the photo reading is worth a second look here.
-
-**Neither reading changes any total** — the page contributes 1:55 of night either way, so this
-affects only *which two rows* carry it, and hence which two landings count as night.
+**D. ✅ RESOLVED 2026-08-01 — the photograph's reading was adopted.** User: *"go with the photo
+read and let's close this."* Applied: **`05.01.2015` DA40 OH-KAM** EFHF local 15:26–16:23 (0:57) →
+`Night_Time` **0:30** (line 247, `Kokonaisaika` 258:57); **`26.01.2015` DA40 OH-STL** EFHF local
+11:17–11:55 (0:38) → `Night_Time` **0:38**, a full-night row (line 248, `Kokonaisaika` 259:35).
+The `26.01.2015` OH-CMO row (line 249) carries **no** night time.
+⚠ **This supersedes the user's earlier dictated list**, which put 0:30 on the STL row and 0:38 on the
+CMO row; the totals are identical either way, so nothing downstream moved. *Recorded because the
+dictated version is still quoted in the read-back table above — the applied values are these.*
 
 **C. RESOLVED** — superseded by the six-spread ledger above; what was 4:03 is now item E's 1:55.
 
