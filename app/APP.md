@@ -22,13 +22,14 @@ transcribed from paper logbooks by the *other* effort in this repo (`claude-docs
 not replaced by the app). Read `CLAUDE.md` §0 first — those rules are non-negotiable and were written
 for this work specifically.
 
-**Status: feature-complete for v1 and green. Deployment (Task 7) is HALF DONE and is the live task —
-the backend runs on the box, Apache has not been switched on, so `ayoub.fi/logbook` is still 404 to
-the world. Read "Where the deploy actually stands" below before touching anything.**
+**Status: feature-complete for v1, green, and LIVE at `https://ayoub.fi/logbook`. But the box is
+BEHIND the repo — it runs an older binary and a 1293-flight database, and the repo is at 1296. One
+owner-run command closes that gap. Read "Where the deploy actually stands" below before touching
+anything.**
 
 ### Done (2026-08-01)
 - **Task 2** — `app/backend/` Go module, `internal/hhmm` and `internal/timeutil`. Both 100%.
-- **Task 3** — the schema and importer. All **1293** flights import and verify.
+- **Task 3** — the schema and importer. All **1296** flights import and verify.
 - **Task 4** — the API and authentication. Every control in `docs/security.md` has the test that
   fails if it is removed.
 - **Task 5b** — **`POST /flights`**, the only write path into the legal record. `internal/entry`
@@ -37,9 +38,11 @@ the world. Read "Where the deploy actually stands" below before touching anythin
 - **Task 6** — the **three PDFs**. `internal/pdfmodel` (cells and totals, pure, 100%) +
   `internal/pdfbook` (rendering). Verified against the real logbook: 87 EASA pages, totals block
   reconciling, Finnish place names intact.
-- **Task 5** — the **frontend**, `app/frontend/`. Six pages behind a login gate. 43 tests green,
+- **Task 5** — the **frontend**, `app/frontend/`. Six pages behind a login gate. **60 tests green**,
   and driven in a real browser against the live API — including logging a flight end to end,
   watching the duplicate be refused, and confirming zero horizontal overflow on a 390px phone.
+  Reworked on the evening of 2026-08-01 after the owner found the new-flight form unusable on an
+  actual phone; see the decision log.
 
 ### The whole map
 ```
@@ -172,7 +175,7 @@ POST   /login              public   {username,password} -> 200 + Set-Cookie; 401
 GET    /health             public   exactly {"status":"ok"} and nothing else
 POST   /logout             private  revokes this session, clears the cookie
 GET    /me                 private  {user_id, username}
-GET    /flights   ?from&to private  {flights:[...], count} in seq order
+GET    /flights   ?from&to private  {flights:[...], count} in seq order (the table reverses for display)
 POST   /flights            private  a hand-entered flight -> 201; 400 with per-field errors; 409 duplicate
                                     times are "HH:MM" (Helsinki local) or "HH:MMZ" (UTC)
                                     takeoff/landing are OPTIONAL, but all-or-nothing as a pair
@@ -335,7 +338,7 @@ day · landings night.
 | Layer | Choice | Why |
 |---|---|---|
 | Backend | Go, stdlib `net/http` | Single static binary; deploy is rsync + restart. Tiny dependency tree. |
-| DB | SQLite (`modernc.org/sqlite`, pure Go) | No CGO ⇒ trivial cross-compile. One file; backup = `VACUUM INTO`. 1293 rows is nothing. |
+| DB | SQLite (`modernc.org/sqlite`, pure Go) | No CGO ⇒ trivial cross-compile. One file; backup = `VACUUM INTO`. 1296 rows is nothing. |
 | Time | embedded `tzdata` | Behaviour must not depend on the server's zoneinfo. |
 | PDF | `go-pdf/fpdf` | Absolute positioning, which a fixed 15-row EASA grid needs. Headless Chrome would cost 300 MB+. |
 | Frontend | React + TS + Vite | Builds to static files. Node is build-time only, never on the server. |
@@ -346,18 +349,38 @@ day · landings night.
 |---|---|---|
 | 1 | Project rules + app docs | **done** 2026-08-01 |
 | 2 | Scaffold backend + frontend, test harness | **done** 2026-08-01 — backend `make check`, frontend `npm run check` (tsc + vitest) |
-| 3 | Schema + importer for 1293 flights (verified) | **done** 2026-08-01 |
-| 4 | API + authentication | **done** 2026-08-01 — `internal/stats`, `internal/auth`, `internal/ratelimit`, `store/auth.go`, `cmd/server`. Every `docs/security.md` control implemented with the test that fails if it is removed. Verified live against the real 1293 flights. |
-| 5 | Four frontend pages (mobile-first) | **done** 2026-08-01 — plus the auth UI. Six pages: Flights, Statistics, New flight, Export, Review, Devices, behind a login gate. React + TS + Vite, `app/frontend/`. 43 frontend tests green. Verified in a real browser against the live API, including logging a flight end to end. |
+| 3 | Schema + importer for 1296 flights (verified) | **done** 2026-08-01 |
+| 4 | API + authentication | **done** 2026-08-01 — `internal/stats`, `internal/auth`, `internal/ratelimit`, `store/auth.go`, `cmd/server`. Every `docs/security.md` control implemented with the test that fails if it is removed. Verified live against the real flights. |
+| 5 | Four frontend pages (mobile-first) | **done** 2026-08-01 — plus the auth UI. Six pages: Flights, Statistics, New flight, Export, Review, Devices, behind a login gate. React + TS + Vite, `app/frontend/`. **60 frontend tests green.** Reworked the same evening after the owner found the new-flight form unusable on a real phone, and the table now lists newest first. Verified in a real browser against the live API, including logging a flight end to end. |
 | 5b | `POST /flights` — the write path | **done** 2026-08-01 — `internal/entry` (validation, pure, 100%), `store.AddFlight`, the hand-entered `seq` band, the duplicate guard, and the import scoping that stops a re-import deleting app-entered flights. |
 | 6 | Three PDF exports (EASA clone + table + stats) | **done** 2026-08-01 — `internal/pdfmodel` (the cells and totals, pure, 100%) + `internal/pdfbook` (rendering, `go-pdf/fpdf`). Live against the real logbook: **87 EASA pages**, totals block reconciling, Finnish place names intact. |
-| 7 | PWA + deploy to `ayoub.fi/logbook` | **PWA done** 2026-08-01 — manifest, icons, and a hand-written service worker that caches the shell and **never** an API response, proven in a browser with the HTTP cache disabled. **Deploy HALF DONE** 2026-08-01 — backend, binary, systemd unit and frontend assets are on the box and the service is running and healthy on `127.0.0.1:9002`; **Apache is not switched on, the database there is stale (1293, not 1296), and no user account exists**, so the site is still 404. See "Where the deploy actually stands". |
+| 7 | PWA + deploy to `ayoub.fi/logbook` | **PWA done** 2026-08-01 — manifest, icons, and a hand-written service worker that caches the shell and **never** an API response, proven in a browser with the HTTP cache disabled. **Deployed and LIVE** 2026-08-01 at `https://ayoub.fi/logbook` — service user, binary, systemd unit, frontend, the additive Apache block and the account are all in place, and the owner's other seven sites still answer 200. **NOT finished**: the box runs an older binary and a 1293-flight database while the repo is at 1296, pending one owner-run command. See "Where the deploy actually stands". |
 | 8 | Backfill landings day/night for the **30** night rows | not started — all 30 are flagged `landings_unverified` in the DB, listed by `logbookctl import`, and surfaced by the API as `landings_unverified` in the stats summary. `claude-docs/drift.md` has the analysis. The p.62 split recomputes to **68 night / 3326 day** (the sum 3394 is unchanged); six of those 68 are estimates from three multi-landing partial-night rows, range 65–72. |
 | 9 | Rule on the open source-data problems | **mostly closed** 2026-08-01 — two of the three ruled and fixed. One item left (`logbook_2_final.csv` lines 89–90) and it needs the physical page; it moves no total. See the ⏸ block at the top. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-01 — The table shows newest first, and that reversal lives in the view
+
+Asked for by the owner: the flight list should open on the most recent flight, not on 2011. The
+EASA export was explicitly noted as already correct, which is the constraint that decided where the
+change goes.
+
+There is **exactly one `ORDER BY seq`** in the store, and it feeds the table, the statistics and all
+three PDFs. Reversing it — or adding a descending variant and pointing the list handler at it —
+would have put the reversal one careless refactor away from the export, whose page geometry and
+`TOTAL PREVIOUS PAGES` chain are built on ascending book order (rule §0.5). So the API still returns
+the book's own order and **the reversal is a view concern in `TablePage`**, on a copy of the array
+rather than in place, because `stats.Paginate` has a test asserting it does not reorder its caller's
+slice and the same courtesy is owed here.
+
+The subtle part is *what* gets reversed: **book order, not date order.** 21 rows across the three
+books are genuinely out of date order, and three of them are the 28/08/2025 late entries now sitting
+at the end of Book 3. Sorting the table by date would move those rows out of the order the paper
+keeps them in — and a logbook that disagrees with the paper about row order is the beginning of
+exactly the drift this project spent 106 KB of `drift.md` on. Both properties have a test.
 
 ### 2026-08-01 — The form asked for a format the phone's keyboard cannot type
 

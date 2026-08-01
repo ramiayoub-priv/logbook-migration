@@ -116,6 +116,49 @@ describe('the flights table', () => {
     expect(screen.queryByText('81')).not.toBeInTheDocument()
   })
 
+  // Newest first. The API returns the book's own seq order -- oldest first --
+  // because that is the order everything cumulative must use, and the EASA
+  // export depends on it. The reversal is therefore a VIEW concern and lives
+  // here, not in the query: the most recent flight is the one being looked for.
+  it('lists the newest flight first', async () => {
+    vi.spyOn(api, 'flights').mockResolvedValue({
+      flights: [
+        flight({ seq: 1, date: '2021-06-01' }),
+        flight({ seq: 2, date: '2023-04-15' }),
+        flight({ seq: 3, date: '2026-07-30' }),
+      ],
+      count: 3,
+    })
+    renderApp()
+
+    const rows = await screen.findAllByRole('row')
+    // rows[0] is the header.
+    const dates = rows.slice(1).map((r) => r.querySelectorAll('td')[0]?.textContent)
+    expect(dates).toEqual(['2026-07-30', '2023-04-15', '2021-06-01'])
+  })
+
+  // Ordering on seq rather than on the date string is load-bearing: 21 rows
+  // across the three books are genuinely out of date order, and three of them
+  // are the 28/08/2025 late entries sitting at the end of Book 3. A table
+  // sorted by date would silently move them out of book order.
+  it('reverses book order, not date order', async () => {
+    vi.spyOn(api, 'flights').mockResolvedValue({
+      flights: [
+        flight({ seq: 1294, date: '2026-07-30' }),
+        // A late entry: last in the book, but an older date.
+        flight({ seq: 1295, date: '2025-08-28' }),
+      ],
+      count: 2,
+    })
+    renderApp()
+
+    const rows = await screen.findAllByRole('row')
+    const dates = rows.slice(1).map((r) => r.querySelectorAll('td')[0]?.textContent)
+    // The late entry is newest in the book, so it comes first -- even though
+    // its date is older.
+    expect(dates).toEqual(['2025-08-28', '2026-07-30'])
+  })
+
   // A row whose day/night split was inferred must not look like one somebody
   // checked (rule 0.2, Task 8).
   it('marks a row whose landing split was inferred', async () => {

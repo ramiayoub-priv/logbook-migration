@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { api, type DateRange } from '../api'
 import { useApi } from '../auth'
 import { clock, hhmm, hhmmOrBlank } from '../format'
@@ -8,6 +8,24 @@ export function TablePage() {
   const [range, setRange] = useState<DateRange>({})
   const load = useCallback(() => api.flights(range), [range.from, range.to])
   const { data, error, loading } = useApi(load, [range.from, range.to])
+
+  /**
+   * Newest first, because the flight you are looking for is almost always the
+   * one you just flew.
+   *
+   * This is a VIEW concern and it lives here rather than in the query. The
+   * server returns the book's own seq order -- oldest first -- and that order
+   * is load-bearing: every cumulative figure and the whole EASA export are
+   * built on it (rule 0.5), and there is exactly one `ORDER BY seq` feeding
+   * the table, the statistics and all three PDFs. Reversing it there would
+   * have reversed the export too.
+   *
+   * It reverses BOOK order, not date order. 21 rows across the three books are
+   * genuinely out of date order -- including the three 28/08/2025 late entries
+   * that sit at the end of Book 3 -- so sorting on the date would quietly move
+   * rows out of the order the paper keeps them in.
+   */
+  const rows = useMemo(() => (data ? [...data.flights].reverse() : []), [data])
 
   return (
     <>
@@ -24,7 +42,7 @@ export function TablePage() {
       {data && (
         <>
           <p className="muted small">
-            {data.count} flight{data.count === 1 ? '' : 's'}, in book order.
+            {data.count} flight{data.count === 1 ? '' : 's'}, newest first.
           </p>
 
           {data.count === 0 ? (
@@ -52,7 +70,7 @@ export function TablePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.flights.map((f) => (
+                    {rows.map((f) => (
                       <tr key={f.seq}>
                         <td>{f.date}</td>
                         <td>
