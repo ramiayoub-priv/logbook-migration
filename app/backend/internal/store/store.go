@@ -51,7 +51,32 @@ type DB struct {
 	// backup is the path of the most recent backup, recorded on the next
 	// import run so a figure can be traced to the state it replaced.
 	backup string
+	// clock is the source of "now" for session expiry. It is a field rather
+	// than a call to time.Now so that the 90-day rolling window can be tested
+	// in milliseconds instead of being taken on trust -- see SetClockForTest
+	// and the expiry control in app/docs/security.md.
+	clock func() time.Time
 }
+
+// at is the current instant in UTC, from this database's clock.
+func (db *DB) at() time.Time { return db.clock().UTC().Truncate(time.Second) }
+
+// stamp formats the current instant for a TEXT column.
+func (db *DB) stamp() string { return db.at().Format(timeFormat) }
+
+// SetClockForTest replaces the clock and returns a function restoring it.
+// Test-only; nothing in the server calls it.
+func (db *DB) SetClockForTest(c func() time.Time) (restore func()) {
+	prev := db.clock
+	db.clock = c
+	return func() { db.clock = prev }
+}
+
+// SQLForTest exposes the underlying handle so tests can assert on the bytes
+// actually written -- that the sessions table holds no usable token, that a
+// password hash is argon2id. Test-only; production code goes through the
+// methods on DB.
+func (db *DB) SQLForTest() *sql.DB { return db.sql }
 
 // Open opens (or creates) the database at path and brings the schema up.
 //
@@ -82,7 +107,7 @@ func Open(path string) (*DB, error) {
 		sqlDB.Close()
 		return nil, fmt.Errorf("store: recording schema version: %w", err)
 	}
-	return &DB{sql: sqlDB, path: path}, nil
+	return &DB{sql: sqlDB, path: path, clock: time.Now}, nil
 }
 
 // Close releases the database.
