@@ -272,14 +272,39 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
   **⚠ `EFSA` was NOT new** — I called it new off `reference.md`'s airport list; Savonlinna is in the
   books 6 times since 2012. **That list is a hand note, not derived from the CSVs — grep the three
   CSVs before calling anything new.** Instructing: 8 rows on 6032, 6 on 6033.
-- **Last row in `logbook_3.csv`:** `15/08/2025 · P28A · OH-PDP · EFSA → EFHV ·
-  11:53Z–13:47Z · Total 1:54 · PIC 1:54 · 1 landing`
+- **Twenty-eighth & twenty-ninth spreads done:** `IMG_6034` (pages 55–56, 15 flights
+  **15/08/2025–29/09/2025**) and `IMG_6035` (pages 57–58, 15 flights **30/09/2025–31/01/2026**),
+  verified & appended 2026-08-01. **Both SIDEWAYS — CCW `rotate(90)`** (6022–6035 all sideways).
+  **All eight cross-checks exact, ZERO corrections, ZERO block warnings** — every one of the 30 block
+  times matched its logged time to the minute, a first for Book 3 (6034: Δtotal **13:11**/Δpic 12:32/
+  Δdual **0:39**/Δinstr **2:14**; 6035: Δtotal **13:03**/Δpic 13:03/Δinstr **1:01** + Night 0:40).
+  All 30 rows **UTC (`Z`)**. Landings **39** and **44**; **20 of 30 rows externally confirmed and
+  landings matched 20 of 20.**
+  **🎉 1000 HOURS PIC on 19/09/2025** (6034 r11, OH-CTL Kahvisaari→Tuusulanjärvi → **1000:20**).
+  **⚠⚠ THE UTC OFFSET IS +3 IN SUMMER, +2 IN WINTER — and DST ends INSIDE IMG_6035** (26/10/2025).
+  6035 r6 (20/10) reconciles at club-local −3h; r12/r13/r14 (Dec–Jan) at −2h. **A record that looks
+  exactly 1 h "wrong" across the late-Oct or late-Mar boundary is daylight saving, not a bad row.**
+  **6034 r1 = DUAL, `pic_name = Sinervä`** (user-confirmed): 15/08 **OH-MIL** Maule
+  Tuusulanjärvi→Hiidenvesi 0:39 — the book actually *names the other pilot* in the PIC cell
+  (SINERVÄ, not AYOUB) and fills Dual; his 7th seaplane dual, 2nd on the Maule.
+  **⚠ 6034 r6 — the book wrote the AIRBORNE times into the off/on-block cells** (08/09 OH-CTL
+  Inkoo→Tuusulanjärvi). User: entry is correct as flown; **store the club BLOCK times.** Now the
+  only row in any book with `Block_Time (0:45) ≠ Total_Time (0:38)` and the first to use
+  `Takeoff`/`Landing`. **Total_Time untouched, so no Δ or cumulative moved.**
+  **6034 r9–r11 (19/09) = another two-pilot ferry day** — OH-CTL moves Pyhäjärvi→Kahvisaari with no
+  logged leg while he flies OH-GKT home for the winter; all three rows corroborated as written.
+  **6035 r12 (12/12) night 0:40 with the 3 landings correctly in the NIGHT column** (club-confirmed).
+  **2025 float season closes 06/11**; the book crosses into **2026** on 6035 r13.
+  New pupil **Koskinen**; new place **Vuolenkoski** (only genuinely new one — the rest were grepped
+  against all three CSVs first). ⚠ **`EFPR` ≠ `EFPO`** — both are real and both are in the books.
+- **Last row in `logbook_3.csv`:** `31/01/2026 · SR20 · OH-ESR · EFNU → EFNU ·
+  11:30Z–13:55Z · Total 2:25 · PIC 2:25 · 3 landings`
 - **Cumulative totals at that row (our continuous series, seeded from Book 2):**
-  - Cumulative_Total **1156:25** · Cumulative_PIC **990:32** · Cumulative_Student **165:53**
-  - Cumulative_Instrument **105:14** · Cumulative_SEP_Sea **375:15**
-  - Cumulative_Landings **3222** (= day+night; runs ahead of book's day-only count — see drift.md)
-  - Cumulative_Instructor **175:18**
-- **`logbook_3.csv` has 404 data rows** (+ header + seed row = 406 lines).
+  - Cumulative_Total **1182:39** · Cumulative_PIC **1016:07** · Cumulative_Student **166:32**
+  - Cumulative_Instrument **105:14** · Cumulative_SEP_Sea **390:08**
+  - Cumulative_Landings **3305** (= day+night; runs ahead of book's day-only count — see drift.md)
+  - Cumulative_Instructor **178:33**
+- **`logbook_3.csv` has 434 data rows** (+ header + seed row = 436 lines).
 
 ### Book-3 conventions (locked 2026-07-31 with user)
 - **Same 26-col schema.** EASA→our-schema mapping: **Dual (Oppilas) → Student_Time**;
@@ -296,12 +321,15 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
 - **Tooling:** `logbook_tools.py <batch.json> --csv logbook_3.csv [--append]` (new `--csv` flag targets
   Book 3; defaults to Book 2). Block-vs-total diffs ≤5 min now warn instead of blocking append.
 
-## Next action — Book 3, IMG_6034 (pages 55–56)
-Process **`IMG_6034`** next (continues from 15/08/2025). **Both electronic references forward-check
-this stretch:** `laskukierros_flights.csv` has OH-CTL at Inkoo/Tuusula 08–10/09, 19/09, 28/09,
-30/09 and OH-CAM at EFHV 20/10 + 12/12 (a **night** flight, `ldg_night 3`); `Aviatron.pdf` has
-**OH-GKT** at Kahvisaari 22/08, 19/09, 03/10 ×2, 17/10 ×2, 31/10 (with a *Koskinen*), 01/11, 06/11.
-**Grep both before transcribing.**
+## Next action — Book 3, IMG_6036 (pages 59–60) — THE LAST TWO SPREADS
+Only **`IMG_6036`** and **`IMG_6037`** remain; Book 3 finishes with them. Continues from
+**31/01/2026**. Forward cover from the references (run `python3 aviatron_to_csv.py --from 2026-02-01`
+and grep the club CSV):
+`laskukierros_flights.csv` has 2026 rows through **25/07/2026**; `aviatron_flights.csv` has
+**OH-GKT** on 13/06, 26/06, 11/07 ×2 and 12/07/2026 (Kahvisaari / Mäntyharju / Leikonvesi / EFRY).
+**⚠ Watch the DST boundary again** (late Mar 2026): club/Aviatron local↔UTC is +2 before, +3 after.
+**Grep both references before transcribing.** When Book 3 is done, rename to `logbook_3_final.csv`
+following the Book-1/2 convention and refresh this file's project summary.
 **Check orientation first** — image
 orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, 6012–6021 were all
 already upright, and **6022–6031 were all sideways (CCW `rotate(90)`)**. Never assume —
@@ -338,6 +366,16 @@ Then continue IMG_6030…6037 at that pace (each spread is
   Extract with `pdftotext -layout Aviatron.pdf`; each flight is a header line
   (`ID / LÄHTÖP / LASKUP / OFF / ON / BLOCK / LASK / … / PIC`) followed by a `RIVI` line —
   **compare on the header's BLOCK/LASK; the RIVI line is airborne time and will read ~5 min short.**
+- **⚠⚠ THE LOCAL↔UTC OFFSET IS SEASONAL: +3 (EEST) SUMMER, +2 (EET) WINTER.** DST flips in late
+  March and late October, and it flipped *inside* IMG_6035 (26/10/2025). **A club or Aviatron row
+  that looks exactly 1 hour "wrong" near those boundaries is daylight saving, not a mis-logged row.**
+  Every prior spread happened to sit inside a single season, which is why this only surfaced now.
+- **⚠ A SHORT ROW MAY MEAN THE BOOK USED THE AIRBORNE CLOCK FOR BOTH CELLS.** The known pattern was
+  a single bad cell (the on-block holding the landing time). IMG_6034 r6 is different: **both** cells
+  are the record's *takeoff/landing* pair, not its off/on-block pair. **Check the record's airborne
+  times as well as its block times before proposing a fix.** Storage convention for such a row is in
+  `reference.md` (block pair → `Off_Block`/`On_Block`, airborne pair → `Takeoff`/`Landing`,
+  **`Total_Time` never changes**).
 - **⚠ THE BOOK ITSELF CAN BE WRONG ON A ROW, NOT JUST MISREAD — AND IT COPIES DOWN.** IMG_6032 r11
   was written 0:57 / 7 landings and carried through the running column *and* the page total, so it
   was internally consistent and passed every arithmetic check; Aviatron says 0:37 / 4. **0:57 / 7 is

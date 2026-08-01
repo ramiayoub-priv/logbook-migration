@@ -646,6 +646,78 @@ Instrument **105:14** (**+4:02**), Student **165:53** (**+0:20**), Instructor **
 **Total and PIC each moved +0:40** (= the p.52 slip +1:00, less the row-11 over-log −0:20).
 Instrument, Student and Instructor unmoved since IMG_6027.
 
+## IMG_6034/6035 batch (pages 55–58, 15/08/2025–31/01/2026) — appended 2026-08-01
+Both spreads **sideways** (CCW `rotate(90)`), no `LT` subscripts. **All eight cross-checks exact and
+zero corrections** (6034: Δtotal **13:11**/Δpic 12:32/Δdual **0:39**/Δinstr **2:14**; 6035: Δtotal
+**13:03**/Δpic 13:03/Δinstr **1:01**, incl. Night 0:40). **Every one of the 30 block times matches
+its logged time to the minute** — the first zero-warning batch of Book 3. Landings sum **39**, **44**.
+All 30 rows **UTC (`Z`)**. **20 of 30 rows externally confirmed; landings matched 20 of 20.**
+
+- **🎉 1000 HOURS PIC on 19/09/2025** — 6034 row 11 (OH-CTL Kahvisaari→Tuusulanjärvi) lands
+  Cumulative_PIC on **1000:20**. (Cumulative_Total passed 1000 on 07/06/2024, IMG_6022.)
+- **⚠⚠ THE LOCAL↔UTC OFFSET IS +3 IN SUMMER AND +2 IN WINTER — and DST ends *inside* IMG_6035.**
+  Finland is EEST (UTC+3) Mar–Oct, EET (UTC+2) Oct–Mar; DST ended **26/10/2025**. Row 6 (20/10)
+  reconciles against the club file at **−3h**; rows 12/13/14 (12/12, 01/01, 26/01) at **−2h**. Both
+  readings put the book on UTC. **A club or Aviatron row that looks exactly 1 h "wrong" across the
+  late-Oct or late-Mar boundary is daylight saving, not a mis-logged row** — this had not come up
+  before because every prior spread sat inside one season.
+- **6034 row 1 — DUAL with `pic_name = Sinervä`** (user-confirmed 2026-08-01). 15/08/2025 **OH-MIL**
+  Maule Tuusulanjärvi→Hiidenvesi 0:39, 1 ldg. Unusually the book *names the other pilot*: the
+  pilot-in-command cell reads **SINERVÄ** (every other row says AYOUB) and the 0:39 sits in the
+  **Dual** column with PIC blank — the page PIC total 12:32 (= 13:11 − 0:39) confirms it.
+  *This is the first Book-3 dual row where the book itself supplies the instructor's name;
+  on 6030 r7 the cell still said AYOUB out of habit.* Sinervä's **7th** seaplane dual with the pilot
+  and his **2nd on the Maule** (first was 24/08/2023 Tuusulanjärvi→Keilaniemi).
+  Neither electronic record covers OH-MIL.
+- **⚠⚠ 6034 row 6 — the book logged the AIRBORNE times in the off/on-block cells.**
+  08/09/2025 OH-CTL Inkoo→Tuusulanjärvi. Club has block `14:20–15:05` (45 min) **and airborne
+  `14:23–15:01` (38 min)**; the book's block cells hold the **airborne pair digit-for-digit** and it
+  logs **0:38**. The pilot confirms the entry is correct as flown and will add it to Aviatron later.
+  **User decision (2026-08-01): store the CLUB BLOCK TIMES.** Stored as:
+  | col | value | |
+  |---|---|---|
+  | `Off_Block` / `On_Block` | `14:20Z` / `15:05Z` | the club's block pair |
+  | `Takeoff` / `Landing` | `14:23Z` / `15:01Z` | the airborne pair the book had written in the block cells |
+  | `Block_Time` | **`0:45`** | off→on |
+  | `Total_Time` | **`0:38`** | unchanged — the flown time the book totals on |
+  **This is the first row in any book where `Block_Time ≠ Total_Time`, and the first use of the
+  `Takeoff`/`Landing` columns.** Both were in the 26-col schema from the start and were simply never
+  needed. Nothing downstream moves: `Total_Time` is untouched, so every page Δ and every cumulative
+  is unaffected — the page still reconciles at 13:11.
+  ⚠ **A new failure mode to recognise:** previously a short row meant the *on-block* cell held the
+  landing time — **one** bad cell. Here **both** cells are from a different clock. **When a row runs
+  short, check the record's airborne pair as well as its block pair before proposing a fix.**
+- **6034 rows 9–11 · 19/09/2025 — a two-aircraft ferry day; OH-CTL moves with no logged leg.**
+  CTL Tuusulanjärvi→Pyhäjärvi, then **GKT** Pyhäjärvi→Kahvisaari, then CTL Kahvisaari→Tuusulanjärvi.
+  The CTL is left at Pyhäjärvi and reappears at Kahvisaari. Same pattern as the EHGG→EDWF legs
+  (IMG_6029): OH-GKT goes home to Kahvisaari for the winter, a second pilot brings the CTL along,
+  both ride it back — **only his own legs are logged.** All three rows corroborated as written
+  (club ×2, Aviatron 36897). Not an error.
+- **6035 row 12 · 12/12/2025 — night flight with the landings in the RIGHT column for once.**
+  OH-CAM EFHV local 0:40, Night 0:40, book puts **3 in the NIGHT column and leaves DAY blank**;
+  club confirms `ldg_day 0, ldg_night 3`. Stored as 3 under the day+night convention.
+  (Contrast IMG_6020 r15, where night landings were written into the day column.)
+- **Out-of-order rows, both as written:** 6034 r15 (29/09 11:20Z, logged after the 13:45 and 14:16
+  rows) and 6035 r11/r12 (13/12 logged before 12/12).
+- **2025 float season closes 06/11** (6035 r9, OH-GKT Kahvisaari→EFRY for the winter); from r10 it is
+  all EFHV/EFNU landplane work. **The book crosses into 2026** on 6035 r13.
+- **New pupil `Koskinen`** (Aviatron 37229, the 31/10 instructing row). **New place `Vuolenkoski`**
+  (6034 r7–r8) — the only genuinely new one; EFPR, Pyhäjärvi, Inkoo, Padasjoki, Vääksy and EFRY were
+  all checked against the three CSVs first. ⚠ **`EFPR` and `EFPO` are different fields** and both
+  appear in the books — the 27/08 SR20 pair really is EFPR.
+- **6034 r2 (22/08 OH-GKT Kahvisaari local 1:14, 8 ldg, instructing) is ABSENT from Aviatron**, though
+  the 15:33 flight the same afternoon is there (36607). **Aviatron's OH-GKT coverage is very good but
+  not complete** — absence from it is not evidence against a row.
+
+### Paper-vs-ours drift at 31/01/2026 (end of p.58) — all five steady
+Book bottoms (p.58): Total **1180:34**, PIC **1014:22**, SE-IFR **101:55**, Dual **166:12**,
+Flight-Instructor **179:56**. Ours: Total **1182:39** (**+2:05**), PIC **1016:07** (**+1:45**),
+Instrument **105:14** (**+3:19**), Student **166:32** (**+0:20**), Instructor **178:33** (**−1:23**).
+Total, PIC, Student and Instructor all **unmoved since p.54**. Instrument moved **+4:02 → +3:19**:
+the book added the 27/08/2025 SR20 leg's **0:43** SE-IFR (101:12 → 101:55) and so did we, but the
+book's SE-IFR line had been running 0:43 further behind — the gap simply closes by that leg. No
+cumulative is affected; nothing to correct.
+
 ## Confirmed corrections
 - **IMG_4953 (closeout, pages 110/111) — row-1 landing & instructor rows (user-verified 2026-07-31).**
   Row 1 (27/05/2021 OH-CTL Räyskälä→Vääksy) landings read ambiguously as 10; user confirmed **9**

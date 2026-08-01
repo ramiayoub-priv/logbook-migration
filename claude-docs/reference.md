@@ -7,6 +7,14 @@ pic_name, Landings, Remarks, Cumulative_Total, Cumulative_PIC, Cumulative_Studen
 Cumulative_Instrument, Cumulative_SEP_Sea, Cumulative_Landings, Cumulative_Instructor`
 
 - All values are quoted. Dates are `DD/MM/YYYY`. Times are `H:MM`/`HH:MM`.
+- **`Off_Block`/`On_Block` vs `Takeoff`/`Landing`, and `Block_Time` vs `Total_Time`.** These are four
+  distinct columns and they finally diverged on **08/09/2025** (IMG_6034 r6) — the only such row so
+  far. The pilot had written the **airborne** times into the book's off/on-block cells; the club
+  record had both pairs, and the user chose to store the block pair. Convention:
+  `Off_Block`/`On_Block` + `Block_Time` = gate-to-gate; `Takeoff`/`Landing` = airborne;
+  **`Total_Time` is always the flown time the book totals on** — never adjust it to match a block
+  time, or the page Δ and every downstream cumulative break. Everywhere else `Block_Time ==
+  Total_Time` and `Takeoff`/`Landing` are empty.
 - **Time zone: transcribe times exactly as written in the paper book (a mix of local/UTC).**
   Do NOT convert while digitizing. A future app (to be built after all logbooks are entered) will
   normalize everything to UTC. So an apparent clock collision across two rows (e.g. a water landing
