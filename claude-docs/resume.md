@@ -26,25 +26,36 @@
 > | Landings (sum) | 3394 | 3394 | ✅ |
 > | **Night** | **22:45** | **22:45** | ✅ **closed 2026-08-01** |
 >
-> **Six of the seven `Cumulative_*` series reconcile row-by-row with ZERO breaks** (Total, PIC,
-> Student, Instructor, Landings, SEP_Sea). **There is exactly one break in 1293 rows** — item 1
-> below. **The times match. Do not re-validate the book on spec; work the short open list instead.**
+> ### 🎯 ALL SEVEN `Cumulative_*` SERIES RECONCILE ROW-BY-ROW WITH **ZERO BREAKS** OVER 1293 ROWS.
+> Every time column's own sum now equals its stored final cumulative, exactly:
+> Total **1219:35** · PIC **1053:03** · Student **166:32** · Instrument **107:05** ·
+> SEP_Sea **407:39** · Landings **3439** · Instructor **189:41** · Night **22:45**.
 >
-> **What is actually open** (full detail at the top of `drift.md`; none of it moves a *total*):
-> 1. **`logbook_1_final.csv` line 28** — `Instrument_Time` **1:21** on a **1:12** flight. The single
->    cumulative break. Column sums 107:14, cumulative says 107:05. **Matters only because the app
->    computes cumulatives from rows (rule 5)**, so it would render 107:14 against the paper's 107:05.
->    Fix = one cell, `1:21` → `1:12`; **no total moves**, every cumulative already reflects 1:12.
-> 2. **`logbook_2_final.csv` lines 89–90** — two `04.05.2018` dates. Row *order* only if the paper
->    says 5 April. No electronic source can settle it; needs the page.
-> 3. **Three airfield codes on `logbook_1_final.csv` lines 177/178/179** disagree with the p.52
->    photograph (`EFSI`→**EFJY**, `EFHV`→**EFHN**, `EFHF`→**EFHN**). Place cells only.
-> 4. **`logbook_2_final.csv` line 97** — one hour off Aviatron. Duration right either way.
-> 5. **The p.62 inked landing split `59 night / 3335 day` is stale → recomputes to `68 / 3326`.**
->    The landing *sum* (3394) is unaffected. Correct the paper, not the CSV.
+> **THE TIMES MATCH. Do not re-validate the book on spec.** Re-check with the command at the end of
+> this block if you want proof; do not re-transcribe pages that already reconcile.
 >
-> *(Historical: the importer originally surfaced three unlogged problems — line 28, the dotted dates,
-> and a 5:58 night gap. The night gap is now fully closed; the other two remain as items 1–2.)*
+> ### ⛔ THE END-OF-BOOK-3 CUMULATIVES ARE NOW FINAL AND FROZEN (user ruling, 2026-08-01)
+> > *"At this point, the FINAL and cumulative times at the end of book 3 are the final values, I will
+> > not correct them again as they are now corrected on paper too and match the csvs… The app and
+> > paper logbook will need to match with the cumulative numbers we have now."*
+>
+> **No future change — migration or app — may move those seven figures.** Any proposed fix must be
+> shown not to, by diffing every `Cumulative_*` cell before and after. ⚠ **Note the direction of the
+> logic**: the line-28 fix below *looked* like it would move a total and in fact was the only way to
+> *preserve* one. Test the claim, don't assume it.
+>
+> **What is still open** (full detail in `drift.md`; **none of it moves any total**):
+> 1. **`logbook_2_final.csv` lines 89–90** — two `04.05.2018` dates. Affects row *order* only, and
+>    only if the paper says 5 April. No electronic source can settle it; needs the physical page.
+> 2. **`logbook_2_final.csv` line 97** — sits one hour off Aviatron. Duration is right either way.
+> 3. **The p.62 inked landing split `59 night / 3335 day` is stale → recomputes to `68 / 3326`.**
+>    The landing *sum* (3394) is unaffected. **Correct the paper, not the CSV.**
+> 4. **`logbook_1_final.csv` line 173** has a stray `Siirto` in its `Remarks` cell — cosmetic.
+>
+> **Closed 2026-08-01:** the 5:58 night gap (now 22:45, Δ 0:00, via the p.52/53 photo); the line-28
+> instrument break (`1:21` → `1:12`, no cumulative moved); three p.52 airfield codes; the `OK-PDP`
+> typo. *(The importer originally surfaced three unlogged problems — line 28, the dotted dates and
+> the night gap. Two are now closed; the dotted dates remain as item 1.)*
 >
 > **Re-investigated the same day — each one is now localised, and a fourth and fifth turned up:**
 > - **Line 28 (instrument):** the 9 min is entirely inside Book 1 (its column sums 3:21, its own
@@ -483,19 +494,19 @@ p.62 ink needs two numbers changed, and nothing in the CSV does.
 
 ## Next action — TWO THINGS, BOTH WAITING ON THE USER
 
-**1. ✅ THE NIGHT COLUMN IS CLOSED — nothing to photograph.** Night = **22:45**, equal to the paper.
-Closed 2026-08-01 by the p.52/53 photograph (`IMG_6048`); see the night block above and `drift.md`.
-⚠ **Never infer night from clock times or sunset** — the book's night column is the only authority
-(user, 2026-08-01). What remains are **small unruled cells, none of which moves a total**:
-- **`logbook_1_final.csv` line 28** — `Instrument_Time` `1:21` → `1:12`. **The only cumulative break
-  in 1293 rows**, and the one thing that will make the app disagree with the paper (107:14 vs 107:05).
+**1. ✅ THE DATA IS RECONCILED — nothing to photograph, nothing to re-validate.** Night = **22:45**,
+equal to the paper; all seven cumulative series reconcile with **zero breaks**. Closed 2026-08-01 by
+the p.52/53 photograph (`IMG_6048`) plus the line-28 fix. ⚠ **Never infer night from clock times or
+sunset** — the book's night column is the only authority (user, 2026-08-01).
+Only two paper-side items remain, and neither moves a total:
 - **`logbook_2_final.csv` lines 89–90** — the two `04.05.2018` dates. Needs the physical page.
-- **`logbook_1_final.csv` lines 177/178/179** — three airfield codes that disagree with the p.52
-  photo (`EFSI`→`EFJY`, `EFHV`→`EFHN`, `EFHF`→`EFHN`).
-- **The p.62 inked landing split** `59/3335` → recomputed **`68/3326`**; correct the paper.
+- **The p.62 inked landing split** `59/3335` → recomputed **`68/3326`**. **Correct the paper.**
 
-All four are written up in `drift.md` (items 1, 2, 6, and the landing-split section).
-**Do not re-validate the book on spec — the totals match.**
+Both are written up in `drift.md` (item 2 and the landing-split section).
+**Do not re-validate the book on spec — the totals match.** To re-prove it in one command:
+`cd app/backend && go run ./cmd/logbookctl import -dry-run -csv ../..`
+*(⚠ `go` was not installed on the user's machine as of 2026-08-01 — the same seven-series
+reconciliation can be done directly off the CSVs in Python if the toolchain is missing.)*
 
 **2. ⏸ THE CSV IS AHEAD OF THE PAPER (Book 3).**
 **Every photographed spread is transcribed** (`IMG_6007`–`IMG_6037`, pages 1–62) **and the CSV now runs

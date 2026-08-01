@@ -53,9 +53,24 @@ Full context in `app/docs/data-model.md`.
   the inked p.62 figure, *already* reflect 1:12. Changing the row to 1:12 makes the column agree with
   the cumulative; **no cumulative needs rebuilding and no total moves.** (The earlier note here said
   "rebuild from line 28 forward (+9 min)" — that was backwards; the cumulatives are already right.)
-- ⏸ **Awaiting the user.** Recommended: `1:21` → `1:12`, single cell, nothing else touched.
-  Book 1's page images are not in the repo (gitignored, and not on this disk), so this cannot be
-  read back off paper without the physical book.
+- ✅ **FIXED 2026-08-01. Line 28 now reads `1:12`. This was the LAST cumulative break in the dataset —
+  all seven series now reconcile row-by-row with ZERO breaks over 1293 rows.**
+  **The user's ruling was conditional:** *"the FINAL and cumulative times at the end of book 3 are the
+  final values… if this fix changes the cumulative time, don't do it. The app and paper logbook will
+  need to match with the cumulative numbers we have now."*
+  **The condition is not triggered, and the logic runs the opposite way to how it first reads:**
+  only the row's `Instrument_Time` cell was edited. **Every `Cumulative_*` cell in all 1293 rows is
+  byte-identical before and after** — verified by diffing all seven series against `git show HEAD`.
+  `Cumulative_Instrument` still ends at **107:05**. What changed is that the *column* now sums to
+  107:05 too, instead of 107:14. **Because the app computes cumulatives from rows and never stores
+  them (rule 5), leaving `1:21` in place is what would have made the app print 107:14 against the
+  paper's 105:57/107:05.** The fix is what *preserves* the numbers the user inked; skipping it is
+  what would have broken them.
+  ⚠ **Standing constraint from that ruling:** the end-of-Book-3 cumulatives are now FINAL —
+  Total **1219:35** · PIC **1053:03** · Student **166:32** · Instrument **107:05** ·
+  SEP_Sea **407:39** · Landings **3439** · Instructor **189:41**. **No future change may move them.**
+  Book 1's page images are not in the repo (gitignored), so the row was never read back off paper;
+  it was settled on internal evidence alone (see the four arguments above).
 
 ### 2. `logbook_2_final.csv` lines 83–90 — dates written `DD.MM.YYYY`
 Eight consecutive rows from one transcription batch use dots instead of slashes:
@@ -291,7 +306,7 @@ id 9852 **to the minute**, so this is not a time-zone offset (that would move bo
 one-hour slip on one cell, in the book or in transcription. **No total is affected** — the duration
 is right either way. ⏸ Documented only; the paper decides.
 
-### 6. ⏸ OPEN — three airfield codes on `logbook_1_final.csv` disagree with the p.52 photograph
+### 6. ✅ FIXED — three airfield codes on `logbook_1_final.csv` disagreed with the p.52 photograph
 Found 2026-08-01 while reading `IMG_6048` for the night column. **No time value and no total is
 affected** — these are place cells only. The photograph is a direct read of the authoritative paper,
 and all three are legible; the writer distinguishes `EFHV` and `EFHN` clearly elsewhere on the same
@@ -306,8 +321,11 @@ page (rows 3–4 are unmistakably `EFHV`).
 **Lines 178/179 are an out-and-back to `EFHN` (Hanko)** — the paper's version chains
 (EFHF→EFHN, then EFHN→EFHF) whereas ours does not (EFHF→EFHV, then EFHF→EFHF, leaving the aircraft
 teleporting home from Hyvinkää). **The chain is corroborating evidence, not just handwriting.**
-⏸ **Awaiting the user's ruling.** Recommended: adopt all three paper reads and drop the now-stale
-`EFSI` remark on line 177. Nothing downstream moves.
+✅ **FIXED 2026-08-01 — the user adopted all three paper reads.** The now-stale
+*"Departure airfield reads like EFSI"* remark on line 177 was dropped at the same time. **No time
+value and no cumulative moved.** *Lesson: a transcription remark recording an uncertain read is a
+live to-do — when a page is eventually photographed, grep the `Remarks` column for such flags rather
+than only checking the columns you came to check.*
 
 ### 7. ⏸ MINOR — stray `Remarks` value on `logbook_1_final.csv` line 173
 The `Remarks` cell reads **`Siirto`** — the Finnish column label for "carried forward", which leaked
