@@ -331,6 +331,13 @@ at an airfield with no signal and never caches a logbook response. Offline *writ
   only thing standing between the app and a fully verified night-landing figure.
 
 ### Traps already paid for — do not rediscover these
+- **A cache fix cannot reach a device that already has the old service worker.** Right after the
+  2026-08-02 deploy the owner's phone still showed the *pre-rework* form, and the live bundle
+  provably did not contain it (the old page's own text greps to 0 in `index-C1WjdtsT.js`). The three
+  no-cache layers stop this recurring; they do nothing for a worker installed before they existed.
+  The one-time escape is a query string (`/logbook/?v=2`) plus fully closing and reopening the
+  home-screen app. **When the owner reports a stale page, check the live bundle's contents before
+  suspecting the deploy** — server-side and device-side staleness look identical from the phone.
 - **It is 1296 flights, not 1298.** 1298 is the CSV *row* count; Books 2 and 3 each open with the
   previous book's final row as a cumulative seed, and those two are skipped.
 - **A zero-break cumulative reconciliation does NOT mean the data is complete.** All seven series
