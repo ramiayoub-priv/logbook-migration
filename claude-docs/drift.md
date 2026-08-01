@@ -2,6 +2,58 @@
 
 Log every correction that alters a row later rows built on. Fix cumulatives from that row forward.
 
+## 🔎 OPEN — three items found by the app importer (2026-08-01)
+
+Building the app's importer (`app/backend/internal/csvbook`) put every row of all three CSVs through
+a row-by-row reconciliation of all seven `Cumulative_*` series plus a set of per-row invariants. Over
+1293 flights it found **one cumulative break and two formatting problems that had never been logged**.
+None has been corrected — the paper book is the authority and these are the user's to rule on.
+Full context in `app/docs/data-model.md`.
+
+### 1. `logbook_1_final.csv` line 28 — instrument time exceeds flight time
+`28/09/2011 · C152 OH-COF · EFHF → EFHF · 08:22–09:34`
+- `Block_Time` **1:12**, `Total_Time` **1:12**, but `Instrument_Time` **1:21**. A flight cannot log
+  more instrument time than it lasted.
+- Its `Cumulative_Instrument` advances **1:00 → 2:12**, i.e. by exactly 1:12. **The cumulative column
+  is self-consistent; the row's `Instrument_Time` is the outlier**, which makes `1:21` almost
+  certainly a transposition of `1:12`.
+- **Consequence, currently live:** summing the `Instrument_Time` column across all three books gives
+  **107:14**, while `Cumulative_Instrument` ends at **107:05**. Every instrument figure downstream of
+  line 28 in our series is therefore 9 minutes low relative to the rows.
+- This is the **only** break in all seven series across all 1293 flights — everything else reconciles
+  exactly, including `Cumulative_SEP_Sea` (407:39) row by row.
+- ⏸ **Awaiting the user.** Fix is a one-character change to the row, then rebuild
+  `Cumulative_Instrument` from line 28 forward (+9 min).
+
+### 2. `logbook_2_final.csv` lines 83–90 — dates written `DD.MM.YYYY`
+Eight consecutive rows from one transcription batch use dots instead of slashes:
+`21.03.2018, 30.03.2018, 19.04.2018, 22.04.2018 ×3, 04.05.2018 ×2`.
+- Six are unambiguous on their own (day > 12). The chronological bracket — line 82 is `15/03/2018`
+  and line 91 is `07/05/2018` — confirms day-first for all eight.
+- ⚠ **The two `04.05.2018` rows (lines 89, 90) cannot be settled from the cell alone.** Read as
+  4 May; if the paper says 5 April, two rows move by a month. **Worth one look at the page.**
+- The importer accepts them and flags them; the CSV itself is unchanged. ⏸ **A normalisation pass to
+  `DD/MM/YYYY` is the user's call.**
+
+### 3. Night time — the paper's 22:45 does not match the CSV's 16:47
+- The `Night_Time` column sums to **16:47** over all three books (Book 1 9:04 · Book 2 3:40 ·
+  Book 3 4:03).
+- The p.62 inked block carries night time **22:45**. This file already records that figure as
+  *"supplied but not read back"* — it was never reconciled. **The gap is 5:58.**
+- Every other p.62 figure (Total, PIC, SE-IFR, Dual, FI, landings) was reconciled and closed.
+  Night time is the one that was not, and it does not agree.
+- ⏸ **Awaiting the user.** Either the paper's night column carries time our rows do not, or 22:45 was
+  a mis-add. Note that the **59 night landings** inked at p.62 were derived from these same rows, so
+  if the night *time* is wrong the landing split below may need revisiting too.
+
+### Not defects — confirmed by the same sweep
+- **18 rows are genuinely out of date order** across the three books (e.g. Book 1 line 269,
+  `11/06/2015` after `23/06/2015`). This is why the app orders on an explicit `seq` and never on
+  `flight_date`. Expected, not an error.
+- **`Block_Time != Total_Time` on exactly one row** (`08/09/2025`, 0:45 vs 0:38) — already known.
+- **No row mixes zones within a time pair**, and no `Off_Block`/`On_Block` cell is blank, in any book.
+- **Every one of the 1293 rows resolves to UTC unambiguously** — not one lands in a DST gap or fold.
+
 ## Intentionally excluded (struck-through / void) entries
 - **IMG_4925 / 18/04/2019 / P28A OH-PIF / EFLA → EFLA / 10:00–12:03 / 2:03:** struck through —
   excluded. Paper running total skips it (562:32 → 563:55).

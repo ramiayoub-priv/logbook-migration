@@ -13,10 +13,36 @@ Read `CLAUDE.md` §0 rules 2, 4 and 5 first — they constrain everything here.
 4. **Provenance is never dropped.** Every flight remembers which book and row it came from, and every
    converted time remembers what the paper actually said.
 
+## Where this lives
+
+The schema is `app/backend/internal/store/schema.sql`, embedded in the binary. The CSV→domain mapping
+and every check below is `app/backend/internal/csvbook` (100% test coverage, it is calculation core).
+The operator runs it with `app/backend/cmd/logbookctl`:
+
+```bash
+logbookctl import -db /var/lib/logbook/logbook.db -csv /path/to/repo -dry-run   # report only
+logbookctl import -db /var/lib/logbook/logbook.db -csv /path/to/repo            # backs up, then imports
+logbookctl verify -db /var/lib/logbook/logbook.db -csv /path/to/repo            # re-check, writes nothing
+```
+
+It is a separate binary from the server on purpose: a destructive operation on a legal record must
+never be reachable from an HTTP request.
+
 ## Tables
 
+Besides the four below the schema carries `discrepancies` (the review list, rewritten on every
+import), `import_runs` (an append-only audit trail: when, how many, which backup) and
+`schema_version`.
+
 ### `aircraft`
-The seed list that makes the new-flight form smart.
+The seed list that makes the new-flight form smart. **Derived from the flights on import**, so it can
+never drift from what was actually flown: `type` is the most-flown type for that registration (ties
+broken alphabetically, so two imports produce identical rows), `default_class` comes from the
+seaplane registration list, `active` means flown within two years of the **last flight in the books**
+(not of today, so the import stays reproducible), and `ifr_capable` is a curated set — `OH-CAM`,
+`OH-ESR`, `OH-PIF` — because instrument time is also logged under the hood in aircraft that are not
+IFR certified (`OH-COF` and `OH-CTH` are C152s with instrument rows). `ifr_capable` is a form hint
+and never constrains what a flight may record.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -81,8 +107,30 @@ used only as a verification checksum and then discarded.
 | `Remarks` | `remarks` |
 | `Cumulative_*` (×7) | **verification only, then dropped** |
 
-**Book seeding**: the first data row of each book's CSV is the carried-over final row of the previous
-book. Those seed rows are **skipped** on import — importing them would double-count three flights.
+**Book seeding**: the first data row of Books 2 and 3 is the carried-over final row of the previous
+book. Those two seed rows are **skipped** on import — importing them would count two flights twice.
+Book 1 has no seed row; its first row is a real first flight.
+
+**The count is 1293 flights, not 1295.** The three CSVs hold 1295 data rows (395 + 421 + 479); minus
+the two seed rows that is 1293. Earlier drafts of `APP.md` said 1295, which was the row count.
+
+| Book | CSV | data rows | seed row | flights |
+|---|---|---:|---|---:|
+| 1 | `logbook_1_final.csv` | 395 | — | 395 |
+| 2 | `logbook_2_final.csv` | 421 | line 2 | 420 |
+| 3 | `logbook_3.csv` | 479 | line 2 | 478 |
+| | | **1295** | | **1293** |
+
+## Class: how sea and land are decided
+
+The CSVs have no class column. The classification comes from the **registration**, from the seaplane
+list in `claude-docs/reference.md` (`OH-CTL, SE-GKT, OH-GKT, OH-PAX, OH-MIL, OH-CTE, OH-CDK`) — not
+from the type, because the book only started writing `C172sea` from IMG_6022 and is inconsistent even
+after that.
+
+**This is verified, not assumed.** Recomputing `Cumulative_SEP_Sea` row by row from that rule
+reproduces the column exactly at every one of the 1293 rows, ending on 407:39. A per-row match over
+1293 rows pins each individual row's class, not just the total.
 
 ## Time conversion
 
@@ -123,16 +171,74 @@ each sum to the same grand total. That is a cheap and effective invariant: **ass
 
 ## Known data-quality items
 
-Surfaced by the importer, **never auto-fixed** (rule §0.2):
+The importer surfaces these and **never auto-fixes them** (rule §0.2). Every one is stored in the
+`discrepancies` table and printed by `logbookctl import`, with a book and line number so it is
+traceable to a paper page.
 
+**56 discrepancies over 1293 flights, in eight kinds.** The counts are asserted in
+`internal/csvbook/realdata_test.go`, so a new occurrence in a future Book 3 batch becomes a failing
+test rather than something that slips through.
+
+| kind | n | what it is |
+|---|---:|---|
+| `landings_unverified` | 22 | rows carrying `Night_Time`; the day/night landing split was inferred (Task 8) |
+| `registration_format` | 16 | not Finnish `OH-xxx`: `SE-GKT` ×14 (real), `SE-LWI` ×1 (real), `OK-PDP` ×1 (a slip) |
+| `date_format` | 8 | Book 2 lines 83–90 transcribed `DD.MM.YYYY` — see below |
+| `unknown_aircraft_type` | 4 | type `C192` on `OH-CTL` ×2 and `OH-GKT` ×2; not a real Cessna type |
+| `type_conflict` | 3 | one registration written with two types: `OH-CTL`, `OH-GKT`, `OH-CMU` |
+| `cumulative_break` | 1 | Book 1 line 28 — see below |
+| `component_exceeds_total` | 1 | the same row |
+| `block_total_mismatch` | 1 | 08/09/2025, block 0:45 vs total 0:38 (already known and correct) |
+
+Notes on the individual items:
+
+- **Book 1 line 28 (28/09/2011, `OH-COF`, EFHF local) — NEW, found building the importer.** The row
+  has `Total_Time` **1:12** but `Instrument_Time` **1:21** — more instrument time than flight time,
+  which is impossible — while its `Cumulative_Instrument` advances by exactly the 1:12 the flight
+  lasted. `1:21` is almost certainly a transposition of `1:12`. **Not corrected.** Consequence:
+  summing the rows gives instrument **107:14**, while the CSV's own `Cumulative_Instrument` ends at
+  **107:05**. The app's totals follow the rows, so it reports 107:14 until the owner rules.
+- **Book 2 lines 83–90 — dates written `DD.MM.YYYY`, NEW.** Eight consecutive rows from a single
+  transcription batch. Read day-first, which six of the eight prove on their own (day > 12) and which
+  the chronological bracket 15/03 → … → 07/05 confirms. **The two `04.05.2018` rows (89, 90) cannot be
+  settled from the cell alone** and are flagged `CONFIRM AGAINST THE PAPER`.
 - **`OK-PDP`** (1 row) — almost certainly a typo for `OH-PDP`; `claude-docs/reference.md` already
   flags it.
-- **Type `C192`** (4 rows: `OH-GKT` ×2, `OH-CTL` ×2) — not a real Cessna type; almost certainly `C172`.
+- **Type `C192`** (4 rows) — almost certainly `C172`. The flight keeps the type as written; the
+  derived `aircraft` row takes the most-flown type, so `OH-CTL` and `OH-GKT` are seeded `C172`.
 - **`OH-CMU` typed as both `C152` (×2) and `C172` (×1)** — reference.md warns `OH-CMU` and `OH-CMV`
   are genuinely different aircraft whose registrations differ only in the last letter, so this needs
   the user's eye rather than a guess.
 - **`SE-GKT` → `OH-GKT`** — the same airframe re-registered. Two `aircraft` rows, linked via `notes`.
-- **22 rows with `Night_Time`** — day/night landing split unverified.
+- **22 rows with `Night_Time`** — day/night landing split unverified (Task 8).
+
+### Night time: the CSV and the paper disagree — open, NEW
+
+The `Night_Time` column sums to **16:47** across all three books. The paper book was inked with
+**22:45** at page 62 on 2026-08-01. `claude-docs/drift.md` records that figure as *"supplied but not
+read back"* — it was never reconciled against our numbers. The gap is **5:58**.
+
+This is a migration question about the paper, not an import question: the import's job is fidelity to
+the CSV, and it reports 16:47 because that is what the rows say. Raised with the owner 2026-08-01;
+tracked in `claude-docs/drift.md`.
+
+## Verification: what "verified" means here
+
+Two separate checks, deliberately not conflated:
+
+1. **Fidelity** — does the database hold exactly what the CSVs say? Row count plus nine independent
+   checksums (flights, total, PIC, dual, instrument, night, instructor, seaplane, landings) are read
+   *back out of SQLite* after writing and compared. A mismatch of one minute rolls the whole
+   transaction back. Checked per figure rather than as one grand total, because two errors of
+   opposite sign would cancel in a combined number. This is a hard gate.
+2. **Consistency** — does the source data agree with itself? All seven `Cumulative_*` series are
+   recomputed row by row and compared to the columns the transcription maintained. A break is
+   *reported*, not fatal: it is a pre-existing property of the paper record, and refusing to import
+   because of it would leave the owner with no application at all. Exactly one break survives over
+   1293 rows (Book 1 line 28, above).
+
+Row-by-row rather than end-totals, on both: an end-total can be passed by two cancelling errors, and
+a break with no line number is not actionable.
 
 ## The landings gap
 

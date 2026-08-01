@@ -8,7 +8,7 @@ BIN     := dist/logbook-server
 PKG     := ./...
 
 # Packages where a bug means a wrong legal record. These must be at 100%.
-CORE    := internal/hhmm internal/timeutil internal/stats
+CORE    := internal/hhmm internal/timeutil internal/csvbook internal/stats
 
 MIN_TOTAL := 80
 
@@ -53,11 +53,18 @@ vet:
 # Cross-compiled for the deploy target. CGO_ENABLED=0 is what makes the result
 # a static binary needing no toolchain, libc or Go install on the server --
 # modernc.org/sqlite is pure Go precisely so this works.
+#
+# Every command under cmd/ is built. ./cmd/server arrives with Task 4;
+# ./cmd/logbookctl is the operator tool that imports the CSVs.
 .PHONY: build
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-	  $(GO) build -trimpath -ldflags="-s -w" -o $(BIN) ./cmd/server
-	@ls -lh $(BIN)
+	@mkdir -p dist
+	@for c in cmd/*/; do \
+	  name=$$(basename $$c); \
+	  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+	    $(GO) build -trimpath -ldflags="-s -w" -o dist/$$name ./$$c || exit 1; \
+	done
+	@ls -lh dist/
 
 .PHONY: clean
 clean:

@@ -11,6 +11,17 @@
 > and `logbook_3.csv`. So the migration's conventions — the `Z` suffix, `Total_Time` being the
 > figure the book totals on, the paper being authoritative — are now load-bearing for the app too.
 > **The migration is still the way flights get digitized; the app does not replace it.**
+>
+> ⚠ **As of 2026-08-01 the app's importer reads all three CSVs and reconciles all seven
+> `Cumulative_*` series row by row.** It found **three previously unlogged problems** in the source
+> data — a bad `Instrument_Time` at `logbook_1_final.csv` line 28, eight `DD.MM.YYYY` dates at
+> `logbook_2_final.csv` lines 83–90, and a 5:58 gap between our night time (16:47) and the paper's
+> inked 22:45. **All three are open and waiting on the user**; see the block at the top of
+> `drift.md`. Nothing has been corrected.
+>
+> This also means the CSVs now have a machine-checked invariant: run
+> `cd app/backend && go run ./cmd/logbookctl import -dry-run -csv ../..` after any append. It re-runs
+> every reconciliation and prints anything that no longer adds up.
 
 ## The project in one paragraph
 We are digitizing a series of paper pilot logbooks into CSV. **Book 1 complete** →

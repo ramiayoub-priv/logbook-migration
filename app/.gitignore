@@ -4,3 +4,5 @@ node_modules/
 *.db
 *.db-wal
 *.db-shm
+# Pre-import backups written by `logbookctl import`.
+*.bak

@@ -22,7 +22,8 @@ transcribed from paper logbooks by the *other* effort in this repo (`claude-docs
 not replaced by the app). Read `CLAUDE.md` §0 first — those rules are non-negotiable and were written
 for this work specifically.
 
-**Status: foundations landed, calculation core done and green. Nothing is deployed. No frontend yet.**
+**Status: the data is in SQLite, verified. Backend calculation core done and green. Nothing is
+deployed. No API and no frontend yet.**
 
 ### Done (2026-08-01)
 - Recon of `ayoub.fi` → `docs/deploy.md` has the full shared-tenant map. **The box is shared with the
@@ -31,33 +32,61 @@ for this work specifically.
 - `CLAUDE.md` §0 rules written, adapted from the neighbouring `transit` project.
 - Server cleanup, both reversible: transit's orphaned Quarkus killed (it runs on its own VM now);
   OpenVPN stopped + disabled at the owner's request.
-- `app/backend/` Go module with **`internal/hhmm`** (H:MM ↔ integer minutes) and **`internal/timeutil`**
-  (the single UTC-conversion authority). **Both at 100% coverage**, written failing-test-first.
+- **Task 2** — `app/backend/` Go module with `internal/hhmm` (H:MM ↔ integer minutes) and
+  `internal/timeutil` (the single UTC-conversion authority). Both 100%, failing-test-first.
+- **Task 3 — the schema and the importer.** `internal/csvbook` (CSV → domain, 100%),
+  `internal/store` (SQLite schema + verified import, 85%), `cmd/logbookctl` (the operator CLI).
+  **All 1293 flights import and verify.** `make check` is green at 94.5% overall.
 
 ### How to run things
 ```bash
 export PATH=$HOME/.local/go/bin:$PATH   # Go 1.26 lives here; the system had none
 cd app/backend
-make check      # vet + race tests + both coverage gates
-make cover-core # the 100% gate on the calculation core
+make check      # vet + race tests + both coverage gates. This is the bar.
+make build      # cross-compiled static binaries into dist/
+
+# Import the CSVs. -dry-run reports and writes nothing; use it first.
+go run ./cmd/logbookctl import -dry-run -csv ../..
+go run ./cmd/logbookctl import -db /tmp/logbook.db -csv ../.. -note "why"
+go run ./cmd/logbookctl verify -db /tmp/logbook.db -csv ../..
 ```
-The server's own Go is 1.13 and irrelevant — we cross-compile (`make build`, `CGO_ENABLED=0`).
+The server's own Go is 1.13 and irrelevant — we cross-compile (`CGO_ENABLED=0`).
 
-### Next task: #3, the schema + importer
-**This is the riskiest piece in the project.** It must reproduce **1295 flights** and their totals
-exactly. Before writing code, read **`docs/data-model.md`** — the schema, the full CSV→DB column
-mapping, and the domain rules are already specified there. Key points that will bite otherwise:
+**The import is idempotent, backs up first, and refuses to commit on any checksum mismatch.** Re-run
+it freely. There is no committed database — it is generated, and `app/.gitignore` keeps `*.db` and
+`*.bak` out of the repo.
 
-- **Skip each book's first data row.** It is the previous book's carried-over final row (a cumulative
-  seed), and importing it would double-count three flights.
-- **Do not import the seven `Cumulative_*` columns.** Use them as a verification checksum, then drop
-  them. Cumulatives are computed in this app, never stored (rule §0.5).
-- **Verify and refuse on mismatch** (rule §0.2): row counts *and* total-time checksums against the
-  CSVs. An importer that "mostly worked" is a corrupted legal record.
-- **Surface the known data-quality items, never auto-fix them**: `OK-PDP` (1 row), type `C192`
-  (4 rows), `OH-CMU` typed as both C152 and C172. Listed with context in `docs/data-model.md`.
-- Source files are at the repo root: `logbook_1_final.csv`, `logbook_2_final.csv`, `logbook_3.csv`
-  (26 columns, all values quoted, dates `DD/MM/YYYY`).
+### The numbers the import produces — memorise these
+```
+flights 1293 | total 1219:35 | pic 1053:03 | dual 166:32 | instrument 107:14
+night 16:47  | instructor 189:41 | seaplane 407:39 | landings 3439 | aircraft 39
+```
+Asserted in `internal/csvbook/realdata_test.go`. **If one of them ever changes, the import is wrong
+until proven otherwise — do not adjust the expectation to make the test pass.**
+
+### ⏸ THREE THINGS ARE WAITING ON THE OWNER — ask about these first
+All three were found by the importer on 2026-08-01 and are logged in `claude-docs/drift.md`
+(top of file) and `docs/data-model.md`. Nothing has been corrected.
+
+1. **`logbook_1_final.csv` line 28** (28/09/2011, OH-COF): `Instrument_Time` **1:21** on a flight
+   whose total is **1:12** — more instrument time than flight time. The cumulative column advances by
+   1:12, so `1:21` is almost certainly a transposition. **This is why our instrument total is 107:14
+   while `Cumulative_Instrument` ends at 107:05.**
+2. **`logbook_2_final.csv` lines 83–90** are dated `DD.MM.YYYY`. Read day-first; six of the eight
+   prove it themselves. ⚠ The two `04.05.2018` rows cannot be settled from the cell — **check the
+   paper**, or they may be a month out.
+3. **Night time: our 16:47 vs the paper's inked 22:45** at p.62 — a 5:58 gap. `drift.md` records
+   22:45 as "supplied but not read back", i.e. never reconciled. Every other p.62 figure was.
+
+### Next task: #4, the API + authentication
+Read **`docs/security.md`** first — the threat model, the Argon2id/session design and the
+default-deny router are all specified there, and the `users`/`sessions` tables already exist in
+`schema.sql`. Rule §0.3 governs: **default deny, no secrets in the repo, stdlib only.**
+
+Everything the API needs to read is already in `internal/store`: `Flights()`, `Aircraft()`,
+`Discrepancies()`, `Verify()`. What is *not* written yet is `internal/stats` — the aggregations for
+the statistics page. `make cover-core` already lists it and prints `SKIP`, so it will be held to 100%
+the moment it exists. Cumulatives are computed there from `seq`, never stored (rule §0.5).
 
 ### Open questions awaiting the owner
 - Is the `kraken-predictor-python-2` container on `:8000` still wanted? Publicly exposed, up 2 years,
@@ -67,6 +96,13 @@ mapping, and the domain rules are already specified there. Key points that will 
   2026-08-01 and must be treated as compromised. Tracked in `docs/security.md`.
 
 ### Traps already paid for — do not rediscover these
+- **It is 1293 flights, not 1295.** 1295 is the CSV *row* count; Books 2 and 3 each open with the
+  previous book's final row as a cumulative seed, and those two are skipped. Earlier drafts of this
+  file said 1295.
+- **Sea vs land comes from the registration, not the type.** The book only started writing `C172sea`
+  from IMG_6022 and is inconsistent after that. Verified: the registration rule reproduces
+  `Cumulative_SEP_Sea` row by row at all 1293 rows.
+- **The books are not in date order** — 18 rows go backwards. Order on `seq`, never on `flight_date`.
 - **Go's `time.Date` is silent on both DST edges, in different ways.** See the 2026-08-01 entry in the
   Decision Log. `internal/timeutil` already handles it; do not "simplify" that check.
 - **Docker bypasses ufw.** A published container port is not closed by a firewall rule. See
@@ -116,7 +152,7 @@ day · landings night.
 |---|---|---|
 | 1 | Project rules + app docs | **done** 2026-08-01 |
 | 2 | Scaffold backend + frontend, test harness | **backend done** 2026-08-01; frontend not started |
-| 3 | Schema + importer for 1295 flights (verified) | not started |
+| 3 | Schema + importer for 1293 flights (verified) | **done** 2026-08-01 |
 | 4 | API + authentication | not started |
 | 5 | Four frontend pages (mobile-first) | not started |
 | 6 | Three PDF exports (EASA clone + table + stats) | not started |
@@ -126,6 +162,76 @@ day · landings night.
 ---
 
 ## 5. Decision Log
+
+### 2026-08-01 — Task 3: the import verifies twice, on two different questions
+
+The importer answers two questions that were tempting to conflate, and treats them differently.
+
+**Fidelity — is the database what the CSVs say?** Nine checksums (flights, total, PIC, dual,
+instrument, night, instructor, seaplane, landings) plus the row count are *read back out of SQLite*
+after writing and compared to what the CSVs produced. One minute of disagreement rolls the whole
+transaction back. Read back rather than trusted, because a CHECK constraint, a type coercion or a
+truncated value would otherwise pass unnoticed. Checked per figure rather than as one grand total,
+because two errors of opposite sign cancel in a combined number.
+
+**Consistency — does the source agree with itself?** All seven `Cumulative_*` series are recomputed
+row by row and compared to the columns the transcription maintained. A break here is **reported, not
+fatal.** Refusing to import over a pre-existing property of the paper record would leave the owner
+with no application at all, and rule §0.2 asks for discrepancies to be surfaced for the owner to
+rule on — not for the importer to have a veto.
+
+The row-by-row form matters on both: an end-total can be passed by two cancelling errors, and a break
+with no line number is not actionable.
+
+**Result: 1293 flights, 39 aircraft, 56 discrepancies, all nine checksums matching.** Exactly one
+cumulative break survives across 1293 rows and seven series.
+
+### 2026-08-01 — Sea/land comes from the registration, and it is verified rather than assumed
+
+The CSVs have no class column. `reference.md` gives a seaplane registration list and warns that the
+book's own `C172sea` marker only appears from IMG_6022 and is inconsistent after that, so the type is
+not usable.
+
+Classifying on the registration turns out to be provable: recomputing `Cumulative_SEP_Sea` row by row
+from that rule reproduces the column **exactly at every one of the 1293 rows**, ending on 407:39. A
+per-row match over 1293 rows pins each individual row's class, not merely the total. That is a
+stronger guarantee than the rule started with, and it is asserted in the tests.
+
+### 2026-08-01 — The aircraft seed list is derived, never hand-maintained
+
+`reference.md` warns, in its own words, that its hand-kept registration and place lists "are NOT
+derived from the CSVs and they have gaps" — `EFSA` was missing despite six flights. So the app's
+`aircraft` table is built from the flights on import: `type` is the most-flown type for that
+registration, `default_class` from the seaplane list, `active` = flown within two years.
+
+Two deliberate details. **`active` counts back from the last flight in the books, not from today** —
+otherwise the same CSVs would import differently next year and idempotence would be a lie. And
+**`ifr_capable` is a curated set (`OH-CAM`, `OH-ESR`, `OH-PIF`) rather than "has logged instrument
+time"**, because instrument time is also logged under the hood: `OH-COF` and `OH-CTH` are C152s with
+instrument rows. It is a hint for the form and never constrains what a flight may record.
+
+### 2026-08-01 — Three source-data problems found, none corrected
+
+The reconciliation swept all 1293 rows and found three things nobody had logged. All are recorded in
+`claude-docs/drift.md` and `docs/data-model.md`, and all are the owner's to rule on (rule §0.2).
+
+1. **`logbook_1_final.csv` line 28** — `Instrument_Time` 1:21 on a flight totalling 1:12. Impossible;
+   the cumulative column advances by 1:12, so the row is the outlier. Our instrument total is
+   therefore 107:14 against the column's 107:05.
+2. **`logbook_2_final.csv` lines 83–90** — dates written `DD.MM.YYYY`. Read day-first, which six of
+   the eight settle themselves and the chronological bracket confirms; the two `04.05.2018` rows are
+   flagged for a look at the paper.
+3. **Night time 16:47 (ours) vs 22:45 (inked at p.62)** — a 5:58 gap on the one p.62 figure that
+   `drift.md` records as never having been read back.
+
+The dotted dates are the interesting judgement call. Refusing would have blocked 1291 sound rows over
+a separator; silently normalising would have hidden a real inconsistency. Accepting with a loud,
+per-row flag — and a louder one on the two ambiguous rows — is what "surface, never fix" means when
+the alternative is delivering nothing.
+
+Rejected: using chronology to disambiguate. **18 rows across the three books are genuinely out of
+date order**, so "later than its predecessor" is not an invariant these books have. That is also why
+the schema orders on `seq` and never on `flight_date`.
 
 ### 2026-08-01 — Stack chosen: Go + SQLite + React/Vite
 
