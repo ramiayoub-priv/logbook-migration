@@ -169,6 +169,10 @@ EFTP (Tampere-Pirkkala), EFRY (Räyskälä — C185 floatplane dep 29/04/2020); 
 Estonian: **EETN** (Tallinn — 31/12/2019 DA40 day-trip, first non-Nordic field).
 **Also in Book 3: EFVP (Vampula)** — user-confirmed; 08/09/2023 OH-PDP EFHV↔EFVP day-return (IMG_6019).
 **EFIK (Kiikala)** — 29/04/2024 SR20 dual round-trip with Stude (IMG_6021).
+**2025 float season adds three lakes near Tuusula/Hyvinkää: `Hirvijärvi`, `Loppijärvi`,
+`Kytäjärvi`** (IMG_6030/6031, all corroborated by `laskukierros_flights.csv`).
+`OH-COF` (C152, EFNU) reappears 16/05/2025 as the pilot's first Book-3 OH-COF row — it is in the
+Book-1/2 C152 list above, not a new registration.
 **IMG_6029 (Jan–Apr 2025) adds three foreign fields, all SR20 OH-ESR:** **ESMG** (Feringe/Ljungby,
 Sweden — the aircraft wintered there, flown out 12/01/2025 and back 08/03/2025), **EHGG**
 (Groningen Eelde, NL) and **EDWF** (Leer-Papenburg, DE). ⚠ The 07/03/2025 `EHGG→EDWF` leg does not

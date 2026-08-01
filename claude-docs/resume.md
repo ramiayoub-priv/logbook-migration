@@ -227,14 +227,34 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
   trips produce geographically disconnected rows; don't treat them as errors.**
   Three inferred on-block cells (r3 →`10:18`, r5 →`16:11`, r9 →`11:21` from the club record) — see
   drift.md; **all on-block again**. New airports **ESMG** (Feringe, Sweden), **EHGG**, **EDWF**.
-- **Last row in `logbook_3.csv`:** `15/04/2025 · SR20 · OH-ESR · ESNU → EFNU ·
-  13:50–15:58 (local) · Total 2:08 · PIC 2:08 · Instrument 2:08 · 1 landing`
+- **Twenty-fourth & twenty-fifth spreads done:** `IMG_6030` (pages 47–48, 15 flights
+  **18/04/2025–29/05/2025**) and `IMG_6031` (pages 49–50, 15 flights **29/05/2025–02/07/2025**),
+  verified & appended 2026-08-01. **Both SIDEWAYS — CCW `rotate(90)`** (6022–6031 all sideways).
+  **All seven cross-checks exact** (6030: Δtotal 13:59/Δpic 13:21/Δstudent **0:38**/Δinstr **6:12**;
+  6031: Δtotal 11:05 all SE-VFR/Δpic 11:05/Δinstr **7:27**). Landings sum **43** and **55**.
+  **🌊 THE 2025 FLOAT SEASON OPENS 18/05/2025** (OH-CTL Räyskälä→Tuusulanjärvi) — back to the
+  familiar Tuusulanjärvi instruction pattern; 6031 is 10/15 OH-CTL float rows.
+  **⚠⚠ THE CLUB FILE CARRIED THIS BATCH** — 23 rows matched on times and **landings matched 23 of
+  23** rows that have a record; every FI row was corroborated by `rami_role=instructor` + pupil name
+  (Salo, Storgårds, Nirkkonen, Puhakka, Kere). **Grep it first, always.**
+  **⚠ ZONES FLIP WITHIN A SPREAD AND BACK IN THE NEXT:** 6030 rows 1–14 `Z`, **row 15 local**;
+  6031 **row 1 local**, rows 2–8/11/13/14 `Z`, **rows 9–10 (08/06) local**, rows 12/15 `Z`.
+  All user-approved. Derive the zone **row by row from the club file**, not per spread.
+  **⚠ 6030 row 7 is a DUAL row with `pic_name` left BLANK** — 19/05 OH-CTL Tuusulanjärvi→Hirvijärvi
+  0:38: Dual column filled, **PIC blank**, but the name cell still says `AYOUB` (habit, not
+  evidence). Absent from the club file → filed under the other pilot. Likely a seaplane spring
+  check; the instructor's name was never supplied. **`OH-COF` returns** (C152, EFNU, instructing —
+  an existing Book-1/2 reg, not a new one).
+  6031 r12 stored **on-block 17:53** (the 5-min water-taxi pattern). New places **Hirvijärvi,
+  Loppijärvi, Kytäjärvi**.
+- **Last row in `logbook_3.csv`:** `02/07/2025 · P28A · OH-PDP · EFHV → EFHV ·
+  15:00Z–15:13Z · Total 0:13 · PIC 0:13 · 3 landings`
 - **Cumulative totals at that row (our continuous series, seeded from Book 2):**
-  - Cumulative_Total **1103:57** · Cumulative_PIC **938:42** · Cumulative_Student **165:15**
-  - Cumulative_Instrument **102:02** · Cumulative_SEP_Sea **343:18**
-  - Cumulative_Landings **3019** (= day+night; runs ahead of book's day-only count — see drift.md)
-  - Cumulative_Instructor **148:07**
-- **`logbook_3.csv` has 344 data rows** (+ header + seed row = 346 lines).
+  - Cumulative_Total **1129:01** · Cumulative_PIC **963:08** · Cumulative_Student **165:53**
+  - Cumulative_Instrument **105:14** · Cumulative_SEP_Sea **359:35**
+  - Cumulative_Landings **3117** (= day+night; runs ahead of book's day-only count — see drift.md)
+  - Cumulative_Instructor **161:46**
+- **`logbook_3.csv` has 374 data rows** (+ header + seed row = 376 lines).
 
 ### Book-3 conventions (locked 2026-07-31 with user)
 - **Same 26-col schema.** EASA→our-schema mapping: **Dual (Oppilas) → Student_Time**;
@@ -251,10 +271,12 @@ The old per-image files in `logbook-2-csv/` are stale ollama output — untruste
 - **Tooling:** `logbook_tools.py <batch.json> --csv logbook_3.csv [--append]` (new `--csv` flag targets
   Book 3; defaults to Book 2). Block-vs-total diffs ≤5 min now warn instead of blocking append.
 
-## Next action — Book 3, IMG_6030 (pages 47–48)
-Process **`IMG_6030`** next (continues from 15/04/2025). **Check orientation first** — image
+## Next action — Book 3, IMG_6032 (pages 51–52)
+Process **`IMG_6032`** next (continues from 02/07/2025 — the club file already shows the next
+flights: 01/07/2025 OH-CTL Tuusula↔Hiidenvesi with Puhakka, then 02/07 OH-CAM EFHV→EFJO→EFNU→EFHV).
+**Check orientation first** — image
 orientation is NOT consistent across Book 3: 6007–6011 needed CCW `rotate(90)`, 6012–6021 were all
-already upright, and **6022–6029 were all sideways (CCW `rotate(90)`)**. Never assume —
+already upright, and **6022–6031 were all sideways (CCW `rotate(90)`)**. Never assume —
 thumbnail first. **Also scan the block-minute cells for the tiny `LT` subscript** (see below).
 Quickest check: `Image.open(p).resize((1024,768))` and eyeball
 which way is up; then crop the two pages at high res (the original is ~2048×1536). Transcribe all rows,
@@ -328,25 +350,27 @@ Then continue IMG_6030…6037 at that pace (each spread is
   the CSVs** — paper stays authoritative; full list in `laskukierros_zflags.md`. No total affected.
   **Practical upshot: keep asking the user about time zones per spread — the book's `Z` is advisory,
   not evidence.** Also documented: 3 record conflicts (2 dates, 1 registration) — see `drift.md`.
-  **62 rows of `laskukierros_flights.csv` postdate 15/04/2025, so it forward-checks IMG_6030 onward**
-  (club regs only — `OH-CTL`, `OH-CAM`, `OH-CAY`, `OH-CGX`, `OH-CMU`, `OH-TIL`; no GKT/ESR/PDP/MIL);
-  the first is `29/04/2025 OH-CAM EFHV local 13:18–14:26 local, 0:45 IFR`. It paid off twice on
-  IMG_6028/6029: it **settled the UTC→local switch date** and **corrected a registration I misread**
-  (`OH-CMV` → `OH-CMU`). **Grep it before offering the user candidate readings.**
+  **~35 rows of `laskukierros_flights.csv` postdate 02/07/2025, so it forward-checks IMG_6032 onward**
+  (club regs only — `OH-CTL`, `OH-CAM`, `OH-CAY`, `OH-CGX`, `OH-CMU`, `OH-TIL`; no GKT/ESR/PDP/MIL/COF);
+  the next two are `01/07/2025 OH-CTL Tuusula↔Hiidenvesi` (instructing, Puhakka) and the `02/07/2025
+  OH-CAM EFHV→EFJO→EFNU→EFHV` day. **It is the single most valuable tool in this project** — on
+  IMG_6028/6029 it settled the UTC→local switch date and corrected a registration I misread
+  (`OH-CMV` → `OH-CMU`); on IMG_6030/6031 it confirmed **23 of 23** landing counts and every
+  instructing row. **Grep it before offering the user candidate readings.**
 - **⚠ The book's tiny `LT` subscript (first seen IMG_6024) is positive evidence a row is LOCAL — but
   its absence proves nothing** (IMG_6023 has none and is local throughout). **And it corrupts the digit
   it follows:** `20`+`LT` read as `29` on two IMG_6024 rows, each putting the row 9 min out. *When two
   rows on one page are short by the same odd amount, suspect one systematic digit misread.*
-- **Paper-vs-ours drift, refreshed at end of page 46 (15/04/2025 boundary; EASA "TOTAL" bottom-of-page):**
-  book Total **1102:32** vs ours **1103:57** (**+1:25**); book PIC **937:37** vs ours **938:42** (**+1:05**);
-  book SE-IFR **98:00** vs our Instrument **102:02** (**+4:02**); book Dual **164:55** vs our Student
-  **165:15** (**+0:20**); book Flight-Instructor **149:30** vs ours **148:07** (**−1:23**).
-  **All five steady across IMG_6028 and IMG_6029** — nothing moved since the IMG_6027 FI slip
+- **Paper-vs-ours drift, refreshed at end of page 50 (02/07/2025 boundary; EASA "TOTAL" bottom-of-page):**
+  book Total **1127:36** vs ours **1129:01** (**+1:25**); book PIC **962:03** vs ours **963:08** (**+1:05**);
+  book SE-IFR **101:12** vs our Instrument **105:14** (**+4:02**); book Dual **165:33** vs our Student
+  **165:53** (**+0:20**); book Flight-Instructor **163:09** vs ours **161:46** (**−1:23**).
+  **All five steady across IMG_6028 → IMG_6031** — nothing moved since the IMG_6027 FI slip
   (−1:20 → −1:23). (The +1:25 dates from the IMG_6013 running-Total slip, our value correct;
   the +1:05 flipped from −1:25 on IMG_6019 where the pilot struck his own PIC total 810:09 → 807:39,
   a hand −2:30 correction he doesn't recall the reason for.) The book's SE-IFR line was itself a
   pilot correction written *below* the p.40 total box (struck 86:55 → 88:04); it carries forward correctly.
-  Landings: ours **3019** (day+night) runs ahead of the book's day-only cumulative (see drift.md).
+  Landings: ours **3117** (day+night) runs ahead of the book's day-only cumulative (see drift.md).
 - **The book's per-row running-Total column is now unreliable — three separate slips** (p.14 **−1:00**,
   p.21 **−1:52** which the pilot caught and fixed at the page total, p.23 **−0:36**). Its printed
   "TOTAL THIS PAGE" and bottom-line totals are still trustworthy. **Cross-check only on those.**

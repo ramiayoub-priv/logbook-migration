@@ -1,0 +1,374 @@
+[
+ {
+  "img": "IMG_6030",
+  "paper": {
+   "d_total": "13:59",
+   "d_pic": "13:21",
+   "d_student": "0:38",
+   "d_instr": "6:12"
+  },
+  "flights": [
+   {
+    "date": "18/04/2025",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "13:30Z",
+    "on": "14:40Z",
+    "total": "1:10",
+    "land": 1
+   },
+   {
+    "date": "29/04/2025",
+    "type": "C172",
+    "reg": "OH-CAM",
+    "dep": "EFHV",
+    "arr": "EFTP",
+    "off": "10:18Z",
+    "on": "11:23Z",
+    "total": "1:05",
+    "instrument": "0:45",
+    "land": 1
+   },
+   {
+    "date": "29/04/2025",
+    "type": "C172",
+    "reg": "OH-CAM",
+    "dep": "EFTP",
+    "arr": "EFHV",
+    "off": "14:40Z",
+    "on": "15:23Z",
+    "total": "0:43",
+    "instrument": "0:15",
+    "land": 1
+   },
+   {
+    "date": "11/05/2025",
+    "type": "C172",
+    "reg": "OH-CAY",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "06:00Z",
+    "on": "06:38Z",
+    "total": "0:38",
+    "land": 4
+   },
+   {
+    "date": "16/05/2025",
+    "type": "C152",
+    "reg": "OH-COF",
+    "dep": "EFNU",
+    "arr": "EFNU",
+    "off": "09:40Z",
+    "on": "10:42Z",
+    "total": "1:02",
+    "instructor": "1:02",
+    "land": 3
+   },
+   {
+    "date": "18/05/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Räyskälä",
+    "arr": "Tuusulanjärvi",
+    "off": "13:50Z",
+    "on": "14:35Z",
+    "total": "0:45",
+    "land": 3
+   },
+   {
+    "date": "19/05/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Tuusulanjärvi",
+    "arr": "Hirvijärvi",
+    "off": "07:35Z",
+    "on": "08:13Z",
+    "total": "0:38",
+    "land": 3,
+    "student": true,
+    "pic_name": ""
+   },
+   {
+    "date": "19/05/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Hirvijärvi",
+    "arr": "Tuusulanjärvi",
+    "off": "08:17Z",
+    "on": "08:55Z",
+    "total": "0:38",
+    "instructor": "0:38",
+    "land": 4
+   },
+   {
+    "date": "19/05/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Tuusulanjärvi",
+    "arr": "Tuusulanjärvi",
+    "off": "15:29Z",
+    "on": "16:45Z",
+    "total": "1:16",
+    "instructor": "1:16",
+    "land": 8
+   },
+   {
+    "date": "24/05/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Tuusulanjärvi",
+    "arr": "Tuusulanjärvi",
+    "off": "08:05Z",
+    "on": "09:15Z",
+    "total": "1:10",
+    "instructor": "1:10",
+    "land": 5
+   },
+   {
+    "date": "25/05/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Tuusulanjärvi",
+    "arr": "Hiidenvesi",
+    "off": "08:09Z",
+    "on": "08:55Z",
+    "total": "0:46",
+    "instructor": "0:46",
+    "land": 1
+   },
+   {
+    "date": "25/05/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Hiidenvesi",
+    "arr": "Lohja",
+    "off": "09:35Z",
+    "on": "10:15Z",
+    "total": "0:40",
+    "instructor": "0:40",
+    "land": 4
+   },
+   {
+    "date": "25/05/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Lohja",
+    "arr": "Tuusulanjärvi",
+    "off": "10:52Z",
+    "on": "11:32Z",
+    "total": "0:40",
+    "instructor": "0:40",
+    "land": 1
+   },
+   {
+    "date": "28/05/2025",
+    "type": "C172",
+    "reg": "OH-CAM",
+    "dep": "EFHV",
+    "arr": "EFMA",
+    "off": "12:38Z",
+    "on": "14:50Z",
+    "total": "2:12",
+    "instrument": "2:12",
+    "land": 1
+   },
+   {
+    "date": "29/05/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Tuusulanjärvi",
+    "arr": "Pellinki",
+    "off": "16:15",
+    "on": "16:51",
+    "total": "0:36",
+    "land": 3
+   }
+  ]
+ },
+ {
+  "img": "IMG_6031",
+  "paper": {
+   "d_total": "11:05",
+   "d_pic": "11:05",
+   "d_instr": "7:27"
+  },
+  "flights": [
+   {
+    "date": "29/05/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Pellinki",
+    "arr": "Tuusulanjärvi",
+    "off": "17:07",
+    "on": "17:38",
+    "total": "0:31",
+    "land": 2
+   },
+   {
+    "date": "30/05/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Tuusulanjärvi",
+    "arr": "Loppijärvi",
+    "off": "09:40Z",
+    "on": "10:19Z",
+    "total": "0:39",
+    "instructor": "0:39",
+    "land": 1
+   },
+   {
+    "date": "30/05/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Loppijärvi",
+    "arr": "Tuusulanjärvi",
+    "off": "10:20Z",
+    "on": "10:55Z",
+    "total": "0:35",
+    "instructor": "0:35",
+    "land": 2
+   },
+   {
+    "date": "01/06/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Tuusulanjärvi",
+    "arr": "Kytäjärvi",
+    "off": "15:16Z",
+    "on": "15:45Z",
+    "total": "0:29",
+    "instructor": "0:29",
+    "land": 1
+   },
+   {
+    "date": "01/06/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Kytäjärvi",
+    "arr": "Tuusulanjärvi",
+    "off": "15:45Z",
+    "on": "16:36Z",
+    "total": "0:51",
+    "instructor": "0:51",
+    "land": 5
+   },
+   {
+    "date": "03/06/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Tuusulanjärvi",
+    "arr": "Tuusulanjärvi",
+    "off": "17:05Z",
+    "on": "18:35Z",
+    "total": "1:30",
+    "instructor": "1:30",
+    "land": 10
+   },
+   {
+    "date": "05/06/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Tuusulanjärvi",
+    "arr": "Haikko",
+    "off": "14:38Z",
+    "on": "15:25Z",
+    "total": "0:47",
+    "instructor": "0:47",
+    "land": 4
+   },
+   {
+    "date": "05/06/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Haikko",
+    "arr": "Tuusulanjärvi",
+    "off": "15:44Z",
+    "on": "16:34Z",
+    "total": "0:50",
+    "instructor": "0:50",
+    "land": 5
+   },
+   {
+    "date": "08/06/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Tuusulanjärvi",
+    "arr": "Hiidenvesi",
+    "off": "12:45",
+    "on": "13:25",
+    "total": "0:40",
+    "land": 2
+   },
+   {
+    "date": "08/06/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Hiidenvesi",
+    "arr": "Tuusulanjärvi",
+    "off": "14:10",
+    "on": "14:50",
+    "total": "0:40",
+    "land": 3
+   },
+   {
+    "date": "16/06/2025",
+    "type": "C172",
+    "reg": "OH-CAY",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "15:36Z",
+    "on": "16:43Z",
+    "total": "1:07",
+    "instructor": "1:07",
+    "land": 5
+   },
+   {
+    "date": "17/06/2025",
+    "type": "C172",
+    "reg": "OH-GKT",
+    "dep": "Kahvisaari",
+    "arr": "Kahvisaari",
+    "off": "16:56Z",
+    "on": "17:53Z",
+    "total": "0:57",
+    "land": 7
+   },
+   {
+    "date": "24/06/2025",
+    "type": "C172",
+    "reg": "OH-CTL",
+    "dep": "Tuusulanjärvi",
+    "arr": "Tuusulanjärvi",
+    "off": "16:00Z",
+    "on": "16:39Z",
+    "total": "0:39",
+    "instructor": "0:39",
+    "land": 1
+   },
+   {
+    "date": "01/07/2025",
+    "type": "C172",
+    "reg": "OH-CGX",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "09:53Z",
+    "on": "10:30Z",
+    "total": "0:37",
+    "land": 4
+   },
+   {
+    "date": "02/07/2025",
+    "type": "P28A",
+    "reg": "OH-PDP",
+    "dep": "EFHV",
+    "arr": "EFHV",
+    "off": "15:00Z",
+    "on": "15:13Z",
+    "total": "0:13",
+    "land": 3
+   }
+  ]
+ }
+]

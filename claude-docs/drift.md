@@ -531,6 +531,61 @@ Instrument **102:02** (**+4:02**), Student **165:15** (**+0:20**), Instructor **
 **No delta moved across IMG_6028 or IMG_6029** — independent confirmation of both spreads, including
 the three inferred block cells and the 18/09 date.
 
+## IMG_6030/6031 batch (pages 47–50, 18/04/2025–02/07/2025) — appended 2026-08-01
+Both spreads **sideways** (CCW `rotate(90)`), no `LT` subscripts. **All seven cross-checks exact**
+(6030: Δtotal **13:59** / Δpic 13:21 / Δstudent **0:38** / Δinstr **6:12**; 6031: Δtotal **11:05**
+all SE-VFR / Δpic 11:05 / Δinstr **7:27**). Every block time on both spreads matched its logged time
+to the minute except one (6031 r12, below). Landings blank on both → ours sum **43** and **55**.
+**🌊 The 2025 float season opens 18/05/2025** (OH-CTL Räyskälä→Tuusulanjärvi); from there the
+spreads go back to the familiar Tuusulanjärvi instruction pattern.
+
+- **⚠⚠ THE CLUB FILE CARRIED THIS BATCH.** 23 rows matched on times and **landings matched on
+  23 of 23** rows that have a record (13/13 on 6031) — plus every Flight-Instructor row was
+  independently corroborated by the record's `rami_role=instructor` and its pupil name (Salo,
+  Storgårds, Nirkkonen, Puhakka, Kere). *This is the strongest external validation a Book-3 batch
+  has had. Always grep it first.*
+- **⚠ ZONES: 6030 is UTC except its LAST row; 6031 is genuinely mixed.** All user-confirmed.
+  | rows | zone | evidence |
+  |---|---|---|
+  | 6030 r1–r14 | **UTC** (`Z`) | 11 rows club-confirmed at exactly +3h |
+  | 6030 r15 · 29/05 Tuusulanjärvi→Pellinki | **local** | book `16:15–16:51` = club local digit-for-digit; as UTC it lands 19:51 local and collides with that evening's two other club flights |
+  | 6031 r1 · 29/05 Pellinki→Tuusulanjärvi | **local** | return half of the same trip, club-confirmed |
+  | 6031 r2–r8, r11, r13, r14 | **UTC** (`Z`) | 10 rows club-confirmed at +3h |
+  | 6031 r9, r10 · 08/06 Tuusulanjärvi↔Hiidenvesi | **local** | book times = club local exactly. ⚠ Unlike the 29/05 case there is **no second flight that day to chain against**, so this could also be a club entry mistakenly filed in UTC (cf. 06/08/2024). User approved storing local; residual uncertainty. |
+  | 6031 r12 (OH-GKT), r15 (OH-PDP) | `Z` | no record; left as the column header states |
+  **The zone now flips within a single spread and back again inside the next one.** Re-derive it
+  row-by-row from the club file, not per spread.
+- **⚠ 6030 row 7 is a DUAL row with no instructor name recorded.** 19/05/2025 OH-CTL
+  Tuusulanjärvi→Hirvijärvi 0:38, 3 ldg. The book puts 0:38 in the **Dual** column and leaves **PIC
+  blank** (the 13:21 PIC page total confirms it), yet writes `AYOUB` in the pilot-name cell like
+  every other row — *the name cell is habit, not evidence; trust the time columns.* It is also the
+  only flight of that day absent from the club file, consistent with being filed under the other
+  pilot's account. The **return leg 20 minutes later (r8) is PIC + Instructor.** Most likely a
+  seaplane spring check / class-rating revalidation. User approved the batch without supplying a
+  name, so **`pic_name` is stored BLANK** — fill it in if it ever surfaces.
+- **6030 row 1's landings cell is blank** (18/04/2025 OH-PDP EFHV local, 1:10). Counted as **1** per
+  the IMG_6013 precedent, user-approved — but a 1:10 Arrow local is plausibly circuits, so this is
+  the one soft number in the batch. Row-1-blank was pinned by mapping the other 14 landing cells
+  against 10 club records; the column is visually offset ~1.5 rows from the left page (spine curl),
+  so **do not read landings by eyeballing row alignment — verify against the record.**
+- **6031 row 12 — the 5-minute on-block pattern again.** 17/06/2025 OH-GKT Kahvisaari local: cells
+  read `16:56 → 17:48` = 0:52, but the logged time and the page total both need **0:57**. Stored
+  **on-block 17:53** (water taxi; see the IMG_6026/6027 root-cause note). No OH-GKT record to confirm.
+- **`OH-COF` returns** (C152, EFNU local 16/05/2025, 1:02, logged PIC + **Instructor**) — *not* a new
+  registration: it is already in `reference.md`'s Book-1/2 C152 list. First OH-COF row in Book 3.
+  Not in the club file (EFNU aircraft, different operator). User-confirmed.
+- **New places:** **Hirvijärvi**, **Loppijärvi**, **Kytäjärvi** (all lakes near Tuusula/Hyvinkää,
+  all club-corroborated). Haikko, Hiidenvesi, Lohja, Pellinki, Räyskälä already known.
+- **Date slip:** 6031 row 7 is written `5/6/15`; the year digit is a slip — it is **05/06/2025**
+  (bracketed by its neighbours and club-confirmed).
+- Rows 2–6 of 6031 carry no year at all in the date cell (`30/05`, `1/06`, `3/06`) — they continue 2025.
+
+### Paper-vs-ours drift at 02/07/2025 (end of p.50) — all five steady
+Book bottoms: Total **1127:36**, PIC **962:03**, SE-IFR **101:12**, Dual **165:33**,
+Flight-Instructor **163:09**. Ours: Total **1129:01** (**+1:25**), PIC **963:08** (**+1:05**),
+Instrument **105:14** (**+4:02**), Student **165:53** (**+0:20**), Instructor **161:46** (**−1:23**).
+**Unmoved across four consecutive spreads now** (IMG_6028 → IMG_6031).
+
 ## Confirmed corrections
 - **IMG_4953 (closeout, pages 110/111) — row-1 landing & instructor rows (user-verified 2026-07-31).**
   Row 1 (27/05/2021 OH-CTL Räyskälä→Vääksy) landings read ambiguously as 10; user confirmed **9**
