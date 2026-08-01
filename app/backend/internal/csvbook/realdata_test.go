@@ -49,22 +49,36 @@ func TestRealBooksProduceTheExpectedTotals(t *testing.T) {
 	// first row of Books 2 and 3 is the previous book's final flight carried
 	// over to seed the cumulative columns.
 	want := csvbook.Totals{
-		Flights:    1293,
-		Total:      hm(1219, 35),
-		PIC:        hm(1053, 3),
-		Dual:       hm(166, 32),
-		Instrument: hm(107, 14),
+		Flights: 1293,
+		Total:   hm(1219, 35),
+		PIC:     hm(1053, 3),
+		Dual:    hm(166, 32),
+		// 107:05, was 107:14. Book 1 line 28 (28/09/2011, OH-COF) logged 1:21 of
+		// instrument on a 1:12 flight -- more instrument than flight time. The
+		// owner ruled on 2026-08-01 that 1:12 is the reading, and the CSV was
+		// corrected. Delta -0:09, and it moves no cumulative: the
+		// Cumulative_Instrument column always advanced by 1:12, which is exactly
+		// why the row was the outlier rather than the column.
+		Instrument: hm(107, 5),
 		// Night was 16:47 until 2026-08-01, against 22:45 inked at page 62.
 		// The owner then read the paper's Yolentoaika column back and
 		// photographed seven Book-1 spreads; its Siirto figures chain
 		// continuously, which pins every night entry to a row. Six values were
 		// added and one moved onto its correct row, taking the column to 20:50
 		// and matching the paper's Siirto at every checkpoint through
-		// 30/11/2013. The residual 1:55 is a single unphotographed page range
-		// (pp.52-69, Mar-Aug 2014) -- see claude-docs/drift.md item E.
-		// Raise this again only when that range is read; do not edit it to
-		// make a test pass.
-		Night:      hm(20, 50),
+		// 30/11/2013.
+		//
+		// The last 1:55 closed the same day when pages 52/53 were photographed
+		// (IMG_6048): 25/02/2014 OH-KLS 0:55 (book 1 line 173, full night) and
+		// 26/03/2014 OH-TIL 1:00 of 2:01 (line 177). That spread's own
+		// Yolentoaika column runs Siirto 9:12 -> 11:07, and 11:07 is exactly
+		// p.71's Siirto, so pages 54-69 carry no night at all -- the column is
+		// closed, not merely sampled.
+		//
+		// 22:45 now equals the figure inked at page 62, delta 0:00. The owner
+		// has frozen the end-of-book-3 cumulatives (claude-docs/resume.md); this
+		// figure must not move again. Do not edit it to make a test pass.
+		Night:      hm(22, 45),
 		Instructor: hm(189, 41),
 		SEPSea:     hm(407, 39),
 		Landings:   3439,
@@ -78,13 +92,16 @@ func TestRealBooksProduceTheExpectedTotals(t *testing.T) {
 // the import trustworthy: the seven Cumulative_* series, recomputed row by row
 // from the flights, must reproduce what the transcription recorded.
 //
-// Exactly one break survives, and it is a defect in the source data, not in
-// this code. Book 1 line 28 (28/09/2011, OH-COF, EFHF local) has a total time
-// of 1:12 but claims 1:21 of instrument time -- more instrument than flight,
-// which is impossible -- while its Cumulative_Instrument column advances by
-// the 1:12 that the flight actually lasted. "1:21" is almost certainly a
-// transposition of "1:12". It is deliberately NOT corrected here; the paper
-// book is the authority and the owner rules on it.
+// It reconciles with ZERO breaks over 1293 rows and seven series. It did not
+// always: book 1 line 28 (28/09/2011, OH-COF, EFHF local) logged 1:12 of flight
+// and claimed 1:21 of instrument -- more instrument than flight, impossible --
+// while its Cumulative_Instrument column advanced by the 1:12 actually flown.
+// The importer surfaced it rather than correcting it, the owner ruled on
+// 2026-08-01 that 1:12 is the reading, and the CSV was fixed.
+//
+// Zero is the assertion, not "one known defect". A break appearing here means
+// either a new transcription batch is inconsistent or this code has regressed;
+// both need triage, and neither is fixed by relaxing this number.
 func TestRealBooksReconcileAgainstTheCumulativeColumns(t *testing.T) {
 	lb := loadReal(t)
 
@@ -94,14 +111,9 @@ func TestRealBooksReconcileAgainstTheCumulativeColumns(t *testing.T) {
 			breaks = append(breaks, d)
 		}
 	}
-	if len(breaks) != 1 {
-		t.Fatalf("got %d cumulative breaks over 1293 flights, want exactly the one known "+
-			"source defect:\n%s", len(breaks), format(breaks))
-	}
-	got := breaks[0]
-	if got.Book != 1 || got.Row != 28 || got.Date != "2011-09-28" {
-		t.Errorf("break at book %d row %d (%s), want book 1 row 28 (2011-09-28)",
-			got.Book, got.Row, got.Date)
+	if len(breaks) != 0 {
+		t.Fatalf("got %d cumulative breaks over 1293 flights and seven series, want zero:\n%s",
+			len(breaks), format(breaks))
 	}
 }
 
@@ -117,19 +129,26 @@ func TestRealBooksSurfaceEveryKnownDataQualityItem(t *testing.T) {
 	// asserted, not just the presence, so that a new occurrence in a future
 	// Book 3 batch shows up as a failing test rather than slipping through.
 	want := map[csvbook.Kind]int{
-		csvbook.KindCumulativeBreak:    1,  // book 1 line 28, above
-		csvbook.KindComponentOverTotal: 1,  // the same row: instrument > total
+		// Both were book 1 line 28, and both closed when the owner ruled its
+		// 1:21 of instrument down to the 1:12 actually flown. Kept in the map at
+		// zero rather than deleted: an impossible row or a broken cumulative
+		// reappearing must fail loudly, and the "unexpected kind" sweep below
+		// only catches kinds that were never listed.
+		csvbook.KindCumulativeBreak:    0,
+		csvbook.KindComponentOverTotal: 0,
 		csvbook.KindBlockTotalMismatch: 1,  // 08/09/2025, block 0:45 vs total 0:38
 		csvbook.KindRegistrationFormat: 15, // SE-GKT x14, SE-LWI x1 -- both genuine.
 		// Was 16: OK-PDP at book 2 line 102 was a transcription typo and the
 		// owner ruled on 2026-08-01 that any OK- reg in these books is OH-.
-		csvbook.KindUnknownType:        4, // "C192" on OH-CTL x2 and OH-GKT x2
-		csvbook.KindTypeConflict:       3, // OH-CTL, OH-GKT, OH-CMU
-		csvbook.KindDateFormat:         8, // book 2 lines 83-90, transcribed DD.MM.YYYY
-		// The rows carrying night time. Was 22; the night reconciliation of
-		// 2026-08-01 added six night rows (0:37, 0:10, 1:17, 0:51, 0:30, 0:38)
-		// and moved a seventh (0:24) between two rows, which is net +6.
-		csvbook.KindLandingsUnverified: 28,
+		csvbook.KindUnknownType:  4, // "C192" on OH-CTL x2 and OH-GKT x2
+		csvbook.KindTypeConflict: 3, // OH-CTL, OH-GKT, OH-CMU
+		csvbook.KindDateFormat:   8, // book 2 lines 83-90, transcribed DD.MM.YYYY
+		// One per row carrying night time, which is what Task 8 must backfill.
+		// Was 22, then 28 when the night reconciliation of 2026-08-01 added six
+		// values, then 30 when the p.52/53 photograph added the last two
+		// (25/02/2014 OH-KLS 0:55 and 26/03/2014 OH-TIL 1:00). That is every
+		// night row in the three books: 20 in book 1, 3 in book 2, 7 in book 3.
+		csvbook.KindLandingsUnverified: 30,
 	}
 	for kind, n := range want {
 		if counts[kind] != n {
@@ -244,7 +263,7 @@ func TestRealBooksSplitLandingsConsistently(t *testing.T) {
 		t.Errorf("landings partition = %d but Totals.Landings = %d", sea+land, lb.Totals.Landings)
 	}
 	// Nothing is read off paper yet, so the night column is still empty and
-	// Task 8 has 22 rows of work waiting.
+	// Task 8 has 30 rows of work waiting.
 	if night != 0 {
 		t.Errorf("night landings = %d; the split has not been backfilled yet", night)
 	}
