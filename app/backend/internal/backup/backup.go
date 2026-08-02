@@ -146,19 +146,7 @@ func Run(db *store.DB, outDir string, now func() time.Time) (Snapshot, error) {
 		return snap, err
 	}
 
-	flights, err := copied.Flights()
-	if err != nil {
-		return snap, err
-	}
-	aircraft, err := copied.Aircraft()
-	if err != nil {
-		return snap, err
-	}
-	discrepancies, err := copied.Discrepancies()
-	if err != nil {
-		return snap, err
-	}
-	users, err := copied.CountUsers()
+	snap, flights, err := figures(copied)
 	if err != nil {
 		return snap, err
 	}
@@ -173,23 +161,8 @@ func Run(db *store.DB, outDir string, now func() time.Time) (Snapshot, error) {
 			len(flights), liveFlights)
 	}
 
-	snap = Snapshot{
-		At:              now().UTC().Truncate(time.Second),
-		Flights:         len(flights),
-		Aircraft:        len(aircraft),
-		Discrepancies:   len(discrepancies),
-		Users:           users,
-		SessionsDropped: dropped,
-	}
-	for _, f := range flights {
-		snap.TotalMinutes += f.TotalMinutes
-		snap.Landings += f.LandingsDay + f.LandingsNight
-		// source_book 0 is the hand-entered band: the flights that exist in no
-		// CSV and cannot be recovered from anywhere but here.
-		if f.SourceBook == 0 {
-			snap.HandEntered++
-		}
-	}
+	snap.At = now().UTC().Truncate(time.Second)
+	snap.SessionsDropped = dropped
 
 	stagedCSV := filepath.Join(stage, CSVName)
 	if err := writeCSV(stagedCSV, flights); err != nil {
@@ -228,6 +201,198 @@ func Run(db *store.DB, outDir string, now func() time.Time) (Snapshot, error) {
 		}
 	}
 	return snap, nil
+}
+
+// Figures computes, from a database alone, exactly the quantities a restore is
+// checked against.
+//
+// IT NEEDS NOTHING BUT THE DATABASE, and that is the entire point. A restored
+// server has the data; it does not necessarily have the three source CSVs, and
+// even where it does, `logbookctl verify` answers a different question -- it
+// checks the transcribed books and is scoped `source_book <> 0`, so it would
+// pass while every app-entered flight, the only irreplaceable rows in the file,
+// was missing. This is the check that covers them.
+//
+// It is the same code path Run uses to write the manifest, deliberately: a
+// checker that computed its figures differently from the writer would drift,
+// and the day it drifted would be the day of a restore.
+func Figures(db *store.DB) (Snapshot, error) {
+	snap, _, err := figures(db)
+	return snap, err
+}
+
+// figures also hands back the flights, which Run needs for the CSV.
+func figures(db *store.DB) (Snapshot, []csvbook.Flight, error) {
+	var snap Snapshot
+
+	flights, err := db.Flights()
+	if err != nil {
+		return snap, nil, err
+	}
+	aircraft, err := db.Aircraft()
+	if err != nil {
+		return snap, nil, err
+	}
+	discrepancies, err := db.Discrepancies()
+	if err != nil {
+		return snap, nil, err
+	}
+	users, err := db.CountUsers()
+	if err != nil {
+		return snap, nil, err
+	}
+
+	snap = Snapshot{
+		Flights:       len(flights),
+		Aircraft:      len(aircraft),
+		Discrepancies: len(discrepancies),
+		Users:         users,
+	}
+	for _, f := range flights {
+		snap.TotalMinutes += f.TotalMinutes
+		snap.Landings += f.LandingsDay + f.LandingsNight
+		// source_book 0 is the hand-entered band: the flights that exist in no
+		// CSV and cannot be recovered from anywhere but here.
+		if f.SourceBook == 0 {
+			snap.HandEntered++
+		}
+	}
+	return snap, flights, nil
+}
+
+// Mismatch is one figure on which a restore disagrees with its manifest.
+type Mismatch struct {
+	Field string
+	Want  string
+	Got   string
+}
+
+func (m Mismatch) String() string {
+	return fmt.Sprintf("%s: want %s, got %s", m.Field, m.Want, m.Got)
+}
+
+// Compare reports every figure on which a restored database (got) disagrees
+// with the manifest of the backup it came from (want). An empty result is the
+// only acceptable outcome of a restore (rule 0.2).
+//
+// Two recorded values are deliberately NOT compared, because they describe the
+// backup RUN rather than the data, and comparing them would make every correct
+// restore look broken: the timestamp, and SessionsDropped -- a restored
+// database has no sessions at all, by design.
+func Compare(want, got Snapshot) []Mismatch {
+	var bad []Mismatch
+	num := func(field string, w, g int) {
+		if w != g {
+			bad = append(bad, Mismatch{field, strconv.Itoa(w), strconv.Itoa(g)})
+		}
+	}
+	num("flights", want.Flights, got.Flights)
+	num("hand-entered", want.HandEntered, got.HandEntered)
+	num("aircraft", want.Aircraft, got.Aircraft)
+	num("discrepancies", want.Discrepancies, got.Discrepancies)
+	num("users", want.Users, got.Users)
+	num("landings", want.Landings, got.Landings)
+	if want.TotalMinutes != got.TotalMinutes {
+		bad = append(bad, Mismatch{"total time",
+			fmt.Sprintf("%s (%d minutes)", hhmm.Format(want.TotalMinutes), want.TotalMinutes),
+			fmt.Sprintf("%s (%d minutes)", hhmm.Format(got.TotalMinutes), got.TotalMinutes)})
+	}
+	return bad
+}
+
+// ParseManifest reads a MANIFEST.txt back into the figures it records.
+//
+// The manifest is written for a human to read, but it is the ONLY statement of
+// what a restore must come back to, so a program has to be able to read it too
+// -- otherwise checking a restore means retyping seven numbers correctly on the
+// worst day of the year.
+//
+// It refuses anything it does not recognise rather than returning what it
+// managed to find. A half-parsed manifest would compare as a pile of zeroes and
+// report a perfectly good restore as catastrophically wrong -- or, far worse,
+// silently match an empty database.
+func ParseManifest(text string) (Snapshot, error) {
+	var s Snapshot
+	seen := map[string]bool{}
+
+	intField := func(dst *int, label, rest string) error {
+		// Trailing prose ("2   (source_book = 0; ...)") is part of the format.
+		v, err := strconv.Atoi(strings.Fields(rest)[0])
+		if err != nil {
+			return fmt.Errorf("backup: manifest field %q: %w", label, err)
+		}
+		*dst = v
+		seen[label] = true
+		return nil
+	}
+
+	for _, line := range strings.Split(text, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		// "sha256 <hex>  <filename>" -- keyed on the filename, so the two lines
+		// cannot be told apart by their order alone.
+		if rest, ok := strings.CutPrefix(line, "sha256 "); ok {
+			f := strings.Fields(rest)
+			if len(f) != 2 {
+				return s, fmt.Errorf("backup: manifest: cannot read the line %q", line)
+			}
+			switch f[1] {
+			case DBName:
+				s.SHA256DB, seen["sha256 db"] = f[0], true
+			case CSVName:
+				s.SHA256CSV, seen["sha256 csv"] = f[0], true
+			}
+			continue
+		}
+
+		var err error
+		switch {
+		case strings.HasPrefix(line, "taken "):
+			s.At, err = time.Parse(time.RFC3339, strings.TrimSpace(line[len("taken "):]))
+			if err != nil {
+				return s, fmt.Errorf("backup: manifest field %q: %w", "taken", err)
+			}
+			seen["taken"] = true
+		case strings.HasPrefix(line, "hand-entered "):
+			err = intField(&s.HandEntered, "hand-entered", line[len("hand-entered "):])
+		case strings.HasPrefix(line, "flights "):
+			err = intField(&s.Flights, "flights", line[len("flights "):])
+		case strings.HasPrefix(line, "aircraft "):
+			err = intField(&s.Aircraft, "aircraft", line[len("aircraft "):])
+		case strings.HasPrefix(line, "discrepancies "):
+			err = intField(&s.Discrepancies, "discrepancies", line[len("discrepancies "):])
+		case strings.HasPrefix(line, "users "):
+			err = intField(&s.Users, "users", line[len("users "):])
+		case strings.HasPrefix(line, "sessions dropped "):
+			err = intField(&s.SessionsDropped, "sessions dropped", line[len("sessions dropped "):])
+		case strings.HasPrefix(line, "landings "):
+			err = intField(&s.Landings, "landings", line[len("landings "):])
+		case strings.HasPrefix(line, "total time "):
+			// "1223:03   (73383 minutes)" -- the minutes are what is compared;
+			// the H:MM is for the reader. Read the authoritative one.
+			f := strings.Fields(line[len("total time "):])
+			if len(f) < 2 {
+				return s, fmt.Errorf("backup: manifest field %q: cannot read %q", "total time", line)
+			}
+			err = intField(&s.TotalMinutes, "total time", strings.TrimPrefix(f[1], "("))
+		}
+		if err != nil {
+			return s, err
+		}
+	}
+
+	for _, must := range []string{
+		"taken", "flights", "hand-entered", "aircraft", "discrepancies", "users",
+		"total time", "landings", "sha256 db", "sha256 csv",
+	} {
+		if !seen[must] {
+			return Snapshot{}, fmt.Errorf(
+				"backup: this does not look like a %s -- it has no %q field", ManifestName, must)
+		}
+	}
+	return s, nil
 }
 
 // csvHeader is every column the CSV carries, in order.
@@ -411,16 +576,36 @@ users     %d
 sha256    %s
 @@@
 
-   Check the file you just installed:
+   Two checks, in this order. **The first needs nothing but coreutils**, and on
+   its own it is conclusive: a file that hashes to this value IS this backup,
+   byte for byte.
 
 @@@bash
-sha256sum /var/lib/logbook/logbook.db
-sudo -u logbook sqlite3 /var/lib/logbook/logbook.db \
-  'SELECT COUNT(*), SUM(total_minutes), SUM(landings_day + landings_night) FROM flights;'
+sha256sum /var/lib/logbook/logbook.db     # must equal the sha256 above
 @@@
 
-   If any figure disagrees, **stop** and find out why before the application is
-   allowed to write to the file (CLAUDE.md rule 0.2).
+   The second reads the figures out of the database and compares them against
+   %s, using the application's own binary:
+
+@@@bash
+sudo -u logbook /opt/logbook/logbookctl check \
+  -db /var/lib/logbook/logbook.db -manifest /path/to/%s
+@@@
+
+   It prints every figure and exits non-zero if any of them disagrees.
+
+   **Do not reach for @sqlite3@.** It is not installed on the server and this
+   application deliberately does not need it -- the SQLite driver is compiled
+   into the Go binary. Earlier versions of this file told you to run it, and on
+   a fresh server that instruction is @command not found@.
+
+   **@logbookctl verify@ is a different command and is NOT this check.** It
+   compares a database against the three transcribed CSVs, and it is scoped to
+   the rows that came from them -- so it passes happily while every flight
+   entered in the app, the only rows that exist nowhere else, is missing.
+
+   If either check disagrees, **stop** and find out why before the application
+   is allowed to write to the file (CLAUDE.md rule 0.2).
 
 4. Start it: @sudo systemctl start logbook@. The startup line reports the flight
    count, and it must read %d.
@@ -452,5 +637,6 @@ record.
 		DBName,
 		s.Flights, hhmm.Format(s.TotalMinutes), s.TotalMinutes, s.Landings, s.Users,
 		s.SHA256DB,
+		ManifestName, ManifestName,
 		s.Flights), "@", "`")
 }

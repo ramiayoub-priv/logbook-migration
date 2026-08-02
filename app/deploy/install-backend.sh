@@ -29,6 +29,20 @@ fi
 install -o root -g root -m 0755 "$STAGE/logbook-server" /opt/logbook/logbook-server
 /opt/logbook/logbook-server -h 2>&1 | head -3 || true
 
+# logbookctl is the operator tool: import, verify, backup and -- the reason it
+# is installed HERE rather than only by install-backup.sh -- `check`, which is
+# how a restored database is verified against a backup's MANIFEST.txt.
+# RESTORE.md step 1 says "install the app as deploy.md describes" and step 3
+# then runs /opt/logbook/logbookctl, so this script is what has to put it there.
+# A restore is not the moment to discover the verification tool was never
+# installed.
+if [ -f "$STAGE/logbookctl" ]; then
+    install -o root -g root -m 0755 "$STAGE/logbookctl" /opt/logbook/logbookctl
+    echo "   logbookctl installed"
+else
+    echo "   !! $STAGE/logbookctl is missing -- stage it, or a restore cannot be verified"
+fi
+
 say "4. database"
 if [ -f /var/lib/logbook/logbook.db ]; then
     echo "   !! /var/lib/logbook/logbook.db ALREADY EXISTS."

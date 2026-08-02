@@ -42,6 +42,8 @@ Commands:
   verify   Re-check an existing database against the CSVs. Writes nothing.
   backup   Write a verified off-box copy (database + CSV + manifest + restore
            instructions) into a directory. Safe to run against a live server.
+  check    Check a RESTORED database against a backup's MANIFEST.txt. Needs no
+           CSVs and no sqlite3. Writes nothing. This is the restore check.
 `
 
 func run(args []string, out io.Writer) error {
@@ -56,6 +58,8 @@ func run(args []string, out io.Writer) error {
 		return runVerify(args[1:], out)
 	case "backup":
 		return runBackup(args[1:], out)
+	case "check":
+		return runCheck(args[1:], out)
 	case "-h", "--help", "help":
 		fmt.Fprint(out, usage)
 		return nil
@@ -210,6 +214,108 @@ func runBackup(args []string, out io.Writer) error {
 	fmt.Fprintf(out, "  sha256      %s  %s\n", snap.SHA256DB, backup.DBName)
 	fmt.Fprintf(out, "  sha256      %s  %s\n", snap.SHA256CSV, backup.CSVName)
 	fmt.Fprintf(out, "Verified against the live database before writing.\n")
+	return nil
+}
+
+// runCheck verifies a RESTORED database against the manifest of the backup it
+// came from. It writes nothing.
+//
+// WHY THIS IS NOT `verify`. Verify compares a database against the three
+// transcribed CSVs, and its checksums are scoped `source_book <> 0`. On a
+// restored server that is both unavailable (the books may not be there) and
+// insufficient (it would pass while every app-entered flight was missing --
+// precisely the rows that exist nowhere else and that the backup exists for).
+// Check asks the only question a restore raises: is this the data the backup
+// recorded?
+//
+// It needs nothing but the database file and a manifest. RESTORE.md used to
+// send the reader to `sqlite3` here, which is not installed on the server and
+// is not a dependency of this project, so the mandatory verification step of a
+// restore was `command not found` on the day it was needed.
+func runCheck(args []string, out io.Writer) error {
+	fs := flag.NewFlagSet("check", flag.ContinueOnError)
+	dbPath := fs.String("db", "", "path to the restored SQLite database (required)")
+	manifestPath := fs.String("manifest", "",
+		"path to the backup's MANIFEST.txt to check against")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *dbPath == "" {
+		return fmt.Errorf("-db is required")
+	}
+
+	// The file's own checksum first, BEFORE anything opens it. sha256 is the
+	// strongest statement available -- a file that hashes correctly is the
+	// backup, byte for byte -- and it is the one check that costs nothing.
+	sum := backup.SHA256File(*dbPath)
+
+	var want backup.Snapshot
+	haveManifest := *manifestPath != ""
+	if haveManifest {
+		text, err := os.ReadFile(*manifestPath)
+		if err != nil {
+			return fmt.Errorf("reading the manifest: %w", err)
+		}
+		if want, err = backup.ParseManifest(string(text)); err != nil {
+			return err
+		}
+	}
+
+	db, err := store.Open(*dbPath)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	got, err := backup.Figures(db)
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintf(out, "%s\n", *dbPath)
+	fmt.Fprintf(out, "  %-16s %d\n", "flights", got.Flights)
+	fmt.Fprintf(out, "  %-16s %d   (source_book = 0; these exist in NO CSV)\n",
+		"hand-entered", got.HandEntered)
+	fmt.Fprintf(out, "  %-16s %d\n", "aircraft", got.Aircraft)
+	fmt.Fprintf(out, "  %-16s %d\n", "discrepancies", got.Discrepancies)
+	fmt.Fprintf(out, "  %-16s %d\n", "users", got.Users)
+	fmt.Fprintf(out, "  %-16s %s   (%d minutes)\n",
+		"total time", hhmm.Format(got.TotalMinutes), got.TotalMinutes)
+	fmt.Fprintf(out, "  %-16s %d\n", "landings", got.Landings)
+	fmt.Fprintf(out, "  %-16s %s\n", "sha256", sum)
+
+	if !haveManifest {
+		// Never let this read as a pass. It reported figures; it compared them
+		// to nothing.
+		fmt.Fprintf(out, "\nNo -manifest given, so nothing was compared. These are the figures\n"+
+			"this database holds; whether they are the RIGHT ones is unproven.\n")
+		return nil
+	}
+
+	if sum != "" && want.SHA256DB != "" && sum != want.SHA256DB {
+		fmt.Fprintf(out, "\n  !! sha256 does not match the manifest\n"+
+			"     manifest %s\n     file     %s\n", want.SHA256DB, sum)
+	}
+
+	bad := backup.Compare(want, got)
+	if len(bad) > 0 {
+		fmt.Fprintf(out, "\nTHIS RESTORE DOES NOT MATCH ITS MANIFEST:\n")
+		for _, m := range bad {
+			fmt.Fprintf(out, "  %-16s manifest %s, database %s\n", m.Field, m.Want, m.Got)
+		}
+		// Rule 0.2: a legal record that disagrees with its own record of itself
+		// is not something to work around.
+		return fmt.Errorf("REFUSING: %d figure(s) disagree with %s (%v) -- "+
+			"do not let the application write to this file until you know why",
+			len(bad), *manifestPath, bad)
+	}
+
+	if sum != want.SHA256DB {
+		return fmt.Errorf("REFUSING: every figure matches but the file's sha256 does not "+
+			"match the manifest (%s vs %s)", sum, want.SHA256DB)
+	}
+	fmt.Fprintf(out, "\nEvery figure matches %s, taken %s.\n",
+		*manifestPath, want.At.Format(time.RFC3339))
 	return nil
 }
 

@@ -342,7 +342,12 @@ GET    /export/statistics.pdf  ?from&to private
 `from`/`to` are inclusive `YYYY-MM-DD`. An unparseable one is a **400**, never an ignored filter.
 
 **Operator CLI** (no HTTP route exists for any of it, by design):
-`./dist/server createuser|passwd|users|disable|enable <name> -db <path>`.
+`./dist/server createuser|passwd|users|disable|enable <name> -db <path>`, and
+`logbookctl import|verify|backup|check`. **`verify` and `check` answer different questions**:
+`verify` compares a database against the three CSVs (scoped `source_book <> 0`, so it passes while
+every app-entered flight is missing), while **`check -db <db> -manifest MANIFEST.txt` is the RESTORE
+check** — it needs no CSVs and no `sqlite3`, and covers the hand-entered rows that exist nowhere
+else. Do not substitute one for the other.
 
 ### Where the deploy actually stands (2026-08-01)
 
@@ -483,9 +488,12 @@ at an airfield with no signal and never caches a logbook response. Offline *writ
 
 **Nothing here blocks, and there is no half-finished work.** In rough order of value:
 
-1. **Read `RESTORE.md` from a real clone**, once, while there is no emergency:
-   `git clone git@github.com:ramiayoub-priv/logbook-backup.git`. A backup nobody has restored from is
-   still a backup nobody should trust.
+1. ✅ **DONE 2026-08-02 — the restore drill.** The backup was cloned, verified, booted and read back
+   without SQLite; it passed on every substantive claim. Its **instructions did not** — step 3 told
+   the reader to run `sqlite3`, which is not on the box and is not a dependency of this project.
+   Fixed with `logbookctl check`; see the decision log. **Still worth doing once by hand on the
+   owner's side**: the one thing a session cannot test is that the *password* still works on a
+   restored database, because it has never been in a file or a session.
 2. **Open the Aircraft tab on the actual phone**, now that it is live. Task 13's figures are proven
    against the real books and the page is proven in jsdom, but **it has never been looked at in a
    real browser** — and six tabs plus a seven-column table are exactly the shapes that have broken
@@ -622,11 +630,76 @@ day · landings night.
 | 12 | **Takeoff / landing / air time in the table, and out of the disclosure** | **done** 2026-08-02 — the flights table gains **Takeoff, Landing and Air**; air time is `format.airMinutes`, computed at render from the two instants and **never stored**, blank (never `0:00`) on the 1277 rows that have none. The airborne pair is **out of the `<details>`** and sits in the Times card next to off/on block; the `details.airborne` CSS is gone. |
 | 13 | **Aircraft time page (block vs air, by aircraft and date range)** | **done** 2026-08-02 — `internal/stats/aircraft.go` (`AirMinutes`, `ByAircraft`, `TotalAircraftTime`; pure, **100%**), `GET /aircraft-time?from&to&reg`, and the **Aircraft** tab. Block and air are separate fields with separate coverage and are never mixed; both totals in **H:MM and whole minutes**; `reg` adds the flights behind one figure without narrowing the comparison. The real books make the case: **OH-CTL has 267:16 of block time and 2:51 of air time from 4 of its 286 flights** — one merged "hours" figure would be catastrophically wrong. |
 | 14 | **Daily off-box backup to a private git repo** | **INSTALLED AND RUNNING** 2026-08-02 — `logbookctl backup` (`internal/backup`) writes four files: `logbook.db` (sessions stripped), `logbook.csv` (every flight, every field), `MANIFEST.txt`, `RESTORE.md`. A systemd timer runs `backup.sh` as the **`logbook` user** → commit → push to `ramiayoub-priv/logbook-backup`. First snapshot pushed as **`fc5cec9` — 1298 flights, 1223:03, 3446 landings**; timer **enabled and active**, next **2026-08-03 03:22 UTC**. Auth is an **account-level key on the dedicated `ramiayoub-priv` account** (owner ruling — not a deploy key). Installing it took four attempts and exposed **four bugs in `install-backup.sh`'s own checks and none in the backup** — see the decision log. ✅ **Step 8, the clone-back, passed**: four files out of a fresh clone, `logbook.db` matching its own manifest sha256, 1298 flights / 1223:03 / 3446 landings / 1 user. |
+| 16 | **The restore drill, and `logbookctl check`** | **done** 2026-08-02 — the backup was cloned and restored for real with no emergency running. It passed everything: both sha256s match, `logbook.db` is byte-identical across three snapshots, the server boots on it reading **`flights=1298`** with all six private routes still 401, and `logbook.csv` reconciles to 1298 / 1223:03 / 3446 / 38 with no SQLite involved. **Its instructions did not pass**: step 3 told the reader to run `sqlite3`, absent from the box and not a dependency of this project, so the mandatory rule-0.2 verification was `command not found` on a fresh server. New **`logbookctl check -db <db> [-manifest <file>]`** (no CSVs, no sqlite3, hashes before opening, shares `Figures` with the manifest writer so the two cannot drift), regenerated `RESTORE.md`, and **`install-backend.sh` now installs `logbookctl`** — step 1 of the restore never did, so fixing only the sqlite3 line would have swapped one missing command for another. Backend **87.6%**, core still 100%. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-02 — The restore drill: the backup was fine, its instructions were not runnable
+
+The brief's top open item was *"read `RESTORE.md` from a real clone, once, while there is no
+emergency — a backup nobody has restored from is still a backup nobody should trust."* Done, in full,
+and the conclusion splits cleanly in two.
+
+**The backup itself passed everything.** Cloned from the private remote, and:
+
+- both files hash to exactly what `MANIFEST.txt` claims;
+- `logbook.db` is **byte-identical across all three snapshots** taken that day — only the manifest's
+  timestamp moves, which is the determinism claim proven rather than asserted, and is why git stores
+  one blob;
+- the database **boots**: the server started against the restored file and logged `flights=1298`,
+  `/health` answered 200 and all six private routes answered 401, so default deny survives a restore;
+- `logbook.csv` **independently reconciles** to the same figures with no SQLite involved at all —
+  1298 flights, 1223:03 (73383 minutes), 3446 landings, 38 aircraft — carries `off_block_raw` and
+  `time_origin` on every row (rule 0.4), has **no `Cumulative_*` columns** (rule 0.5), and both
+  hand-entered flights are in it with their raw times. The deliberate redundancy is real redundancy.
+
+**And its instructions could not be followed.** Step 3 — the step `RESTORE.md` calls mandatory, the
+one rule 0.2 hangs on — told the reader to run `sqlite3`. **That binary is not installed on the
+production box** (checked) **and is not a dependency of this project**: the whole point of
+`modernc.org/sqlite` is that nothing outside the Go binary speaks SQLite. On a fresh server that line
+is `command not found`, at the exact moment someone is deciding whether to let an application write
+to a legal record. The choice it forces is "skip the verification" or "apt-install a database package
+mid-emergency".
+
+**This is the same species as the `GIT_SSH_COMMAND` preflight**, and the pattern is now three for
+three on this project: *a verification step that cannot do the thing it claims to do*. That one could
+not fail for the reason it named; this one could not run at all. Both read as protection. Both had
+sat there since the day they were written, because **verification code gets no exercise on the happy
+path** — and a backup's restore instructions are the most extreme case of that, since the happy path
+is "never restore".
+
+Also found, and the reason the fix is bigger than a one-line edit: `RESTORE.md` step 1 says *install
+the app as `deploy.md` describes*, and step 3 then runs `/opt/logbook/logbookctl` — but
+**`install-backend.sh` only ever installed `logbook-server`.** `logbookctl` reached the box solely as
+a side effect of `install-backup.sh`. A restore performed exactly as documented arrived at step 3
+without the tool. Fixing only the sqlite3 line would have replaced a command that does not exist with
+a different command that does not exist.
+
+**What was built.** `logbookctl check -db <db> [-manifest MANIFEST.txt]` — reads the figures out of a
+restored database and compares them to the manifest, printing every one, exiting non-zero on any
+disagreement, naming which figure and both values. It needs **nothing but the database file**: no
+CSVs, no `sqlite3`, no network. It hashes the file **before** anything opens it. `Figures` is the
+same code path `Run` uses to write the manifest, deliberately — a checker that computed its numbers
+differently from the writer would drift, and the day it drifted would be the day of a restore.
+`install-backend.sh` now installs `logbookctl`.
+
+**`verify` is not this check, and the difference is load-bearing.** Verify compares against the three
+CSVs and is scoped `source_book <> 0`. It would pass with a satisfied green message while **every
+app-entered flight was missing** — the only rows in the file that exist nowhere else, and the entire
+reason Task 14 exists. `RESTORE.md` now says so in as many words, because reaching for the
+familiar-looking command is the obvious mistake.
+
+Proven against the real artefact, not only in tests: `check` on the actual restored production
+backup matches all seven figures and the sha256; pointed at a stale scratch database it refuses and
+reports `flights 1298 vs 1296`, `hand-entered 2 vs 0`, `discrepancies 54 vs 61` — which is exactly
+what "restored from the wrong day" looks like. The test that forbids the defect was confirmed to fire
+against the **shipped** `RESTORE.md` before the fix went in.
+
+**Fifth time on this project that running something found what reading it did not** — after the
+untypeable colon, the stale service worker, the off-screen save confirmation, and the empty clone.
 
 ### 2026-08-02 — Installing the backup: three bugs in the checks, none in the thing being checked
 

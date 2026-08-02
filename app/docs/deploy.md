@@ -323,7 +323,46 @@ journalctl -u logbook-backup.service -n 40
 git clone git@github.com:ramiayoub-priv/logbook-backup.git /tmp/lb-check
 cat /tmp/lb-check/MANIFEST.txt
 sha256sum /tmp/lb-check/logbook.db      # must match the manifest
+
+# And does it hold what it claims to hold? Needs no CSVs and no sqlite3.
+/opt/logbook/logbookctl check -db /tmp/lb-check/logbook.db \
+                              -manifest /tmp/lb-check/MANIFEST.txt
 ```
+
+### ⚠ The second trap, found on 2026-08-02 by following RESTORE.md for real
+
+The backup was cloned and restored as a drill, with no emergency in progress — and the instructions
+it carries turned out **not to be runnable**. Step 3, the mandatory verification that rule 0.2 hangs
+on, said:
+
+```bash
+sudo -u logbook sqlite3 /var/lib/logbook/logbook.db 'SELECT COUNT(*), ...'
+```
+
+**`sqlite3` is not installed on this box and is not a dependency of this project** — the entire point
+of `modernc.org/sqlite` is that nothing outside the Go binary has to speak SQLite. On a fresh server
+that line is `command not found`, and the reader either skips the check on a legal record or
+`apt install`s a database package mid-restore.
+
+This is the same species as the `GIT_SSH_COMMAND` preflight: **a verification step that cannot do
+what it claims.** The fix:
+
+- **`logbookctl check -db <db> [-manifest <file>]`** reads the figures out of a restored database and
+  compares them to a backup's `MANIFEST.txt`, printing every one and exiting non-zero on any
+  disagreement. No CSVs, no `sqlite3`, no network. It hashes the file **before** opening it.
+- `RESTORE.md` is generated from `internal/backup`, so it now ships that command instead, leads with
+  `sha256sum` (coreutils, and on its own conclusive), and explicitly warns the reader off `sqlite3`.
+- **`install-backend.sh` now installs `logbookctl`**, not just the server. `RESTORE.md` step 1 says
+  "install the app as `deploy.md` describes" and step 3 then runs `/opt/logbook/logbookctl` — before
+  this, only `install-backup.sh` put it there, so a restore performed exactly as documented reached
+  step 3 without the tool.
+
+**`logbookctl verify` is NOT the restore check and must not be substituted for it.** Verify compares
+a database against the three transcribed CSVs and is scoped `source_book <> 0` — on a restored server
+the books may not be present at all, and even where they are, verify passes happily while every
+app-entered flight is missing. Those are precisely the rows that exist nowhere else and that the
+whole backup exists to protect. `check` asks the only question a restore raises: **is this the data
+the backup recorded?**
 
 Restoring is `RESTORE.md` inside that clone. The short version: install the app as above but **do
 not import the CSVs** (that rebuilds the transcribed books and discards every flight entered in the

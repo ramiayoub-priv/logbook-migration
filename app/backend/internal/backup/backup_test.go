@@ -3,6 +3,7 @@ package backup_test
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -369,6 +370,203 @@ func TestRestoreInstructionsTravelWithTheData(t *testing.T) {
 	// checkable rather than hoped at.
 	if !strings.Contains(doc, "3") || !strings.Contains(doc, snap.SHA256DB[:12]) {
 		t.Error("RESTORE.md does not state the figures to check the restore against")
+	}
+}
+
+// --- Checking a restore, with the tools a restored server actually has -------
+//
+// THE DEFECT THIS SECTION EXISTS FOR, found on 2026-08-02 by cloning the backup
+// and following its own instructions. Step 3 of RESTORE.md -- the step it calls
+// mandatory, the one rule 0.2 hangs on -- told the reader to run `sqlite3`.
+// That binary is NOT installed on the production box and is not a dependency of
+// this project: the entire point of modernc.org/sqlite is that nothing outside
+// the Go binary has to speak SQLite. So on the day of a restore, on a fresh
+// server, the verification step is `command not found`, and the reader either
+// skips the check or apt-installs a database package mid-emergency.
+//
+// A verification that cannot be run is the same species of bug as a check that
+// cannot fail (the GIT_SSH_COMMAND preflight, decision log 2026-08-02): it
+// reads as protection and provides none.
+
+// Every COMMAND the instructions give must be runnable on a freshly restored
+// server. The prose may name sqlite3 -- warning the reader off it is worth a
+// paragraph, since the previous version of this file sent them there -- but no
+// command block may invoke it.
+func TestRestoreInstructionsDoNotDependOnSqlite3(t *testing.T) {
+	_, out := run(t, live(t))
+	doc := read(t, filepath.Join(out, backup.RestoreName))
+
+	for i, block := range strings.Split(doc, "```") {
+		if i%2 == 0 {
+			continue // prose, not something the reader is told to run
+		}
+		if strings.Contains(block, "sqlite3") {
+			t.Errorf("RESTORE.md gives a command that runs sqlite3, which is not on "+
+				"the server and is not a dependency of this project -- on a fresh "+
+				"server this is `command not found`, and it is the step rule 0.2 "+
+				"hangs on:\n%s", block)
+		}
+	}
+}
+
+// Every command RESTORE.md gives must come from coreutils or from the app's own
+// binaries, because those are the only things a restored server is guaranteed
+// to have.
+func TestRestoreInstructionsNameAVerificationThatCanBeRun(t *testing.T) {
+	_, out := run(t, live(t))
+	doc := read(t, filepath.Join(out, backup.RestoreName))
+
+	for _, want := range []string{
+		"sha256sum",        // coreutils: proves the file, needing nothing at all
+		"logbookctl check", // the app's own binary: proves the contents
+		backup.ManifestName,
+	} {
+		if !strings.Contains(doc, want) {
+			t.Errorf("RESTORE.md never tells the reader to run %q", want)
+		}
+	}
+}
+
+// The manifest is the only statement of what a restore must come back to, so it
+// has to be readable by the program that checks a restore -- not just by a
+// human. Round-trip: what Run wrote, parsed back, is what Run recorded.
+func TestManifestParsesBackIntoTheFiguresItRecorded(t *testing.T) {
+	snap, out := run(t, live(t))
+
+	got, err := backup.ParseManifest(read(t, filepath.Join(out, backup.ManifestName)))
+	if err != nil {
+		t.Fatalf("ParseManifest: %v", err)
+	}
+
+	for _, c := range []struct {
+		field     string
+		want, got int
+	}{
+		{"flights", snap.Flights, got.Flights},
+		{"hand-entered", snap.HandEntered, got.HandEntered},
+		{"aircraft", snap.Aircraft, got.Aircraft},
+		{"discrepancies", snap.Discrepancies, got.Discrepancies},
+		{"users", snap.Users, got.Users},
+		{"total minutes", snap.TotalMinutes, got.TotalMinutes},
+		{"landings", snap.Landings, got.Landings},
+	} {
+		if c.want != c.got {
+			t.Errorf("%s: manifest parsed back as %d, was written as %d", c.field, c.got, c.want)
+		}
+	}
+	if got.SHA256DB != snap.SHA256DB {
+		t.Errorf("sha256 of %s parsed back as %q, want %q", backup.DBName, got.SHA256DB, snap.SHA256DB)
+	}
+	if got.SHA256CSV != snap.SHA256CSV {
+		t.Errorf("sha256 of %s parsed back as %q, want %q", backup.CSVName, got.SHA256CSV, snap.SHA256CSV)
+	}
+}
+
+func TestParseManifestRefusesSomethingThatIsNotAManifest(t *testing.T) {
+	for _, text := range []string{"", "hello", "flights          not-a-number\n"} {
+		if _, err := backup.ParseManifest(text); err == nil {
+			t.Errorf("ParseManifest(%q) succeeded; a manifest it cannot read must be an error, "+
+				"never a zero-valued snapshot that everything then matches", text)
+		}
+	}
+}
+
+// Figures is what `logbookctl check` computes from a restored database. It must
+// need NOTHING but the database: a restored server has the data, and does not
+// necessarily have the three CSVs (which is why `verify` is not the answer).
+func TestFiguresMatchTheManifestOfTheBackupTheyCameFrom(t *testing.T) {
+	_, out := run(t, live(t))
+
+	restored, err := store.Open(filepath.Join(out, backup.DBName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer restored.Close()
+
+	got, err := backup.Figures(restored)
+	if err != nil {
+		t.Fatalf("Figures: %v", err)
+	}
+	want, err := backup.ParseManifest(read(t, filepath.Join(out, backup.ManifestName)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bad := backup.Compare(want, got); len(bad) != 0 {
+		t.Errorf("a freshly restored backup disagrees with its own manifest: %v", bad)
+	}
+}
+
+// And it has to actually catch a restore that is wrong, or it is decoration.
+func TestCompareCatchesARestoreThatLostAFlight(t *testing.T) {
+	_, out := run(t, live(t))
+
+	want, err := backup.ParseManifest(read(t, filepath.Join(out, backup.ManifestName)))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	restored, err := store.Open(filepath.Join(out, backup.DBName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer restored.Close()
+
+	// Stand in for the half-copied file, the truncated download, the restore
+	// from the wrong day: the database no longer holds what the manifest says.
+	if _, err := restored.AddFlight(csvbook.Flight{
+		Date: "2026-08-03", AircraftType: "C172", AircraftReg: "OH-CTL",
+		Class: csvbook.ClassSEPLand, DepPlace: "EFHV", ArrPlace: "EFHV",
+		OffBlockUTC: time.Date(2026, 8, 3, 9, 0, 0, 0, time.UTC),
+		OnBlockUTC:  time.Date(2026, 8, 3, 10, 0, 0, 0, time.UTC),
+		OffBlockRaw: "09:00Z", OnBlockRaw: "10:00Z", TimeOrigin: "utc_as_written",
+		BlockMinutes: 60, TotalMinutes: 60, PICMinutes: 60,
+		PICName: "self", LandingsDay: 1, LandingsVerified: true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := backup.Figures(restored)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bad := backup.Compare(want, got)
+	if len(bad) == 0 {
+		t.Fatal("Compare accepted a database holding a flight its manifest does not know about")
+	}
+	var fields []string
+	for _, m := range bad {
+		fields = append(fields, m.Field)
+	}
+	for _, want := range []string{"flights", "total time", "landings"} {
+		if !slices.Contains(fields, want) {
+			t.Errorf("Compare did not report %q as disagreeing; it reported %v", want, fields)
+		}
+	}
+}
+
+// Two things in the manifest describe the BACKUP RUN rather than the data, and
+// comparing them would make every correct restore look wrong: the timestamp,
+// and the number of live sessions that were dropped on the way out (a restored
+// database has none by design).
+func TestCompareIgnoresWhatDescribesTheRunRatherThanTheData(t *testing.T) {
+	snap, out := run(t, live(t))
+	if snap.SessionsDropped == 0 {
+		t.Fatal("fixture has no sessions to drop, so this test would prove nothing")
+	}
+
+	restored, err := store.Open(filepath.Join(out, backup.DBName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer restored.Close()
+
+	got, err := backup.Figures(restored)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bad := backup.Compare(snap, got); len(bad) != 0 {
+		t.Errorf("Compare reported %v; the dropped sessions and the timestamp describe "+
+			"the run, not the data, and must not make a good restore look bad", bad)
 	}
 }
 
