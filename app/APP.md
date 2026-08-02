@@ -29,21 +29,37 @@ exists is already transcribed; there is no backlog. **New flights are entered in
 and the rule wins.
 
 **Where to start.** This file, then `docs/data-model.md` / `docs/security.md` / `docs/deploy.md` as
-the work requires. Task 10 (edit/delete a flight) closed on 2026-08-02, so **v1 is complete**: there
-is no queued feature. The open items are the ones under "Open questions awaiting the owner" below,
-of which the oldest and most important is the **`rami` sudo password rotation**.
+the work requires.
 
-⚠ **Edit and delete are BUILT but not yet DEPLOYED as of this writing.** The box is running the
-morning's binary and frontend. Shipping them needs the usual pair — the owner's
-`sudo /home/rami/logbook-deploy/update.sh` for the binary, then the frontend rsync — and this time
-the binary must land **first or together**: the frontend's edit page calls `PUT`/`DELETE
-/flights/{seq}`, which the deployed binary does not have. See the runbook below.
+**THE QUEUE, in the order the owner wants it** — all three came out of the first real day of use on
+2026-08-02, when the owner flew a there-and-back and logged both flights on the phone. Every design
+decision is already ruled and written up in the decision-log entry **"The first real day of use"**;
+read that before touching any of them, then build.
 
-**Status: feature-complete for v1, green, and LIVE at `https://ayoub.fi/logbook` — and as of
-2026-08-02 the box is LEVEL with the repo: current binary (md5-matched), current frontend, the three
-28/08/2025 flights imported, and the no-cache headers in place. The one thing a session cannot read
-is the `flights=1296` startup line; see "Where the deploy actually stands" for what was verified and
-how.**
+| | | |
+|---|---|---|
+| **Task 11** | Saving must be unmissable | The confirmation is off-screen on a phone. Success takes over the screen. |
+| **Task 12** | Takeoff / landing / air time in the table, fields un-collapsed | The aircraft's own logbook is filled from airborne times. **Needs the staged binary deployed.** |
+| **Task 13** | Aircraft time page: block vs air, by aircraft and range | He pays by the hour, some owners by block time and some by air time. Honesty about coverage is the load-bearing part. |
+
+⚠ **DEPLOY FIRST — IT IS ALREADY BUILT AND STAGED.** The box is running the morning's binary and
+frontend; the repo is two features ahead (edit/delete, and `takeoff_utc`/`landing_utc` on the wire).
+The binary is staged at `/home/rami/logbook-deploy/logbook-server`, md5
+`64c47992cc8d949aa0e84fdf4ae2ccaf`, matching a build of this repo's HEAD. Shipping is the owner's
+`sudo /home/rami/logbook-deploy/update.sh` followed by the frontend rsync — **in that order**,
+because the edit page calls `PUT`/`DELETE /flights/{seq}`, which the deployed binary does not have.
+**Task 12 cannot even be seen to work until this lands.** See the runbook below.
+
+⚠ **THERE ARE NOW REAL FLIGHTS IN PRODUCTION THAT EXIST NOWHERE ELSE.** The owner logged two on
+2026-08-02. They carry `source_book = 0`, so the re-import inside `update.sh` leaves them alone (its
+`DELETE` is scoped, and there is a test) — but they are no longer reconstructible from the CSVs, and
+"rebuild it from the CSVs in one command" no longer means "lose nothing". **The backups under
+`/var/lib/logbook/backups/` are the only copy of those rows.**
+
+**Status: LIVE at `https://ayoub.fi/logbook` and in real use — the owner logged two flights from the
+field on 2026-08-02. The morning's deploy (binary, frontend, the three 28/08/2025 flights, the
+no-cache headers) is on the box and verified. Since then the repo has moved TWO features ahead of it
+and the queue above is what the first day of use asked for.**
 
 ### Done (2026-08-01)
 - **Task 2** — `app/backend/` Go module, `internal/hhmm` and `internal/timeutil`. Both 100%.
@@ -160,8 +176,13 @@ defect and had even been noted as having it. The owner had to report it a second
 appears twice on one page, it is a rule — sweep the page.**
 
 **There is no committed database** — it is generated, and `app/.gitignore` keeps `*.db` and `*.bak`
-out of the repo. Nothing you need is only in a database file; rebuild it from the CSVs in one
-command.
+out of the repo. A *development* database is rebuilt from the CSVs in one command (`make scratch`).
+
+⚠ **That stopped being true of PRODUCTION on 2026-08-02.** Flights entered in the app exist in no
+CSV, and there are real ones now. The production database is no longer derivable from the repo, so
+`/var/lib/logbook/backups/` — written by `update.sh` before every import — is the only copy of those
+rows. Treat it accordingly: this is the first thing in the project whose loss cannot be undone by
+re-running something.
 
 ### The numbers the import produces — memorise these
 ```
@@ -470,11 +491,75 @@ day · landings night.
 | 7 | PWA + deploy to `ayoub.fi/logbook` | **PWA done** 2026-08-01 — manifest, icons, and a hand-written service worker that caches the shell and **never** an API response, proven in a browser with the HTTP cache disabled; the shell is now fetched `no-store` and a new worker reloads the page (`src/swupdate.ts`). **Deployed and LIVE** 2026-08-01 at `https://ayoub.fi/logbook` — service user, binary, systemd unit, frontend, the additive Apache block and the account are all in place, and the owner's other seven sites still answer 200. The deploy scripts now live in **`app/deploy/`** instead of only on the box. **NOT finished**: the box runs an older binary and a **1293**-flight database while the repo is at **1296** (the three 28/08/2025 flights). Current binaries and scripts are staged on the box and md5-matched; two owner `sudo` commands remain. See the runbook in "Where the deploy actually stands". |
 | 8 | Backfill landings day/night for the **30** night rows | **WILL NOT DO** — closed 2026-08-02 by the owner's ruling that historical data is not to be touched (`CLAUDE.md` §0.8). The 30 rows keep their `landings_unverified` flag **permanently**: the API reports the count, the table asterisks the row and the statistics page names it in a paragraph. That is the honest state and it must not be quietly dropped to make a page look tidier. |
 | 9 | Rule on the open source-data problems | **closed** 2026-08-02 — two of three were ruled and fixed on 2026-08-01. The third (`logbook_2_final.csv` lines 89–90, `04.05.2018` ×2) stands **unresolved forever**: it affects row order only, moves no total, and settling it needs a physical page that will not be re-read. Recorded, not fixed. |
+| 11 | **Saving a flight must be unmissable** | **planned, not started** — from the first real day of use: the owner logged two flights on the phone and could not tell whether either had saved. Ruled: **the success takes over the screen**. See the 2026-08-02 "first day of use" decision-log entry for the full design. |
+| 12 | **Takeoff / landing / air time in the table, and out of the disclosure** | **planned, not started** — the aircraft's own logbook is filled from airborne times, not block times, so they have to be readable straight off the flights table. Includes promoting the two fields out of the collapsed section, ruled by the owner. Needs the **staged binary deployed**: `takeoff_utc`/`landing_utc` only reach the client from the new build. |
+| 13 | **Aircraft time page (block vs air, by aircraft and date range)** | **planned, not started** — the owner pays for aeroplanes by the hour, some owners charging block time and some air time. Pick an aircraft and a range, get both totals in H:MM **and** in minutes, plus the flights behind the figure. The load-bearing part is honesty about coverage — see the decision-log entry. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-02 — The first real day of use, and the three things it asked for
+
+The owner flew a there-and-back and logged **both flights on the phone, in the field** — the first
+time the app was used for what it is for. Everything below comes from that hour, and none of it was
+visible from a test suite, a desktop browser or a scratch server. All three are **planned here and
+implemented in a later session**; the rulings are the owner's and are already made.
+
+**1 · "I get no feedback when I save, so I wasn't sure it was entered."** The confirmation exists —
+`<p role="status">` at the top of the form — and on a phone it is **off-screen**: the submit button
+is at the bottom of a form three cards long, and the message renders somewhere above the fold. A
+screen-reader user was told; the pilot looking at the screen was not. **Ruled: the success takes over
+the screen.** After a save the form is replaced by a large confirmation naming the flight — date,
+registration, total — scrolled into view, offering *Log another flight* and *See it in the table*. A
+failure gets the same prominence in red, scrolled to the field that caused it.
+
+Two details that must not be lost in the build. The **draft has to survive a failed save** — a phone
+that empties a twenty-field form because the server said 400 is a phone that does not get the flight
+logged at all. And there must remain **exactly one live region**: the page already learned this the
+hard way when an `<output>` element's implicit `role="status"` collided with the saved-flight
+announcement.
+
+This is the third time a defect has been invisible to every test and obvious in thirty seconds of
+real use, after the untypeable colon and the stale service worker. **The pattern is not "test more",
+it is "the phone, in the field, is a different machine".**
+
+**2 · Takeoff, landing and air time belong in the table.** The aircraft's own logbook — a separate,
+legally required document the owner fills after flying — records **airborne** times, not block times.
+Reading them off the app instead of the paper is the whole point of having the app in the field. So
+the flights table gains **Takeoff**, **Landing** and **Air**, and air time is *computed* at render
+from the two instants (rolling past midnight the way the server does), never stored — rule §0.5's
+reasoning applies to any derived figure, not only to cumulatives.
+
+The consequence the owner also ruled on: **the airborne pair comes out of the collapsed "optional"
+section** and sits in the Times card next to off/on block. It was folded away because most rows in the
+*paper books* have none — but that is a fact about 1296 historical rows, not about the flights being
+flown now. A field you have to remember to expand is a field that ends up empty, and an empty
+airborne time is what makes an air-time total unusable a year later, when it is being billed from.
+
+⚠ This one **needs the staged binary deployed**: `takeoff_utc`/`landing_utc` reach the client only
+from the build made this morning, which is still sitting in `/home/rami/logbook-deploy/`.
+
+**3 · An aircraft-time page, because the money is real.** The owner rents aeroplanes and **some
+owners charge block time, some charge air time**. Pick an aircraft and a date range; get both totals
+in **H:MM and in whole minutes** (an invoice is checked in one and computed in the other), and the
+list of flights behind the figure so a disputed line can be traced to a flight rather than argued
+against a single number.
+
+The aggregation belongs in **`internal/stats`**, which is pure and held at 100% — this is money and
+it is the same class of code as the licence totals.
+
+**The load-bearing decision is what the page does about missing airborne times.** Air time is known
+only for flights carrying both, and today that is a small minority. A page that adds up what it has
+and prints "Air time: 3:20" is claiming a completeness it does not have, and the owner would bill or
+be billed on it. So the figure is always shown **with its coverage** — air time known for N of M
+flights in this range — and the block total, which is known for every flight, is never mixed with it.
+That is rule §0.2 applied to a figure nobody has computed before: surface the gap, never paper over
+it.
+
+Naming and one open question: the tab bar already holds five entries and a sixth is tight on a 390px
+phone, so where this page hangs is a layout decision to make with the page in front of us, not now.
 
 ### 2026-08-02 — Editing a flight: a plain form over an append-only trail
 
