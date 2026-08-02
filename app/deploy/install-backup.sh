@@ -66,19 +66,50 @@ chown logbook:logbook "$SSH_DIR/known_hosts"
 chmod 0644 "$SSH_DIR/known_hosts"
 
 say "3. the backup repository"
-asuser() {
-    sudo -u logbook env GIT_SSH_COMMAND="ssh -i $SSH_DIR/backup_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$SSH_DIR/known_hosts -o BatchMode=yes" "$@"
-}
+# ONE definition of the ssh options, used two ways -- and they are NOT
+# interchangeable, which cost a whole debugging session on 2026-08-02.
+#
+# GIT_SSH_COMMAND is read by GIT. It does nothing whatsoever for a bare `ssh`.
+# The first version defined only asuser() and then called `asuser ssh -T
+# git@github.com` in step 5, which ran plain ssh as the logbook user with no -i:
+# it looked for a default identity at ~/.ssh/id_*, found none, and reported
+# "Permission denied (publickey)". So step 5 -- the check whose entire job is to
+# prove the deploy key works -- never once tested the deploy key, and blamed a
+# GitHub setup that was correct. Every git operation around it was authenticating
+# fine on the same key.
+SSH_OPTS=(-i "$SSH_DIR/backup_ed25519" -o IdentitiesOnly=yes
+          -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$SSH_DIR/known_hosts"
+          -o BatchMode=yes)
+# for git: git spawns this string itself
+asuser()     { sudo -u logbook env GIT_SSH_COMMAND="ssh ${SSH_OPTS[*]}" "$@"; }
+# for ssh itself: the options must be real argv, not an environment variable
+asuser_ssh() { sudo -u logbook ssh "${SSH_OPTS[@]}" "$@"; }
 
 # WHICH BRANCH the remote calls its default, asked of the remote rather than
 # assumed. Pushing `main` at a remote whose HEAD says `master` produces a
 # repository that pushes cleanly forever and clones back EMPTY -- found by
 # rehearsing, and it is the failure mode that only shows up on the day the
 # backup is needed.
-BRANCH=$(asuser git ls-remote --symref "$REMOTE" HEAD 2>/dev/null |
+#
+# It must also be HONEST about which of those two it did. The first version sent
+# ls-remote's stderr to /dev/null and fell back to `main`, then printed "the
+# remote's default branch is 'main'" either way. On 2026-08-02 that announced a
+# discovered fact during a run whose every remote operation was failing on
+# authentication, and sent the debugging after the wrong thing entirely.
+# Reporting an assumption as a discovery is the same defect this script exists
+# to catch one step later.
+ls_err=$(mktemp)
+BRANCH=$(asuser git ls-remote --symref "$REMOTE" HEAD 2>"$ls_err" |
          awk '$1=="ref:" {sub("refs/heads/","",$2); print $2; exit}')
-BRANCH=${BRANCH:-main}
-echo "   the remote's default branch is '$BRANCH'"
+if [ -n "$BRANCH" ]; then
+    echo "   the remote's default branch is '$BRANCH', read from the remote"
+else
+    BRANCH=main
+    echo "   !! could NOT read the default branch from the remote -- ASSUMING '$BRANCH'."
+    echo "   !! Usually this means the key cannot authenticate; step 5 decides. git said:"
+    sed 's/^/     /' "$ls_err"
+fi
+rm -f "$ls_err"
 
 if [ -d "$REPO_DIR/.git" ]; then
     echo "   already a git repository -- leaving its history alone"
@@ -114,11 +145,31 @@ systemctl daemon-reload
 say "5. can we reach GitHub as the deploy key?"
 # Exit status 1 with a "successfully authenticated" banner is what GitHub gives
 # a working deploy key -- it never grants a shell.
-auth=$(asuser ssh -T git@github.com 2>&1 || true)
+auth=$(asuser_ssh -T git@github.com 2>&1 || true)
 echo "   $auth"
 case "$auth" in
-    *successfully\ authenticated*) echo "   OK" ;;
+    *successfully\ authenticated*) : ;;
     *) echo "   !! the deploy key did not authenticate. Fix that before enabling the timer."; exit 1 ;;
+esac
+
+# WHICH key authenticated, not merely that one did. GitHub greets a deploy key
+# as "Hi owner/repo!" and an account-level key as "Hi owner!". Both push
+# perfectly, so the kind of key in use is otherwise invisible -- and it is worth
+# printing, because it is the fact that decides this box's blast radius on
+# GitHub. It is reported, never acted on.
+#
+# OWNER RULING 2026-08-02: an ACCOUNT-LEVEL KEY ON A DEDICATED ACCOUNT, not a
+# deploy key. This script's header used to instruct otherwise; the ruling wins.
+# The reasoning is recorded in app/APP.md's decision log -- in short, the scoping
+# a deploy key buys is already provided by the account itself, which exists for
+# this and holds nothing else. Do NOT "fix" this back to a deploy key, and do
+# not make it a warning: it is a decision, and it has been made.
+greeting=$(printf '%s' "$auth" | sed -n 's/.*\(Hi [^!]*\)!.*/\1/p')
+case "$greeting" in
+    */*) echo "   OK -- '$greeting' is a deploy key, scoped to that one repository" ;;
+    *)   echo "   OK -- '$greeting' is an account-level key on the dedicated backup"
+         echo "        account (owner ruling 2026-08-02). Its reach is that account's"
+         echo "        repositories, which is why the account holds nothing else." ;;
 esac
 
 say "6. the remote must be EMPTY the first time"
