@@ -103,7 +103,7 @@ func TestRealBooksProduceTheExpectedTotals(t *testing.T) {
 		// 22:45 now equals the figure inked at page 62, delta 0:00. The owner
 		// has frozen the end-of-book-3 cumulatives (claude-docs/resume.md); this
 		// figure must not move again. Do not edit it to make a test pass.
-		Night:      hm(22, 45),
+		Night: hm(22, 45),
 		// Instructor and SEPSea are unmoved by the 28/08/2025 late entries:
 		// nobody was instructed, and OH-ESR is an SR20 landplane.
 		Instructor: hm(189, 41),

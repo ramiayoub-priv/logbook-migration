@@ -31,16 +31,17 @@ and the rule wins.
 **Where to start.** This file, then `docs/data-model.md` / `docs/security.md` / `docs/deploy.md` as
 the work requires.
 
-**THE QUEUE, in the order the owner wants it** — all three came out of the first real day of use on
-2026-08-02, when the owner flew a there-and-back and logged both flights on the phone. Every design
-decision is already ruled and written up in the decision-log entry **"The first real day of use"**;
-read that before touching any of them, then build.
+**THE QUEUE IS EMPTY. Tasks 11, 12, 13 and 14 are all built and committed** (2026-08-02, later
+session). What is left is **not code — it is two things only the owner can do**, and until they are
+done the newest work is not live and the backup does not exist:
 
-| | | |
+| | what | why only the owner |
 |---|---|---|
-| **Task 11** | Saving must be unmissable | The confirmation is off-screen on a phone. Success takes over the screen. |
-| **Task 12** | Takeoff / landing / air time in the table, fields un-collapsed | The aircraft's own logbook is filled from airborne times. **Needs the staged binary deployed.** |
-| **Task 13** | Aircraft time page: block vs air, by aircraft and range | He pays by the hour, some owners by block time and some by air time. Honesty about coverage is the load-bearing part. |
+| **1** | **Deploy the current build** — the runbook below, steps 1–4. | Two `sudo` commands; there is no passwordless sudo. **Tasks 11/12/13 are in the repo and NOT on the box.** |
+| **2** | **Set up the backup** — generate the deploy key on the server, create the **private** `ramiayoub-priv/logbook-backup` with **no README**, then run `install-backup.sh`. | It involves a secret; rule §0.3 forbids a session ever holding one. Full commands in `docs/deploy.md`. |
+
+⚠ **Until step 2 is done, flights entered in the app exist in exactly one place** — the production
+disk. That is the single most important open item in the project.
 
 ✅ **DEPLOYED 2026-08-02 14:44 UTC** — edit/delete and `takeoff_utc`/`landing_utc` are live. Binary
 `64c47992cc8d949aa0e84fdf4ae2ccaf` on the box equals a build of HEAD; `/health` 200, `/flights`
@@ -57,7 +58,9 @@ picked the new build up by itself — no query-string trick needed. That mechani
 `DELETE` is scoped, and there is a test) — **and that was confirmed against the live site rather than
 taken on trust**: the Flights page read 1298 after the re-import. But they are not reconstructible
 from the CSVs, so "rebuild it from the CSVs in one command" no longer means "lose nothing". **The
-backups under `/var/lib/logbook/backups/` are the only copy of those rows.**
+backups under `/var/lib/logbook/backups/` are the only copy of those rows — and they are on the same
+disk as the database they protect.** Task 14 fixes this and is **built but not yet installed**;
+until the owner runs `install-backup.sh`, this remains the project's largest exposure.
 
 ⚠ **THE LIVE COUNT AND THE TEST CONSTANTS ARE DIFFERENT NUMBERS, AND BOTH ARE RIGHT.**
 `realdata_test.go` asserts **1296 / 1222:10 / 1054:45 / …** — those describe **the CSVs**, and they
@@ -67,11 +70,19 @@ test figure disagree **must not reconcile them**: they are answers to different 
 "fixing" the constant would silently unfreeze the historical record. The import's own checksums are
 scoped `source_book <> 0` for exactly this reason.
 
-**Status: LIVE at `https://ayoub.fi/logbook`, in real use, and the box is LEVEL with the repo as of
-2026-08-02 14:44 UTC — binary md5-matched, frontend shipped, edit/delete and the airborne times on
-the wire. The owner logged two flights from the field that day and both survived the re-import
-(**1298** on the live Flights page, owner-confirmed). The queue above is what that first day of use
-asked for.**
+**Status: LIVE at `https://ayoub.fi/logbook` and in real use. The box was level with the repo at
+2026-08-02 14:44 UTC — but it is NOT any more:** Tasks 11, 12, 13 and 14 landed after that and none
+of them has been deployed. The owner logged two flights from the field that day and both survived
+the re-import (**1298** on the live Flights page, owner-confirmed).
+
+⚠ **What changed in the repo after the last deploy, so you know what the deploy will ship:**
+the save takeover (Task 11), takeoff/landing/air in the table plus the un-collapsed airborne fields
+(Task 12), the **Aircraft** tab and `GET /aircraft-time` (Task 13), the backup machinery (Task 14),
+and the **five corrected aircraft-type cells** — so the re-import inside `update.sh` will report
+**54 discrepancies, not 61**. That is expected and correct; see the ruling below.
+
+⚠ **The frontend gained a SIXTH TAB and "Statistics" is now "Stats".** The binary and the frontend
+still have to ship together (the pairing warning further down applies unchanged).
 
 ### Done (2026-08-01)
 - **Task 2** — `app/backend/` Go module, `internal/hhmm` and `internal/timeutil`. Both 100%.
@@ -107,7 +118,17 @@ app/backend/
   internal/store/      schema.sql, the verified import, the read queries, auth.go, and
                        handentry.go (AddFlight + the seq band + the reimport relink) and
                        handedit.go (UpdateFlight/DeleteFlight + the append-only audit).   [83%]
-  internal/stats/      Summarize, Range/Filter, Paginate. Computed, never stored.      [core, 100%]
+  internal/stats/      Summarize, Range/Filter, Paginate, and aircraft.go (ByAircraft /
+                       AirMinutes -- what each aeroplane COST, block vs air, with its
+                       coverage). Computed, never stored.                             [core, 100%]
+  internal/backup/     The off-box copy: VACUUM INTO -> redact sessions -> verify against
+                       the live DB -> db + csv + manifest + RESTORE.md. Refuses rather
+                       than half-writes. Driven by `logbookctl backup`.                    [78%]
+                       NOT calculation core, so the 80% gate does not apply to it
+                       individually; what is left uncovered is I/O error returns that
+                       need a full disk to reach. Every behaviour that decides what the
+                       backup CONTAINS is covered, including the restore actually being
+                       signed in to.
   internal/pdfmodel/   Every cell and every total of the three PDFs. Pure -- rule 0.6
                        names "PDF totals" as calculation core.                         [core, 100%]
   internal/pdfbook/    Draws them with go-pdf/fpdf.                                        [~95%]
@@ -131,9 +152,14 @@ app/frontend/
 app/deploy/          the box's staging scripts, IN THE REPO as of 2026-08-01 (rule 0.1 -- they
                      lived only in /home/rami/logbook-deploy/ until then, which meant a fresh
                      clone could not reconstruct the deploy). update.sh, install-backend.sh,
-                     install-apache.sh, apache-logbook.conf, logbook.service. Edit them HERE and
-                     rsync them to the box; never edit them on the box.
+                     install-apache.sh, apache-logbook.conf, logbook.service, and as of
+                     2026-08-02 backup.sh + logbook-backup.service/.timer + install-backup.sh.
+                     Edit them HERE and rsync them to the box; never edit them on the box.
 ```
+
+`app/frontend/src/pages/AircraftTime.tsx` is the sixth page (Task 13). `src/format.ts` gained
+`airMinutes`, which derives airborne time from two stored instants -- NOT the same function as
+`FlightForm.blockFrom`, which rolls a bare four-digit clock that has no date attached.
 `make cover-core` enforces 100% on everything marked `[core]` — the code where a bug means a wrong
 legal record, or an exposed one.
 
@@ -359,7 +385,16 @@ rsync -a --delete app/frontend/dist/ rami@ayoub.fi:/var/www/logbook/
 
 # 4. OWNER, sudo: the Cache-Control headers, so the phone stops serving the old build.
 ssh -t rami@ayoub.fi 'sudo /home/rami/logbook-deploy/install-apache.sh'
+
+# 5. OWNER, sudo, ONCE: the daily off-box backup (Task 14).
+#    Generate the deploy key and create the PRIVATE repo first -- docs/deploy.md
+#    has the exact commands. Then:
+ssh -t rami@ayoub.fi 'sudo /home/rami/logbook-deploy/install-backup.sh'
 ```
+
+⚠ **Step 2's import will now report `54 discrepancies`, not 61.** That is the owner's 2026-08-02
+aircraft-type ruling, and the flight count and every time total are unchanged. **The startup line
+must still read `flights=1296`.** Anything else is a defect.
 
 ⚠ **`install-apache.sh` now REPLACES its block rather than skipping it.** The first version refused
 to touch a vhost that already had a `BEGIN logbook` block, which meant a changed snippet could never
@@ -527,11 +562,70 @@ day · landings night.
 | 11 | **Saving a flight must be unmissable** | **done** 2026-08-02 — the success **takes over the screen**: the form is replaced by a confirmation naming what the SERVER stored (date, registration, route, both clock pairs, total, landings), scrolled to and focused, offering *Log another flight* / *Keep editing this flight* and *See it in the table*. A refusal gets the same weight in red and **jumps to the first failing control by page order**, not by the order the server listed them. The draft survives every failure path, and there is still **exactly one live region**. |
 | 12 | **Takeoff / landing / air time in the table, and out of the disclosure** | **done** 2026-08-02 — the flights table gains **Takeoff, Landing and Air**; air time is `format.airMinutes`, computed at render from the two instants and **never stored**, blank (never `0:00`) on the 1277 rows that have none. The airborne pair is **out of the `<details>`** and sits in the Times card next to off/on block; the `details.airborne` CSS is gone. |
 | 13 | **Aircraft time page (block vs air, by aircraft and date range)** | **done** 2026-08-02 — `internal/stats/aircraft.go` (`AirMinutes`, `ByAircraft`, `TotalAircraftTime`; pure, **100%**), `GET /aircraft-time?from&to&reg`, and the **Aircraft** tab. Block and air are separate fields with separate coverage and are never mixed; both totals in **H:MM and whole minutes**; `reg` adds the flights behind one figure without narrowing the comparison. The real books make the case: **OH-CTL has 267:16 of block time and 2:51 of air time from 4 of its 286 flights** — one merged "hours" figure would be catastrophically wrong. |
+| 14 | **Daily off-box backup to a private git repo** | **built, NOT YET INSTALLED ON THE BOX** 2026-08-02 — `logbookctl backup` (`internal/backup`) writes four files: `logbook.db` (sessions stripped), `logbook.csv` (every flight, every field), `MANIFEST.txt`, `RESTORE.md`. A systemd timer at 03:17 UTC runs `backup.sh` as the **`logbook` user** → commit → push to `ramiayoub-priv/logbook-backup`. Verified against the live database before anything is written, and **proven end to end here: snapshot → push → clone → restore → `verify` green on all nine checksums.** ⏳ **Two owner steps remain** (deploy key + private repo) — see `docs/deploy.md`. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-02 — Task 14: the backup, and the bug that reports success forever
+
+Asked for by the owner: a daily copy of the data pushed to a private repository, restorable on its
+own. The reason is sharper than "backups are good". Until today production was reconstructible from
+this repository — three committed CSVs and one command. Now the app is the only way the record
+grows, and **flights entered in it exist in no CSV**. The pre-import backups under
+`/var/lib/logbook/backups/` sit on the same disk as the database they protect: they defend against a
+bad import and against nothing else.
+
+**The snapshot is `logbookctl backup`, not a shell script with `sqlite3` in it.** It is Go, so the
+verification is the same code the import already trusts: `VACUUM INTO` (transactionally consistent
+against a live database in WAL mode — the service never stops), then `PRAGMA integrity_check`, then
+a row count against the **live** database, and it **refuses and writes nothing** on a mismatch. It
+builds everything in a staging directory and moves it into place only once all of it is proven, so
+an interrupted or refused run leaves yesterday's good backup exactly where it was.
+
+**Four files, and two of them are deliberate redundancy.** `logbook.db` is the restore. `logbook.csv`
+exists for the day something is wrong with the database file, or with this program, or with SQLite —
+a legal record whose only readable form needs a specific binary to still work has a single point of
+failure. The CSV carries the provenance columns and the raw times as written on paper (rule §0.4),
+not a summary, and **no `Cumulative_*` columns** (rule §0.5): writing running totals into the backup
+would put this project's largest historical source of drift back into the data.
+
+**`RESTORE.md` travels *with* the data.** Instructions that live only in the application repository
+are instructions you do not have on the day the server is gone.
+
+**Sessions are stripped, users are kept, and that second half is the real decision.** Sessions are
+the nearest thing in the schema to a live credential and restore nothing. Users must survive or the
+restored logbook cannot be opened — which means the Argon2id hash leaves the box. That is written
+down in `docs/security.md` rather than assumed, together with its consequence: **if that repository
+ever becomes public, the logbook password is compromised.**
+
+**It commits every day, even when nothing was flown.** Unchanged data produces byte-identical files
+— verified — so git stores one blob and the only new bytes are the manifest's timestamp. What that
+buys is a heartbeat: "nothing changed" and "this has been failing silently for a month" stop looking
+identical in the log.
+
+**⚠ THE BUG, AND IT IS THE MOST VALUABLE THING IN THIS TASK.** Rehearsing the script end to end
+found a failure that *reports success forever* and surfaces only on the day the backup is needed:
+**the push succeeded and a fresh clone came back EMPTY.** The remote's `HEAD` named a branch we had
+never pushed to, so `git clone` warned "remote HEAD refers to nonexistent ref" and produced an empty
+directory. Every run printed `done`.
+
+The fix is not the interesting part; the lesson is. **A push that reports success is evidence about
+the push. Only a clone is evidence about the backup.** So `install-backup.sh` now clones the
+repository back, checks all four files are present and that `logbook.db` still hashes to what its own
+manifest claims, and **refuses to enable the timer** otherwise — naming the exact fix. The push uses
+an explicit refspec onto a branch discovered from the remote and stored in the repo's own config, so
+the two cannot drift. Rehearsing also caught `git init -b main` needing git ≥ 2.28 against Ubuntu
+20.04's 2.25.
+
+This is the fourth time on this project that running something found what reading it did not, after
+the untypeable colon, the stale service worker, and the off-screen save confirmation.
+
+**Proven end to end before being called done**: 1296 real flights → snapshot → commit → push →
+clone → `logbookctl verify` **green on all nine checksums** against the source CSVs. The broken
+branch configuration was also reproduced deliberately, to confirm the check refuses it.
 
 ### 2026-08-02 — Task 13 as built: the coverage IS the feature
 

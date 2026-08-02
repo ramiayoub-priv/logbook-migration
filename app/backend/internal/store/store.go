@@ -144,6 +144,69 @@ func (db *DB) Backup(dest string) error {
 // NoteBackup records which backup protects the next import.
 func (db *DB) NoteBackup(path string) { db.backup = path }
 
+// RedactForBackup strips what a copy of this database must not carry off the
+// box, and reports how many rows went.
+//
+// CALL THIS ON A COPY, NEVER ON THE LIVE DATABASE. On the live file it would
+// sign every device out. It exists for internal/backup, which takes a
+// VACUUM INTO snapshot and then redacts that.
+//
+// Only `sessions` goes. They are the closest thing in this file to a live
+// credential -- the column is a hash of the cookie rather than the cookie
+// itself (docs/security.md), so a leaked backup yields nothing usable, but a
+// backup that leaves the machine should still carry the smallest useful set.
+// They are also worthless on restore: the expiry has passed, the addresses are
+// stale, and the owner signs in again regardless.
+//
+// `users` deliberately SURVIVES. A restored logbook nobody can log into is not
+// a restored logbook, and the password is an Argon2id hash at 19 MiB, which is
+// what makes shipping it to a private repository an acceptable trade for being
+// able to come back from a dead server. Recorded in docs/security.md.
+//
+// VACUUM afterwards so the deleted rows are not merely unlinked pages still
+// readable in the file that gets pushed.
+func (db *DB) RedactForBackup() (int, error) {
+	res, err := db.sql.Exec("DELETE FROM sessions")
+	if err != nil {
+		return 0, fmt.Errorf("store: redacting sessions: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("store: redacting sessions: %w", err)
+	}
+	if _, err := db.sql.Exec("VACUUM"); err != nil {
+		return 0, fmt.Errorf("store: vacuuming after redaction: %w", err)
+	}
+	return int(n), nil
+}
+
+// IntegrityCheck asks SQLite whether the file is sound.
+//
+// Used by internal/backup before a snapshot is allowed to be committed and
+// pushed. A backup nobody checked is a backup nobody can rely on, and the point
+// at which to find out is now rather than on the day the server is gone.
+func (db *DB) IntegrityCheck() error {
+	var result string
+	if err := db.sql.QueryRow("PRAGMA integrity_check").Scan(&result); err != nil {
+		return fmt.Errorf("store: integrity check: %w", err)
+	}
+	if result != "ok" {
+		return fmt.Errorf("store: integrity check on %s failed: %s", db.path, result)
+	}
+	return nil
+}
+
+// CountUsers is how many accounts the database holds. Reported in the backup
+// manifest so that a restore can tell at a glance whether it can be logged in
+// to at all.
+func (db *DB) CountUsers() (int, error) {
+	var n int
+	if err := db.sql.QueryRow("SELECT COUNT(*) FROM users").Scan(&n); err != nil {
+		return 0, fmt.Errorf("store: counting users: %w", err)
+	}
+	return n, nil
+}
+
 // Result is what one import wrote.
 type Result struct {
 	Flights       int

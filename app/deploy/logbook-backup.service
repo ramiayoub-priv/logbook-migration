@@ -1,0 +1,41 @@
+[Unit]
+Description=Off-box backup of the logbook (snapshot, commit, push)
+# Only meaningful with a network; the push is the point of the exercise.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=logbook
+Group=logbook
+ExecStart=/opt/logbook/backup.sh
+
+# The same hardening as logbook.service, minus what a backup does not need.
+# ProtectHome stays TRUE: the service user's home is /var/lib/logbook, which is
+# not under /home, so nothing here needs to see /home at all.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+
+# The only writable path. Everything this unit produces -- the snapshot, the
+# CSV, the git objects -- lands under here.
+ReadWritePaths=/var/lib/logbook
+
+# git and ssh need to resolve and reach github.com. AF_UNIX is for the resolver.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+# A whole-database VACUUM INTO plus a git push on a 2 GB box shared with seven
+# other sites (rule 0.3, do not disturb the rest of the server). 1296 flights is
+# a 420 KB file, so this is generous.
+MemoryMax=256M
+
+# If GitHub is unreachable the backup should not hang until the next one is due.
+TimeoutStartSec=600

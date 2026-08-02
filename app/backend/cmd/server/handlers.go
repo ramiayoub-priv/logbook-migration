@@ -280,7 +280,7 @@ func toFlightJSON(f csvbook.Flight) flightJSON {
 		DepPlace: f.DepPlace, ArrPlace: f.ArrPlace,
 		OffBlockUTC: nilIfZero(f.OffBlockUTC), OnBlockUTC: nilIfZero(f.OnBlockUTC),
 		OffBlockRaw: f.OffBlockRaw, OnBlockRaw: f.OnBlockRaw, TimeOrigin: string(f.TimeOrigin),
-		TakeoffUTC:  nilIfZero(f.TakeoffUTC), LandingUTC: nilIfZero(f.LandingUTC),
+		TakeoffUTC: nilIfZero(f.TakeoffUTC), LandingUTC: nilIfZero(f.LandingUTC),
 		BlockMinutes: f.BlockMinutes, TotalMinutes: f.TotalMinutes,
 		NightMinutes: f.NightMinutes, InstrumentMinutes: f.InstrumentMinutes,
 		PICMinutes: f.PICMinutes, DualMinutes: f.DualMinutes,

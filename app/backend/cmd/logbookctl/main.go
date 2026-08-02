@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ramiayoub/logbook/backend/internal/backup"
 	"github.com/ramiayoub/logbook/backend/internal/csvbook"
 	"github.com/ramiayoub/logbook/backend/internal/hhmm"
 	"github.com/ramiayoub/logbook/backend/internal/store"
@@ -39,6 +40,8 @@ const usage = `logbookctl <command> [flags]
 Commands:
   import   Load the logbook CSVs into the database, verified. Backs up first.
   verify   Re-check an existing database against the CSVs. Writes nothing.
+  backup   Write a verified off-box copy (database + CSV + manifest + restore
+           instructions) into a directory. Safe to run against a live server.
 `
 
 func run(args []string, out io.Writer) error {
@@ -51,6 +54,8 @@ func run(args []string, out io.Writer) error {
 		return runImport(args[1:], out)
 	case "verify":
 		return runVerify(args[1:], out)
+	case "backup":
+		return runBackup(args[1:], out)
 	case "-h", "--help", "help":
 		fmt.Fprint(out, usage)
 		return nil
@@ -156,6 +161,55 @@ func runVerify(args []string, out io.Writer) error {
 	}
 	fmt.Fprintf(out, "%s matches the CSVs on all nine checksums:\n%s",
 		*dbPath, totalsBlock(lb.Totals))
+	return nil
+}
+
+// runBackup writes the off-box copy that Task 14 exists for.
+//
+// It reads the database and writes only into -out, so it is safe to run against
+// a live server -- VACUUM INTO is transactionally consistent in WAL mode and the
+// service never has to stop. That matters: a backup that requires downtime is a
+// backup that gets skipped.
+//
+// It is here in logbookctl rather than in the server for the same reason import
+// is: nothing that copies the whole legal record off the machine should be
+// reachable over HTTP.
+func runBackup(args []string, out io.Writer) error {
+	fs := flag.NewFlagSet("backup", flag.ContinueOnError)
+	dbPath := fs.String("db", "", "path to the SQLite database (required)")
+	outDir := fs.String("out", "", "directory to write the backup into (required)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *dbPath == "" {
+		return fmt.Errorf("-db is required")
+	}
+	if *outDir == "" {
+		return fmt.Errorf("-out is required")
+	}
+
+	db, err := store.Open(*dbPath)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	snap, err := backup.Run(db, *outDir, time.Now)
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintf(out, "Backed up %d flights (%d entered in the app) to %s\n",
+		snap.Flights, snap.HandEntered, *outDir)
+	fmt.Fprintf(out, "  total       %s (%d minutes)\n",
+		hhmm.Format(snap.TotalMinutes), snap.TotalMinutes)
+	fmt.Fprintf(out, "  landings    %d\n", snap.Landings)
+	fmt.Fprintf(out, "  aircraft    %d\n", snap.Aircraft)
+	fmt.Fprintf(out, "  users       %d (%d sessions dropped, not carried off the box)\n",
+		snap.Users, snap.SessionsDropped)
+	fmt.Fprintf(out, "  sha256      %s  %s\n", snap.SHA256DB, backup.DBName)
+	fmt.Fprintf(out, "  sha256      %s  %s\n", snap.SHA256CSV, backup.CSVName)
+	fmt.Fprintf(out, "Verified against the live database before writing.\n")
 	return nil
 }
 

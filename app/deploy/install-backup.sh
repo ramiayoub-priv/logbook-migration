@@ -1,0 +1,189 @@
+#!/bin/bash
+# Install the daily off-box backup. Idempotent; safe to re-run.
+#
+# It touches nothing that is already serving traffic: no Apache change, no
+# firewall change, no change to logbook.service. If this fails the box is left
+# with an inert directory and a stopped timer.
+#
+# BEFORE RUNNING IT, THE OWNER MUST DO TWO THINGS BY HAND, and neither can be
+# scripted from here because both involve a secret (rule 0.3, no secrets in the
+# repo -- ever):
+#
+#   1. Create the deploy key ON THE SERVER, so the private half never travels:
+#
+#        sudo -u logbook ssh-keygen -t ed25519 -N '' \
+#             -C 'logbook backup (ayoub.fi)' \
+#             -f /var/lib/logbook/.ssh/backup_ed25519
+#        sudo cat /var/lib/logbook/.ssh/backup_ed25519.pub
+#
+#   2. Add that PUBLIC key to https://github.com/ramiayoub-priv/logbook-backup
+#      under Settings -> Deploy keys, WITH "Allow write access" ticked.
+#
+#      A deploy key rather than a personal access token, and rather than the
+#      owner's own SSH key: it grants exactly one repository, it can be revoked
+#      from the GitHub UI without affecting anything else, and if this box is
+#      ever compromised it cannot be used to reach any other repository.
+#
+#      THE REPOSITORY MUST BE PRIVATE. It contains the whole logbook and the
+#      account's Argon2id password hash -- see app/docs/security.md.
+set -euo pipefail
+
+STAGE="$(cd "$(dirname "$0")" && pwd)"
+REPO_DIR=/var/lib/logbook/backup
+SSH_DIR=/var/lib/logbook/.ssh
+REMOTE=${LOGBOOK_BACKUP_REMOTE:-git@github.com:ramiayoub-priv/logbook-backup.git}
+say() { printf '\n== %s\n' "$*"; }
+
+say "0. prerequisites"
+command -v git >/dev/null || { echo "   !! git is not installed"; exit 1; }
+if [ ! -f "$SSH_DIR/backup_ed25519" ]; then
+    echo "   !! No deploy key at $SSH_DIR/backup_ed25519."
+    echo "   !! Create it and register the .pub half on GitHub first -- see the"
+    echo "   !! comment at the top of this script. Stopping; nothing changed."
+    exit 1
+fi
+echo "   deploy key present: $(stat -c 'mode %a, owner %U' "$SSH_DIR/backup_ed25519")"
+
+say "1. directories and permissions"
+install -d -o logbook -g logbook -m 0700 "$SSH_DIR"
+install -d -o logbook -g logbook -m 0750 "$REPO_DIR"
+chmod 0600 "$SSH_DIR/backup_ed25519"
+chown logbook:logbook "$SSH_DIR/backup_ed25519"
+
+say "2. pin GitHub's host keys"
+# StrictHostKeyChecking=yes in backup.sh means the push FAILS on an unknown or
+# changed host key rather than trusting it. That is only worth anything if this
+# file was written when the box was known-good, which is now.
+if [ -s "$SSH_DIR/known_hosts" ] && grep -q github.com "$SSH_DIR/known_hosts"; then
+    echo "   known_hosts already carries github.com -- leaving it alone"
+else
+    ssh-keyscan -t rsa,ecdsa,ed25519 github.com > "$SSH_DIR/known_hosts" 2>/dev/null
+    echo "   pinned $(grep -c github.com "$SSH_DIR/known_hosts") github.com host keys"
+    echo "   VERIFY these against https://api.github.com/meta before trusting them:"
+    ssh-keygen -lf "$SSH_DIR/known_hosts" | sed 's/^/     /'
+fi
+chown logbook:logbook "$SSH_DIR/known_hosts"
+chmod 0644 "$SSH_DIR/known_hosts"
+
+say "3. the backup repository"
+asuser() {
+    sudo -u logbook env GIT_SSH_COMMAND="ssh -i $SSH_DIR/backup_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$SSH_DIR/known_hosts -o BatchMode=yes" "$@"
+}
+
+# WHICH BRANCH the remote calls its default, asked of the remote rather than
+# assumed. Pushing `main` at a remote whose HEAD says `master` produces a
+# repository that pushes cleanly forever and clones back EMPTY -- found by
+# rehearsing, and it is the failure mode that only shows up on the day the
+# backup is needed.
+BRANCH=$(asuser git ls-remote --symref "$REMOTE" HEAD 2>/dev/null |
+         awk '$1=="ref:" {sub("refs/heads/","",$2); print $2; exit}')
+BRANCH=${BRANCH:-main}
+echo "   the remote's default branch is '$BRANCH'"
+
+if [ -d "$REPO_DIR/.git" ]; then
+    echo "   already a git repository -- leaving its history alone"
+else
+    # NOT `git init -b main`: that flag arrived in git 2.28 and Ubuntu 20.04
+    # ships 2.25, which fails with "unknown switch `b'". Found by rehearsing
+    # this script rather than by reading it. symbolic-ref works everywhere and
+    # is what -b does underneath.
+    sudo -u logbook git init -q "$REPO_DIR"
+    echo "   initialised"
+fi
+sudo -u logbook git -C "$REPO_DIR" symbolic-ref HEAD "refs/heads/$BRANCH"
+# Identity is repo-local so it cannot leak into any other repository on the box.
+sudo -u logbook git -C "$REPO_DIR" config user.name  "logbook backup"
+sudo -u logbook git -C "$REPO_DIR" config user.email "logbook-backup@ayoub.fi"
+# backup.sh reads this rather than guessing, so the two cannot drift apart.
+sudo -u logbook git -C "$REPO_DIR" config logbook.backupBranch "$BRANCH"
+sudo -u logbook git -C "$REPO_DIR" remote remove origin 2>/dev/null || true
+sudo -u logbook git -C "$REPO_DIR" remote add origin "$REMOTE"
+echo "   remote: $(sudo -u logbook git -C "$REPO_DIR" remote get-url origin)"
+
+say "4. scripts and units"
+install -o root -g root -m 0755 "$STAGE/backup.sh" /opt/logbook/backup.sh
+install -o root -g root -m 0644 "$STAGE/logbook-backup.service" /etc/systemd/system/logbook-backup.service
+install -o root -g root -m 0644 "$STAGE/logbook-backup.timer"   /etc/systemd/system/logbook-backup.timer
+# logbookctl is what actually takes the snapshot; ship it alongside the server.
+if [ -f "$STAGE/logbookctl" ]; then
+    install -o root -g root -m 0755 "$STAGE/logbookctl" /opt/logbook/logbookctl
+fi
+[ -x /opt/logbook/logbookctl ] || { echo "   !! /opt/logbook/logbookctl is missing"; exit 1; }
+systemctl daemon-reload
+
+say "5. can we reach GitHub as the deploy key?"
+# Exit status 1 with a "successfully authenticated" banner is what GitHub gives
+# a working deploy key -- it never grants a shell.
+auth=$(asuser ssh -T git@github.com 2>&1 || true)
+echo "   $auth"
+case "$auth" in
+    *successfully\ authenticated*) echo "   OK" ;;
+    *) echo "   !! the deploy key did not authenticate. Fix that before enabling the timer."; exit 1 ;;
+esac
+
+say "6. the remote must be EMPTY the first time"
+# If GitHub created the repository with a README, the first push is a
+# non-fast-forward and fails -- at 03:17, into the journal, where nobody is
+# looking. Better to refuse here, with a human present.
+remote_refs=$(asuser git ls-remote "$REMOTE" 2>/dev/null | wc -l)
+local_commits=$(sudo -u logbook git -C "$REPO_DIR" rev-list --count HEAD 2>/dev/null || echo 0)
+if [ "$remote_refs" -gt 0 ] && [ "$local_commits" -eq 0 ]; then
+    echo "   !! $REMOTE already has $remote_refs ref(s) but this box has never pushed to it."
+    echo "   !! Create the repository with NO README and NO licence, or pull its"
+    echo "   !! history here deliberately first. Stopping before the timer is enabled."
+    exit 1
+fi
+echo "   remote refs: $remote_refs, local commits: $local_commits -- ok"
+
+say "7. first run, now, so a failure is seen by a human rather than at 03:17"
+systemctl start logbook-backup.service
+systemctl --no-pager --full status logbook-backup.service | head -20
+
+say "8. CLONE IT BACK -- the only check that proves a backup exists"
+# This is the step that would have caught the branch-name bug that made every
+# push succeed while every clone came back empty. A push that reports success
+# is evidence about the push. Only a clone is evidence about the BACKUP.
+CHECK=$(mktemp -d)
+trap 'rm -rf "$CHECK"' EXIT
+asuser git clone -q "$REMOTE" "$CHECK/clone"
+missing=0
+for f in logbook.db logbook.csv MANIFEST.txt RESTORE.md; do
+    if [ -s "$CHECK/clone/$f" ]; then
+        echo "   $f  $(stat -c '%s bytes' "$CHECK/clone/$f")"
+    else
+        echo "   !! $f is MISSING from a fresh clone"; missing=1
+    fi
+done
+if [ "$missing" -ne 0 ]; then
+    echo "   !! THE PUSHED BACKUP IS NOT RESTORABLE. Timer NOT enabled."
+    echo "   !!"
+    echo "   !! If the clone warned 'remote HEAD refers to nonexistent ref', the"
+    echo "   !! remote's default branch is not the branch we pushed ('$BRANCH')."
+    echo "   !! Every push would succeed and every clone would come back empty."
+    echo "   !! Fix it on GitHub -- Settings -> General -> Default branch -- so it"
+    echo "   !! reads '$BRANCH', then run this script again."
+    exit 1
+fi
+
+# And the bytes that came back must be the bytes the manifest promised.
+want=$(awk '/logbook\.db$/ {print $2}' "$CHECK/clone/MANIFEST.txt")
+got=$(sha256sum "$CHECK/clone/logbook.db" | cut -d' ' -f1)
+if [ "$want" != "$got" ]; then
+    echo "   !! the cloned database does not match its own manifest"
+    echo "   !!   manifest $want"
+    echo "   !!   clone    $got"
+    exit 1
+fi
+echo "   sha256 matches the manifest: ${got:0:16}…"
+grep -E '^(flights|total time|landings|users)' "$CHECK/clone/MANIFEST.txt" | sed 's/^/   /'
+
+say "9. enable the timer"
+systemctl enable --now logbook-backup.timer
+systemctl list-timers logbook-backup.timer --no-pager
+
+echo
+echo "Backup installed, pushed, and cloned back verified."
+echo
+echo "A backup nobody has ever restored FROM is still a backup nobody should"
+echo "trust. Read RESTORE.md in that clone at least once, while there is no"
+echo "emergency:  git clone $REMOTE"

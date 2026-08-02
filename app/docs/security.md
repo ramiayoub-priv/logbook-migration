@@ -110,6 +110,45 @@ Apache already absorb.
   §0.2: this is a legal record.
 - Logs record authentication outcomes but **never** passwords, session tokens, or cookie values.
 
+### The off-box backup — what leaves the machine, and why that is acceptable
+
+Added 2026-08-02 (Task 14). A copy of the whole database is pushed daily to a **private** GitHub
+repository. That is deliberately a copy of a legal record leaving a machine we control, so the
+trade is written down rather than assumed.
+
+**What goes.** `logbook.db` (the whole schema and its contents) and `logbook.csv` (every flight).
+The flights themselves are the point: since the transcription effort closed, rows entered in the app
+exist in no CSV, so the pre-import backups on the same disk protect against a bad import and against
+nothing else — not a dead disk, not a lost server, not a mistaken `rm`.
+
+**`sessions` is stripped before the copy leaves the box** (`store.RedactForBackup`, then `VACUUM` so
+the rows are not merely unlinked pages still readable in the file). They are the nearest thing in
+the schema to a live credential. The column is a **hash** of the cookie rather than the cookie
+itself, so even an unredacted copy would yield nothing usable — but a backup should carry the
+smallest set that still restores, and sessions restore nothing: the expiry has passed and the
+addresses are stale.
+
+**`users` deliberately survives, Argon2id hash and all.** This is the one real trade. A restored
+logbook nobody can sign in to is not a restored logbook, and the alternative — reconstructing the
+account by hand under the pressure of an outage — is worse. The hash is Argon2id at 19 MiB, which is
+what makes an offline attack against a private repository an acceptable risk rather than a
+theoretical one. **If that repository is ever made public, or the GitHub account is compromised,
+treat the logbook password as compromised and rotate it.**
+
+**Credentials for the push.** A **GitHub deploy key**, generated on the server so the private half
+never travels, stored at `/var/lib/logbook/.ssh/backup_ed25519` (`0600`, owned by `logbook`) —
+outside the web root and outside this repository (rule §0.3). A deploy key rather than a personal
+access token or the owner's own SSH key: it grants exactly one repository, it is revocable from the
+GitHub UI without touching anything else, and a compromise of this box cannot reach any other
+repository. `StrictHostKeyChecking=yes` against a `known_hosts` pinned at install time, so a
+substituted GitHub host key fails the push instead of being trusted silently.
+
+**Least privilege.** The timer runs `logbook-backup.service` as the **`logbook` user, not root** —
+it reads a database it already owns and writes into a directory it already owns — with the same
+systemd hardening as the server and `ReadWritePaths=/var/lib/logbook` as its only writable path.
+Nothing in the backup path is reachable over HTTP: the snapshot is taken by `logbookctl`, which is a
+separate binary from the server for exactly this reason.
+
 ### Process and supply chain
 - **Keep the dependency tree near-empty.** Prefer the Go stdlib. Every dependency added must be
   justified in `APP.md`. The intended total is single digits: `modernc.org/sqlite`,

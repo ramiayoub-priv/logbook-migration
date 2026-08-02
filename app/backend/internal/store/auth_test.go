@@ -518,3 +518,44 @@ func readPasswordHash(t *testing.T, db *store.DB, username string) string {
 	}
 	return h
 }
+
+// RedactForBackup is what lets a copy of this database leave the box.
+//
+// Sessions are live credentials-adjacent rows and are worthless once restored
+// -- their expiry has passed, their IPs are stale, and the owner would sign in
+// again anyway. Users MUST survive: a restored logbook nobody can log into is
+// not a restored logbook.
+func TestRedactForBackupDropsSessionsAndKeepsUsers(t *testing.T) {
+	db := openTemp(t)
+	u, err := db.CreateUser("rami", pw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := db.CreateSession(u.ID, "phone", "10.0.0.1"); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := db.CreateSession(u.ID, "laptop", "10.0.0.2"); err != nil {
+		t.Fatal(err)
+	}
+
+	removed, err := db.RedactForBackup()
+	if err != nil {
+		t.Fatalf("RedactForBackup: %v", err)
+	}
+	if removed != 2 {
+		t.Errorf("removed %d sessions, want 2", removed)
+	}
+
+	sessions, err := db.Sessions(u.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sessions) != 0 {
+		t.Errorf("%d sessions survived redaction", len(sessions))
+	}
+
+	// The account is still there, and still usable -- this is the whole point.
+	if _, err := db.Authenticate("rami", pw); err != nil {
+		t.Errorf("the account did not survive redaction: %v", err)
+	}
+}

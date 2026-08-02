@@ -1,0 +1,21 @@
+[Unit]
+Description=Daily off-box backup of the logbook
+
+[Timer]
+# 03:17 UTC. An odd minute rather than the top of the hour so it does not land
+# with everything else on the box, and the small hours because nobody logs a
+# flight then -- the snapshot is consistent regardless, but a quiet moment costs
+# nothing to pick.
+OnCalendar=*-*-* 03:17:00 UTC
+
+# Run on the next boot if the machine was off when it was due. A backup that
+# silently skips the days the server was down is a backup with a hole in it
+# exactly where the trouble was.
+Persistent=true
+
+# Up to ten minutes of jitter, so a fleet of machines does not hit GitHub at the
+# same second. One machine here, but it costs nothing and it is the habit.
+RandomizedDelaySec=600
+
+[Install]
+WantedBy=timers.target
