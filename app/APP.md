@@ -265,6 +265,13 @@ DELETE /flights/{seq}      private  deletes a HAND-ENTERED flight, returns what 
                                     403 on an imported row, 404 missing (so a double tap is safe).
 GET    /aircraft           private  the derived seed list for the new-flight form
 GET    /stats     ?from&to private  {summary:{...}, range}
+GET    /aircraft-time      private  ?from&to&reg -- what each aeroplane cost.
+                                    {range, reg, aircraft:[...], total:{...}, flights:[...]}
+                                    Block and air are SEPARATE fields with separate coverage
+                                    counts (air_known/air_missing) and must never be merged:
+                                    block is recorded on all 1296 rows, air on 19.
+                                    `reg` adds that aeroplane's flights; the summary rows
+                                    always cover the whole range either way.
 GET    /discrepancies      private  the "needs review" list, 54 rows today (was 61 before the
                                     2026-08-02 aircraft-type ruling)
 GET    /sessions           private  the revocable device list; `current` marks the caller
@@ -519,12 +526,62 @@ day · landings night.
 | 15 | **The `C192` / `OH-CMU` aircraft types** | **done** 2026-08-02 — owner ruling, five cells in one column: `C192` → `C172` (book 2 lines 132, 133, 137, 138) and `OH-CMU` → `C152` (book 3 line 434). There is no Cessna 192, and book 2 line 139 is the same aeroplane the same day written `C172`. Discrepancies **61 → 54** (`unknown_aircraft_type` 4 → 0, `type_conflict` 3 → 0); **no other figure moved at all** — sea/land comes from the registration. Closed permanently by `TestEveryRegistrationNamesOneRealAircraftType`, watched red before it was accepted. Second and last lift of the §0.8 freeze to date. |
 | 11 | **Saving a flight must be unmissable** | **done** 2026-08-02 — the success **takes over the screen**: the form is replaced by a confirmation naming what the SERVER stored (date, registration, route, both clock pairs, total, landings), scrolled to and focused, offering *Log another flight* / *Keep editing this flight* and *See it in the table*. A refusal gets the same weight in red and **jumps to the first failing control by page order**, not by the order the server listed them. The draft survives every failure path, and there is still **exactly one live region**. |
 | 12 | **Takeoff / landing / air time in the table, and out of the disclosure** | **done** 2026-08-02 — the flights table gains **Takeoff, Landing and Air**; air time is `format.airMinutes`, computed at render from the two instants and **never stored**, blank (never `0:00`) on the 1277 rows that have none. The airborne pair is **out of the `<details>`** and sits in the Times card next to off/on block; the `details.airborne` CSS is gone. |
-| 13 | **Aircraft time page (block vs air, by aircraft and date range)** | **planned, not started** — the owner pays for aeroplanes by the hour, some owners charging block time and some air time. Pick an aircraft and a range, get both totals in H:MM **and** in minutes, plus the flights behind the figure. The load-bearing part is honesty about coverage — see the decision-log entry. |
+| 13 | **Aircraft time page (block vs air, by aircraft and date range)** | **done** 2026-08-02 — `internal/stats/aircraft.go` (`AirMinutes`, `ByAircraft`, `TotalAircraftTime`; pure, **100%**), `GET /aircraft-time?from&to&reg`, and the **Aircraft** tab. Block and air are separate fields with separate coverage and are never mixed; both totals in **H:MM and whole minutes**; `reg` adds the flights behind one figure without narrowing the comparison. The real books make the case: **OH-CTL has 267:16 of block time and 2:51 of air time from 4 of its 286 flights** — one merged "hours" figure would be catastrophically wrong. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-02 — Task 13 as built: the coverage IS the feature
+
+The plan (below) argued that the air-time figure must travel with its coverage. Running it against
+the real books turned that from a principle into the obvious answer:
+
+```
+REG      TYPE   FLTS     BLOCK      AIR   air recorded
+OH-CTL   C172    286    267:16     2:51   4 of 286
+OH-PDP   P28A    275    193:19     0:45   2 of 275
+OH-CWB   C172     65     71:57        —   0 of 65
+TOTAL over 38 aircraft: 1296 flights, block 1222:17, air 13:07 from 19 of 1296
+```
+
+**A page that printed "OH-CTL — Air time: 2:51" next to 267 hours of flying would not be slightly
+misleading, it would be worthless**, and it is the number an invoice gets checked against. So block
+and air are separate fields with separate counts all the way through — `AircraftTime` carries
+`AirKnown`/`AirMissing` beside `AirMinutes`, the API sends both, and the page's two sentences are
+deliberately **different in kind**: block states a fact ("recorded on every flight"), air states a
+fraction ("recorded on 1 of 2"). That asymmetry is the message; making them a matching pair of
+figures is precisely the mistake.
+
+Four decisions worth keeping.
+
+**Block, not total, and the difference is counted rather than reconciled.** The licence figures run
+on `TotalMinutes`; an owner charging by the hour charges chocks-to-chocks, which is `BlockMinutes`.
+They agree on every row but one — 08/09/2025, block 0:45 vs total 0:38, a flagged discrepancy — so
+the whole-logbook block total is **1222:17 against the licence total of 1222:10, exactly 7 minutes
+apart**, and there is a real-data test asserting that relationship. `BlockDiffersFromTotal` counts
+those rows and the page says so, because otherwise the first question is why two pages disagree.
+
+**`Types` is a list, not a string.** One registration written with two types is a discrepancy, and
+picking the more popular spelling would resolve it silently. The owner ruled the five historical
+cases today and the CSVs are guarded, but that guard reads the *books* — a flight typed into the app
+can still introduce one, and this page shows `C152 · C172` rather than choosing.
+
+**`reg` adds the flights behind a figure without narrowing the summary.** Asking about one aeroplane
+must not change what it is being compared against, so the rows always cover the whole range. Without
+`reg` no flights are sent at all: 1296 flight objects is not a thing to hand a phone that asked for
+totals.
+
+**A sixth tab, and "Statistics" became "Stats".** The open question in the plan was where this page
+hangs. Six tabs fit a 390px phone once the longest label is eight characters, with a font step down
+under 400px. Hiding a page the owner asked for behind another page was the alternative, and a
+shorter label costs nothing.
+
+⚠ **Not yet done for this page: a run in a real browser.** The figures are proven against the real
+books and the page is proven in jsdom, but this project has three times shipped something a green
+suite loved and thirty seconds of real use exposed. **Open it on the phone before trusting the
+layout** — six tabs and a seven-column table are exactly the shapes that have broken before.
 
 ### 2026-08-02 — Tasks 11 and 12 as built, and the two decisions that were not in the plan
 

@@ -120,6 +120,7 @@ func NewServer(db *store.DB, cfg Config) *Server {
 	s.private("DELETE", "/flights/{seq}", s.handleDeleteFlight)
 	s.private("GET", "/aircraft", s.handleAircraft)
 	s.private("GET", "/stats", s.handleStats)
+	s.private("GET", "/aircraft-time", s.handleAircraftTime)
 	s.private("GET", "/discrepancies", s.handleDiscrepancies)
 	s.private("GET", "/export/easa.pdf", s.handleExportEASA)
 	s.private("GET", "/export/table.pdf", s.handleExportTable)

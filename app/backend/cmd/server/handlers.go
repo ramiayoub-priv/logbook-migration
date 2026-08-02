@@ -620,6 +620,99 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// aircraftTimeJSON is one aeroplane's line on the aircraft-time page.
+//
+// Block and air are separate fields with separate coverage counts, and that is
+// the whole design. Block time is known for every flight in the books; air time
+// for 19 of 1296. Collapsing them into one "hours" figure would produce a
+// number that is right for one owner's invoice and quietly wrong for another's.
+type aircraftTimeJSON struct {
+	Registration string `json:"registration"`
+	// Every distinct type written for this registration. A list, because one
+	// registration written with two types is a discrepancy to show rather than
+	// resolve by picking the more popular spelling.
+	Types   []string `json:"types"`
+	Flights int      `json:"flights"`
+
+	BlockMinutes int `json:"block_minutes"`
+	AirMinutes   int `json:"air_minutes"`
+	// The coverage the air figure must never be read without.
+	AirKnown   int `json:"air_known"`
+	AirMissing int `json:"air_missing"`
+
+	BlockDiffersFromTotal int `json:"block_differs_from_total"`
+}
+
+func toAircraftTimeJSON(a stats.AircraftTime) aircraftTimeJSON {
+	// Types is always a list on the wire, never null: a client that has to
+	// distinguish [] from null before it can render a row is a client with a
+	// bug waiting in it.
+	types := a.Types
+	if types == nil {
+		types = []string{}
+	}
+	return aircraftTimeJSON{
+		Registration: a.Registration, Types: types, Flights: a.Flights,
+		BlockMinutes: a.BlockMinutes, AirMinutes: a.AirMinutes,
+		AirKnown: a.AirKnown, AirMissing: a.AirMissing,
+		BlockDiffersFromTotal: a.BlockDiffersFromTotal,
+	}
+}
+
+// handleAircraftTime reports what each aeroplane cost over a range.
+//
+// Added 2026-08-02 for Task 13. The owner rents aeroplanes and some owners
+// charge block time while some charge air time, so this endpoint is about
+// money -- which is why the arithmetic is in internal/stats with the licence
+// totals rather than here, and why nothing in this handler adds anything up.
+//
+// `reg` is optional and does two different things at once, deliberately. The
+// summary rows ALWAYS describe the whole range, so asking about one aeroplane
+// never narrows what it is being compared against; `reg` adds the flights
+// behind that one figure, so a disputed invoice line can be traced to a flight
+// instead of argued against a single number. Without it no flights are sent at
+// all -- 1296 flight objects is not a thing to hand a phone that asked for
+// totals.
+func (s *Server) handleAircraftTime(w http.ResponseWriter, r *http.Request) {
+	rng, err := rangeOf(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	flights, err := s.flightsIn(rng)
+	if err != nil {
+		s.log.Error("computing aircraft time", "error", err)
+		writeError(w, http.StatusInternalServerError, "could not read the logbook")
+		return
+	}
+
+	rows := stats.ByAircraft(flights)
+	out := make([]aircraftTimeJSON, 0, len(rows))
+	for _, a := range rows {
+		out = append(out, toAircraftTimeJSON(a))
+	}
+
+	// The flights behind one aeroplane's figure, in the book's own seq order --
+	// the same order the table and every cumulative use.
+	reg := r.URL.Query().Get("reg")
+	behind := make([]flightJSON, 0)
+	if reg != "" {
+		for _, f := range flights {
+			if f.AircraftReg == reg {
+				behind = append(behind, toFlightJSON(f))
+			}
+		}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"range":    map[string]string{"from": rng.From, "to": rng.To},
+		"reg":      reg,
+		"aircraft": out,
+		"total":    toAircraftTimeJSON(stats.TotalAircraftTime(rows)),
+		"flights":  behind,
+	})
+}
+
 func (s *Server) handleDiscrepancies(w http.ResponseWriter, r *http.Request) {
 	list, err := s.db.Discrepancies()
 	if err != nil {

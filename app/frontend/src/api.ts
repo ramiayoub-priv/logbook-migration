@@ -158,6 +158,30 @@ export interface Aircraft {
   notes: string
 }
 
+/**
+ * AircraftTime is one aeroplane's time over a range, in the two currencies it
+ * gets charged in.
+ *
+ * Block and air are separate fields with separate coverage, and that is the
+ * point rather than an accident of the schema: some owners charge block time
+ * and some charge air time, block is known for every flight, and air is known
+ * for 19 of the 1296 transcribed ones. `air_minutes` must never be shown
+ * without `air_known` beside it.
+ */
+export interface AircraftTime {
+  registration: string
+  /** Every distinct type written for this registration. Normally one. */
+  types: string[]
+  flights: number
+  block_minutes: number
+  air_minutes: number
+  /** How many of those flights recorded both airborne times. */
+  air_known: number
+  air_missing: number
+  /** Flights whose block time differs from the total the licence runs on. */
+  block_differs_from_total: number
+}
+
 export interface Discrepancy {
   kind: string
   book: number
@@ -235,6 +259,29 @@ export const api = {
     request<{ summary: Summary; range: { from: string; to: string } }>(`/stats${query(range)}`),
 
   aircraft: () => request<{ aircraft: Aircraft[] }>('/aircraft'),
+
+  /**
+   * What each aeroplane cost over a range.
+   *
+   * `reg` adds the flights behind that one aeroplane's figure, so a disputed
+   * invoice line can be traced to a flight rather than argued against a single
+   * number. The summary rows always cover the whole range either way — asking
+   * about one aeroplane must not narrow what it is compared against.
+   */
+  aircraftTime: (range: DateRange = {}, reg?: string) => {
+    const p = new URLSearchParams()
+    if (range.from) p.set('from', range.from)
+    if (range.to) p.set('to', range.to)
+    if (reg) p.set('reg', reg)
+    const s = p.toString()
+    return request<{
+      range: { from: string; to: string }
+      reg: string
+      aircraft: AircraftTime[]
+      total: AircraftTime
+      flights: Flight[]
+    }>(`/aircraft-time${s ? `?${s}` : ''}`)
+  },
 
   discrepancies: () =>
     request<{ discrepancies: Discrepancy[]; count: number }>('/discrepancies'),

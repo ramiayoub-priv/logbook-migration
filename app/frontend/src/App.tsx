@@ -3,15 +3,21 @@ import { editSeqOf, Link, useRoute, type Route } from './router'
 import { LoginPage } from './pages/Login'
 import { TablePage } from './pages/Table'
 import { StatisticsPage } from './pages/Statistics'
+import { AircraftTimePage } from './pages/AircraftTime'
 import { NewFlightPage } from './pages/NewFlight'
 import { EditFlightPage } from './pages/EditFlight'
 import { ExportPage } from './pages/Export'
 import { ReviewPage } from './pages/Review'
 import { SessionsPage } from './pages/Sessions'
 
+// Six tabs on a 390px phone, which is why "Statistics" became "Stats" when the
+// aircraft-time page arrived (2026-08-02). The alternative was hiding a page
+// the owner asked for behind another one; a shorter label costs nothing and
+// every pilot reads it.
 const TABS: { route: Route; label: string }[] = [
   { route: 'table', label: 'Flights' },
-  { route: 'statistics', label: 'Statistics' },
+  { route: 'statistics', label: 'Stats' },
+  { route: 'aircraft', label: 'Aircraft' },
   { route: 'new', label: 'New' },
   { route: 'export', label: 'Export' },
   { route: 'review', label: 'Review' },
@@ -58,6 +64,8 @@ function Page({ route }: { route: Route }) {
   switch (route) {
     case 'statistics':
       return <StatisticsPage />
+    case 'aircraft':
+      return <AircraftTimePage />
     case 'new':
       return <NewFlightPage />
     case 'export':

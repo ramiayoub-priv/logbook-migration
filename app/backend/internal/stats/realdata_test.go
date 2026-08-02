@@ -215,3 +215,72 @@ func TestPaginateWalksSeqNotDate(t *testing.T) {
 	}
 	t.Logf("%d rows are out of date order, ordered correctly on seq", outOfDateOrder)
 }
+
+// --- Aircraft time against the real books (Task 13, 2026-08-02) -------------
+
+// The aircraft-time page's honesty depends on two facts about the corpus, and
+// both are asserted here rather than assumed, because the page states them to
+// the pilot in words: block time is known for EVERY flight, and air time for
+// almost none of them.
+//
+// If the first ever stops being true the page is quietly under-billing, and if
+// the second changes the coverage sentence needs rewording. Either way it must
+// be a failing test rather than a page that has silently become wrong.
+func TestRealBooksAircraftTimeCoverage(t *testing.T) {
+	lb := loadReal(t)
+	rows := stats.ByAircraft(lb.Flights)
+	total := stats.TotalAircraftTime(rows)
+
+	if len(rows) != 38 {
+		t.Errorf("got %d aircraft, want 38", len(rows))
+	}
+	if total.Flights != 1296 {
+		t.Errorf("got %d flights, want 1296", total.Flights)
+	}
+
+	// Block time is complete: every one of the 1296 rows carries one. This is
+	// what lets the page print the block total without a caveat.
+	var noBlock int
+	for _, f := range lb.Flights {
+		if f.BlockMinutes == 0 {
+			noBlock++
+		}
+	}
+	if noBlock != 0 {
+		t.Errorf("%d flights carry no block time; the page bills on block and "+
+			"states it without a caveat, so this must stay zero", noBlock)
+	}
+
+	// Air time is known on 19 rows. THIS is why the figure never travels
+	// without its coverage, and why it is never mixed with the block total.
+	if total.AirKnown != 19 || total.AirMissing != 1277 {
+		t.Errorf("air coverage = %d known / %d missing, want 19 / 1277",
+			total.AirKnown, total.AirMissing)
+	}
+
+	// The one flagged row in the corpus where block and total disagree:
+	// 08/09/2025, block 0:45 vs total 0:38. It is counted, not reconciled.
+	if total.BlockDiffersFromTotal != 1 {
+		t.Errorf("block/total disagreements = %d, want 1 (08/09/2025)",
+			total.BlockDiffersFromTotal)
+	}
+
+	// Every registration resolves to exactly one type, since the owner's
+	// 2026-08-02 ruling. The page shows all of them precisely so that a future
+	// second type is visible rather than chosen between.
+	for _, r := range rows {
+		if len(r.Types) != 1 {
+			t.Errorf("%s has types %v; one airframe has one type", r.Registration, r.Types)
+		}
+	}
+
+	// The block total across all aircraft must equal the logbook's own total
+	// time, because Total_Time == Block_Time on every row but the one above
+	// (which is 7 minutes shorter on total than on block).
+	whole := stats.Summarize(lb.Flights)
+	if total.BlockMinutes != whole.Total+7 {
+		t.Errorf("block total %d vs logbook total %d; expected exactly 7 minutes "+
+			"apart, the single 08/09/2025 discrepancy",
+			total.BlockMinutes, whole.Total)
+	}
+}

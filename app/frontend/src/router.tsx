@@ -15,6 +15,7 @@ export const BASE = '/logbook'
 export type Route =
   | 'table'
   | 'statistics'
+  | 'aircraft'
   | 'new'
   | 'export'
   | 'review'
@@ -26,6 +27,7 @@ const ROUTES: Record<string, Route> = {
   '/': 'table',
   '/table': 'table',
   '/statistics': 'statistics',
+  '/aircraft': 'aircraft',
   '/new': 'new',
   '/export': 'export',
   '/review': 'review',

@@ -111,6 +111,12 @@ body {
   font-weight: 600;
 }
 
+/* Six tabs on a narrow phone. "Aircraft" is the longest label and must not
+   wrap or be clipped -- a tab whose text is cut in half is a tab nobody taps. */
+@media (max-width: 400px) {
+  .tabs a { font-size: 0.72rem; padding: 10px 2px; }
+}
+
 @media (min-width: 800px) {
   .tabs {
     position: static;
@@ -363,6 +369,24 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   display: inline-block; margin-left: 4px; color: var(--warn);
   font-weight: 700; cursor: help;
 }
+
+/* --- The aircraft time page ----------------------------------------------- */
+
+/* The registration is a button, not a link: it chooses what the panel below
+   shows and navigates nowhere. `button.link` is red by default because its
+   other use is destructive, so this variant takes the ordinary ink back. */
+button.link.plain {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+}
+button.link.plain[aria-pressed='true'] { color: var(--accent); }
+tr.chosen > td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+
+/* A per-row coverage cell that is short of complete. Not an error -- most rows
+   have no airborne times and that is the honest state -- but it must not read
+   like a figure somebody checked. */
+td.warntext { color: var(--warn); }
 
 .center { text-align: center; padding: 28px 12px; color: var(--muted); }
 

@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AuthProvider } from '../auth'
 import { App } from '../App'
-import { api, ApiError, type Flight, type Summary } from '../api'
+import { api, ApiError, type AircraftTime, type Flight, type Summary } from '../api'
 
 const USER = { user_id: 1, username: 'rami' }
 
@@ -35,8 +35,24 @@ function summary(over: Partial<Summary> = {}): Summary {
   }
 }
 
+function acTime(over: Partial<AircraftTime> = {}): AircraftTime {
+  return {
+    registration: 'OH-CAM', types: ['C172'], flights: 2,
+    block_minutes: 135, air_minutes: 65, air_known: 1, air_missing: 1,
+    block_differs_from_total: 0,
+    ...over,
+  }
+}
+
 beforeEach(() => {
   vi.spyOn(api, 'me').mockResolvedValue(USER)
+  vi.spyOn(api, 'aircraftTime').mockResolvedValue({
+    range: { from: '', to: '' },
+    reg: '',
+    aircraft: [acTime()],
+    total: acTime({ registration: '', types: [] }),
+    flights: [],
+  })
   vi.spyOn(api, 'flights').mockResolvedValue({ flights: [flight()], count: 1 })
   vi.spyOn(api, 'stats').mockResolvedValue({ summary: summary(), range: { from: '', to: '' } })
   vi.spyOn(api, 'aircraft').mockResolvedValue({
@@ -247,7 +263,7 @@ describe('the statistics page', () => {
   it('shows the twelve figures as H:MM', async () => {
     const user = userEvent.setup()
     renderApp()
-    await user.click(await screen.findByRole('link', { name: 'Statistics' }))
+    await user.click(await screen.findByRole('link', { name: 'Stats' }))
 
     // 73175 minutes is the frozen whole-logbook total of 1219:35.
     expect(await screen.findByText('1219:35')).toBeInTheDocument()
@@ -260,7 +276,7 @@ describe('the statistics page', () => {
   it('discloses the unverified landing split', async () => {
     const user = userEvent.setup()
     renderApp()
-    await user.click(await screen.findByRole('link', { name: 'Statistics' }))
+    await user.click(await screen.findByRole('link', { name: 'Stats' }))
     expect(await screen.findByText(/30 flights in this range carry a day\/night landing split/i))
       .toBeInTheDocument()
   })
@@ -272,7 +288,7 @@ describe('the statistics page', () => {
     })
     const user = userEvent.setup()
     renderApp()
-    await user.click(await screen.findByRole('link', { name: 'Statistics' }))
+    await user.click(await screen.findByRole('link', { name: 'Stats' }))
     await screen.findByText('1219:35')
     expect(screen.queryByText(/landing split that was inferred/i)).not.toBeInTheDocument()
   })
@@ -814,6 +830,111 @@ describe('the new-flight form', () => {
     await user.click(await screen.findByRole('link', { name: 'New' }))
     const date = await screen.findByLabelText('Date')
     expect(date).toHaveAttribute('max', new Date().toISOString().slice(0, 10))
+  })
+})
+
+// --- Task 13: the aircraft time page ---------------------------------------
+//
+// "I pay for the aeroplanes by the hour, and some owners charge block time and
+// some charge air time" (owner, 2026-08-02). This is money, so the load-bearing
+// property is honesty about coverage: block time is known for every flight, air
+// time for 19 of 1296, and a page that added up what it had and printed one
+// figure would be claiming a completeness it does not have.
+
+describe('the aircraft time page', () => {
+  async function open() {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'Aircraft' }))
+    return user
+  }
+
+  // Both, because an invoice is checked in one and computed in the other.
+  // findAllByText: with a single aeroplane in range the figure legitimately
+  // appears twice, once in the range total and once in its only row.
+  it('gives block and air time in H:MM and in whole minutes', async () => {
+    await open()
+    expect((await screen.findAllByText('2:15')).length).toBeGreaterThan(0) // block, 135
+    expect(screen.getAllByText('1:05').length).toBeGreaterThan(0)          // air, 65
+    expect(screen.getAllByText(/135 min/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/65 min/).length).toBeGreaterThan(0)
+  })
+
+  // The figure never travels without the coverage that makes it readable.
+  it('states how many flights the air figure was computed from', async () => {
+    await open()
+    expect(await screen.findByText(/recorded on 1 of 2 flights/i)).toBeInTheDocument()
+    // And says outright that the total is partial, so it is not read as the
+    // block figure's equal.
+    expect(screen.getByText(/partial/i)).toBeInTheDocument()
+  })
+
+  // The asymmetry between the two sentences IS the message: block states a
+  // fact, air states a fraction. Flattening them into a matching pair of
+  // figures is the mistake this page exists to avoid.
+  it('does not present air time as complete when it is not', async () => {
+    await open()
+    expect(await screen.findByText(/recorded on every flight/i)).toBeInTheDocument()
+    expect(screen.getByText(/recorded on 1 of 2 flights/i)).toBeInTheDocument()
+  })
+
+  // Zero airborne times is not "0:00 airborne". It is "nobody wrote it down",
+  // and the page has to say which.
+  it('says plainly when no airborne time was recorded at all', async () => {
+    vi.spyOn(api, 'aircraftTime').mockResolvedValue({
+      range: { from: '', to: '' }, reg: '',
+      aircraft: [acTime({ air_minutes: 0, air_known: 0, air_missing: 2 })],
+      total: acTime({ registration: '', types: [], air_minutes: 0, air_known: 0, air_missing: 2 }),
+      flights: [],
+    })
+    await open()
+    expect(await screen.findByText(/no airborne times recorded/i)).toBeInTheDocument()
+  })
+
+  // "The list of flights behind the figure, so a disputed line can be traced to
+  // a flight rather than argued against a single number."
+  it('shows the flights behind one aeroplane on request', async () => {
+    const load = vi.spyOn(api, 'aircraftTime')
+    const user = await open()
+    await user.click(await screen.findByRole('button', { name: /OH-CAM/ }))
+
+    await waitFor(() =>
+      expect(load).toHaveBeenCalledWith(expect.anything(), 'OH-CAM'),
+    )
+  })
+
+  it('asks the server again when the range changes', async () => {
+    const user = await open()
+    await screen.findAllByText('2:15')
+    await user.type(screen.getByLabelText('From'), '2024-01-01')
+
+    await waitFor(() =>
+      expect(api.aircraftTime).toHaveBeenCalledWith(
+        expect.objectContaining({ from: '2024-01-01' }),
+        undefined,
+      ),
+    )
+  })
+
+  // One registration written with two types is a discrepancy to show, not to
+  // resolve by picking the more popular spelling.
+  it('shows every type written for a registration', async () => {
+    vi.spyOn(api, 'aircraftTime').mockResolvedValue({
+      range: { from: '', to: '' }, reg: '',
+      aircraft: [acTime({ registration: 'OH-CMU', types: ['C152', 'C172'] })],
+      total: acTime({ registration: '', types: [] }),
+      flights: [],
+    })
+    await open()
+    expect(await screen.findByText(/C152 · C172/)).toBeInTheDocument()
+  })
+
+  it('reports a failure instead of an empty bill', async () => {
+    vi.spyOn(api, 'aircraftTime').mockRejectedValue(
+      new ApiError(500, 'could not read the logbook'),
+    )
+    await open()
+    expect(await screen.findByRole('alert')).toHaveTextContent('could not read the logbook')
   })
 })
 
