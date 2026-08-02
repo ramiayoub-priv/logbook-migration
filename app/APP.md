@@ -37,11 +37,49 @@ done the newest work is not live and the backup does not exist:
 
 | | what | why only the owner |
 |---|---|---|
-| **1** | **Deploy the current build** — the runbook below, steps 1–4. | Two `sudo` commands; there is no passwordless sudo. **Tasks 11/12/13 are in the repo and NOT on the box.** |
+| **1** | **Deploy the current build** — the runbook below. **Step 1 (staging) is DONE and verified**; what remains is the owner's `sudo` step 2, then step 3, then step 4. | Two `sudo` commands; there is no passwordless sudo. **Tasks 11/12/13/14 are staged on the box and NOT yet installed.** |
 | **2** | **Set up the backup** — generate the deploy key on the server, create the **private** `ramiayoub-priv/logbook-backup` with **no README**, then run `install-backup.sh`. | It involves a secret; rule §0.3 forbids a session ever holding one. Full commands in `docs/deploy.md`. |
 
 ⚠ **Until step 2 is done, flights entered in the app exist in exactly one place** — the production
 disk. That is the single most important open item in the project.
+
+✅ **STAGED 2026-08-02 (later session) — runbook step 1 is complete and independently verified.**
+A session can do step 1; it needs no sudo. What is now sitting in `/home/rami/logbook-deploy/`:
+
+- `logbook-server` md5 **`284a93fb5d21a077118d8ed229cc0a04`**, `logbookctl`
+  **`6d6f78fa8ce5726103ce3b3b4bde9823`** — cross-compiled `CGO_ENABLED=0` from this repo's HEAD
+  (`31ac3ff`), and md5-matched **on the box** against the local build rather than trusted from rsync.
+- **The three CSVs, in `csv/` — the copy `update.sh` actually reads.** They were **stale**: the box
+  still had the Aug-1 20:27 files, i.e. from *before* the aircraft-type ruling. Had step 2 been run
+  against those, the re-import would have put `C192` back and reported **61** discrepancies. All
+  three now md5-match the repo.
+- All of `app/deploy/` including the **Task 14 backup machinery** (`backup.sh`,
+  `install-backup.sh`, `logbook-backup.service`, `logbook-backup.timer`), which had never been on
+  the box at all. Eleven files, every one md5-identical to the repo.
+
+**The staged binary was then run against the staged CSVs** (`logbookctl import -dry-run -csv ./csv`,
+which writes nothing) — the real artefacts that the owner's root command will use, not a local
+approximation:
+
+```
+flights 1296 | total 1222:10 | pic 1054:45 | dual 167:25 | instrument 107:58
+night 22:45  | instructor 189:41 | seaplane 407:39 | landings 3444
+54 discrepancies: block_total_mismatch 1, date_format 8, landings_unverified 30,
+                  registration_format 15
+```
+
+`unknown_aircraft_type` and `type_conflict` are **absent, i.e. zero** — the ruling is in the data
+that will be imported. **This is the proof step 2 will not break**, per rule §0.6, and it was
+obtained before anything ran as root.
+
+The frontend is built and its bundle is **`index-OExDQCHH.js`** (the live one is
+`index-C1WjdtsT.js`). It was greped for the new work rather than assumed: the save-takeover strings,
+`Takeoff`/`Landing`/`Air`, and `route:"aircraft"` + `aircraft-time` are all present.
+
+⛔ **The frontend was deliberately NOT rsynced, and must not be until step 2 has run.** The pairing
+warning below has a new and sharper instance: the Aircraft tab calls **`GET /aircraft-time`, which
+the binary currently live does not have**. Shipping the frontend first would put a tab on the
+owner's phone that 404s. Binary first, always.
 
 ✅ **DEPLOYED 2026-08-02 14:44 UTC** — edit/delete and `takeoff_utc`/`landing_utc` are live. Binary
 `64c47992cc8d949aa0e84fdf4ae2ccaf` on the box equals a build of HEAD; `/health` 200, `/flights`
@@ -366,6 +404,10 @@ CSVs on the box were confirmed **byte-identical (md5) to the repo's**, which is 
 ```bash
 # 1. Stage the current build. rami owns /home/rami/logbook-deploy, so no sudo.
 #    Binaries are cross-compiled CGO_ENABLED=0 from this repo's HEAD.
+#    ✅ ALREADY DONE for HEAD=31ac3ff and md5-verified on the box (see above).
+#    Re-run it only if you have rebuilt; then re-verify the md5s, do not assume.
+#    ⚠ The `csv/` copy is the one update.sh reads. Staging only the top-level
+#      copies leaves the importer reading whatever was there before.
 cd app/backend && export PATH=$HOME/.local/go/bin:$PATH
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /tmp/logbook-server ./cmd/server
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /tmp/logbookctl   ./cmd/logbookctl
@@ -568,6 +610,37 @@ day · landings night.
 ---
 
 ## 5. Decision Log
+
+### 2026-08-02 — Staging the deploy, and the stale CSVs that were one root command from undoing a ruling
+
+Runbook step 1 needs no sudo, so a session can do it, and doing it is what turns the owner's
+remaining work into two commands instead of a procedure. Three things came out of it that are worth
+keeping.
+
+**The staged CSVs were stale, and nothing would have announced it.** The box was still holding the
+Aug-1 20:27 files — from *before* the five aircraft-type cells were ruled on. `update.sh` re-imports
+from `$STAGE/csv`, so running it would have written `C192` back into the production database and
+reported **61 discrepancies**, and the only signal would have been a number in the middle of a long
+root-command transcript that a tired reader would have to notice and know was wrong. The binary gets
+all the attention in a deploy because it is the thing that obviously changed; **the data staged
+beside it is what actually reaches the legal record.** Both halves are now md5-checked, and the
+runbook says explicitly that `csv/` is the copy that matters.
+
+**A dry run on the box is evidence; a green suite at home is not.** `logbookctl import -dry-run`
+writes nothing, so it can be run as `rami` against the exact binary and the exact CSVs that the root
+command will use. That is a different claim from `make check` passing locally: it tests the artefacts
+*as staged*, after the cross-compile and the transfer, on the machine they will run on. It returned
+1296 / 1222:10 / 54, with `unknown_aircraft_type` and `type_conflict` absent. Rule §0.6 asks for a
+statement of why a deploy will not break **before** it runs, and this is the strongest form of it
+available without root.
+
+**The pairing rule got a sharper instance, and it now points in a specific direction.** The existing
+warning is that the binary and frontend must land *together*; this deploy shows that the order within
+"together" is not free. The Aircraft tab calls `GET /aircraft-time`, a route the live binary does not
+have — so a frontend shipped first is a tab that 404s on the owner's phone. **Binary first, then
+frontend**, and the frontend was built and verified but deliberately left unsent for that reason.
+Checking the bundle's *contents* (rather than trusting that a build contains what was committed) is
+the habit the stale-service-worker episode paid for, and it is cheap enough to keep doing.
 
 ### 2026-08-02 — Task 14: the backup, and the bug that reports success forever
 
