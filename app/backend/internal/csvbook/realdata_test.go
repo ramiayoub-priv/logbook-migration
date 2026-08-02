@@ -168,8 +168,15 @@ func TestRealBooksSurfaceEveryKnownDataQualityItem(t *testing.T) {
 		csvbook.KindRegistrationFormat: 15, // SE-GKT x14, SE-LWI x1 -- both genuine.
 		// Was 16: OK-PDP at book 2 line 102 was a transcription typo and the
 		// owner ruled on 2026-08-01 that any OK- reg in these books is OH-.
-		csvbook.KindUnknownType:  4, // "C192" on OH-CTL x2 and OH-GKT x2
-		csvbook.KindTypeConflict: 3, // OH-CTL, OH-GKT, OH-CMU
+		// Both were the same five cells and both closed together on 2026-08-02,
+		// when the owner ruled that "C192" is a transcription typo for C172 --
+		// there is no such Cessna -- and that OH-CMU is a C152 on every flight.
+		// Kept in the map at zero rather than deleted, like the two above: a
+		// type that is not an aircraft, or one registration flown as two types,
+		// must fail loudly if it ever comes back, and the "unexpected kind"
+		// sweep below only catches kinds that were never listed.
+		csvbook.KindUnknownType:  0, // was 4: "C192" on OH-CTL x2 and OH-GKT x2
+		csvbook.KindTypeConflict: 0, // was 3: OH-CTL, OH-GKT, OH-CMU
 		csvbook.KindDateFormat:   8, // book 2 lines 83-90, transcribed DD.MM.YYYY
 		// One per row carrying night time, which is what Task 8 must backfill.
 		// Was 22, then 28 when the night reconciliation of 2026-08-01 added six
@@ -189,6 +196,72 @@ func TestRealBooksSurfaceEveryKnownDataQualityItem(t *testing.T) {
 				"data problem must be triaged, not absorbed", kind, n)
 		}
 	}
+}
+
+// TestEveryRegistrationNamesOneRealAircraftType is the permanent close of the
+// owner's ruling of 2026-08-02.
+//
+// Five cells across two books said something that could not be true. Four rows
+// gave OH-GKT and OH-CTL the type "C192" -- Cessna has never built a 192, and
+// the very next flight of the same day in the same aeroplane (book 2 line 139)
+// is written C172. One row gave OH-CMU as a C172 when it is a C152 on all of
+// its other flights. Both were transcription slips, and the owner ruled them
+// closed rather than left standing as open questions.
+//
+// This is asserted here, in the language of the ruling, as well as through the
+// two discrepancy kinds now held at zero above. Two independent statements of
+// one fact, because a guard that lives only inside the discrepancy machinery
+// disappears the day somebody prunes a kind from that map.
+//
+// NOTE this is NOT a licence figure and never was: the sea/land split -- the
+// thing a seaplane rating is evidenced by -- comes from the REGISTRATION, not
+// the type (see IsSea and the 2026-08-01 decision-log entry). Correcting these
+// five cells moved no total, no landing count and no class. That is exactly why
+// the freeze could be lifted for them.
+func TestEveryRegistrationNamesOneRealAircraftType(t *testing.T) {
+	lb := loadReal(t)
+
+	typesOf := map[string]map[string]bool{}
+	for _, f := range lb.Flights {
+		// "C192" must never reappear, under any registration.
+		if f.AircraftType == "C192" {
+			t.Errorf("book %d line %d (%s, %s): type C192 is not an aircraft; "+
+				"the owner ruled it a typo for C172 on 2026-08-02",
+				f.SourceBook, f.SourceRow, f.Date, f.AircraftReg)
+		}
+		if typesOf[f.AircraftReg] == nil {
+			typesOf[f.AircraftReg] = map[string]bool{}
+		}
+		typesOf[f.AircraftReg][f.AircraftType] = true
+	}
+
+	// One registration, one type. An aeroplane does not change model.
+	for reg, types := range typesOf {
+		if len(types) != 1 {
+			t.Errorf("%s is flown as %d different types %v; one airframe has one type",
+				reg, len(types), sortedKeys(types))
+		}
+	}
+
+	// The specific rulings, named, so a future reader sees what was decided
+	// rather than only that something was.
+	if got := sortedKeys(typesOf["OH-CMU"]); len(got) != 1 || got[0] != "C152" {
+		t.Errorf("OH-CMU is a C152 on every flight (owner, 2026-08-02); got %v", got)
+	}
+	for _, reg := range []string{"OH-GKT", "OH-CTL"} {
+		if got := sortedKeys(typesOf[reg]); len(got) != 1 || got[0] != "C172" {
+			t.Errorf("%s is a C172 on every flight (owner, 2026-08-02); got %v", reg, got)
+		}
+	}
+}
+
+func sortedKeys(m map[string]bool) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // TestRealBooksResolveEveryTimeToUTC guards the conversion authority against
@@ -321,8 +394,11 @@ func TestRealBooksDeriveTheAircraftSeedList(t *testing.T) {
 		class csvbook.Class
 		ifr   bool
 	}{
-		{"OH-CTL", "C172", csvbook.ClassSEPSea, false},  // C192 outlier must lose
-		{"OH-GKT", "C172", csvbook.ClassSEPSea, false},  // likewise
+		// Both were seeded C172 by dominantType even while the four C192 rows
+		// existed; since the 2026-08-02 ruling every row agrees outright. The
+		// mechanism is still exercised, on a fixture, in csvbook_test.go.
+		{"OH-CTL", "C172", csvbook.ClassSEPSea, false},
+		{"OH-GKT", "C172", csvbook.ClassSEPSea, false},
 		{"SE-GKT", "C172", csvbook.ClassSEPSea, false},  // same airframe, earlier reg
 		{"OH-CDK", "C185", csvbook.ClassSEPSea, false},  // floatplane
 		{"OH-MIL", "M6", csvbook.ClassSEPSea, false},    // Maule, always on floats

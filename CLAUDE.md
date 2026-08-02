@@ -93,17 +93,35 @@ Read the rules below every session, then **`app/APP.md`**.
      do not re-transcribe a page, do not "improve" a value — not to fix a typo, not to close a
      known discrepancy, not because a new photograph turned up. Every paper page that exists has
      been transcribed (`logbook-3/IMG_6007`–`IMG_6037`, book pages 1–62); there is no backlog.
+   - **Only the OWNER lifts this freeze, explicitly, and only for named cells.** It has happened
+     twice, both recorded in `app/APP.md`'s decision log: the three missing 28/08/2025 flights
+     (2026-08-01) and the five aircraft-type cells (2026-08-02, below). A session **never** decides
+     on its own that a value looks wrong enough to change — it surfaces it and stops. What the
+     owner rules is then applied to the named cells only, and the freeze resumes at the new figures.
    - **New flights are entered in the app**, through `POST /flights`. That is now the only way the
      record grows. It lands with `source_book = 0` in its own `seq` band and survives everything.
    - **The numbers are final, and the tests now mean something stronger.** 1296 flights, total
      1222:10, PIC 1054:45, dual 167:25, instrument 107:58, night 22:45, instructor 189:41, seaplane
-     407:39, landings 3444, 38 aircraft, 61 discrepancies. `realdata_test.go` used to have one
+     407:39, landings 3444, 38 aircraft, **54 discrepancies**. `realdata_test.go` used to have one
      legitimate reason to go red — the CSVs growing. **That reason is gone. A change in any of
      those figures is now a defect, full stop**, and the fix is never to update the constant.
+   - **Discrepancies were 61 until 2026-08-02**, when the owner ruled the aircraft-type slips:
+     **"C192" is a typo for C172** (there is no such Cessna; the next flight of the same day in the
+     same aeroplane is written C172) on book 2 lines 132, 133, 137, 138 — OH-GKT ×2, OH-CTL ×2 —
+     and **OH-CMU is a C152 on every flight**, on book 3 line 434. Five cells, one column.
+     `unknown_aircraft_type` 4 → 0 and `type_conflict` 3 → 0, both **kept in the map at zero**.
+     **No time, landing, class or licence figure moved**: the sea/land split comes from the
+     registration, never from the type. Guarded permanently and by name in
+     `TestEveryRegistrationNamesOneRealAircraftType`.
    - **The open data questions stay open, permanently, and stay visible.** The 30
      `landings_unverified` rows keep their flag and the statistics page keeps saying so; the
-     `logbook_2_final.csv` lines 89–90 date ambiguity stands unresolved. Surfacing them is honest;
-     closing them would require touching the data. Do not offer to finish them.
+     `logbook_2_final.csv` lines 89–90 date ambiguity stands unresolved — that one turns on a
+     physical page nobody will re-read, which is exactly what the type slips did *not* turn on.
+     Surfacing them is honest; closing them would require touching the data. Do not offer to
+     finish them.
+   - **`logbook_2.csv` (no `_final`) is a superseded transcription artefact and still reads
+     `C192`.** Nothing loads it — `csvbook.DefaultSources` names the three files above and only
+     those. Left as it was found; it is not a fourth book and it is not a bug to fix.
    - `claude-docs/` becomes a **historical record**: read it to understand why the data is what it
      is, never as a task list.
 

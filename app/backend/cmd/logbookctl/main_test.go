@@ -36,7 +36,11 @@ func TestImportEndToEnd(t *testing.T) {
 	got := out.String()
 	for _, want := range []string{
 		"Read 1296 flights",
-		"Imported 1296 flights, 38 aircraft, 61 discrepancies",
+		// 54, was 61: the owner ruled the "C192" typo and OH-CMU's type on
+		// 2026-08-02, which closed unknown_aircraft_type (4) and type_conflict
+		// (3) together. No time, landing or class figure moved with them --
+		// sea/land comes from the registration, never from the type.
+		"Imported 1296 flights, 38 aircraft, 54 discrepancies",
 		"Aircraft linkage: 1296 linked, 0 unlinked",
 		"Verified: every checksum matches the source CSVs.",
 		// The report must say plainly that nothing was fixed, every time.

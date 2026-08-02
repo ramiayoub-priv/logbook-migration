@@ -289,22 +289,23 @@ The importer surfaces these and **never auto-fixes them** (rule §0.2). Every on
 `discrepancies` table and printed by `logbookctl import`, with a book and line number so it is
 traceable to a paper page.
 
-**61 discrepancies over 1293 flights, in six live kinds** (56 when first written). The 2026-08-01
-reconciliation moved several: eight new night rows each raise a `landings_unverified` flag, fixing
-`OK-PDP` removed one `registration_format`, and the line-28 ruling closed the only
-`cumulative_break` and the only `component_exceeds_total`. The counts are asserted exactly in
-`internal/csvbook/realdata_test.go`, so a new occurrence in a future Book 3 batch becomes a failing
-test rather than something that slips through. **The two closed kinds stay in that assertion at
-zero** rather than being deleted, so a regression fails loudly.
+**54 discrepancies over 1296 flights, in four live kinds** (56 when first written, 61 at its peak).
+The 2026-08-01 reconciliation moved several: eight new night rows each raise a `landings_unverified`
+flag, fixing `OK-PDP` removed one `registration_format`, and the line-28 ruling closed the only
+`cumulative_break` and the only `component_exceeds_total`. **On 2026-08-02 the owner ruled the
+aircraft-type slips, closing `unknown_aircraft_type` and `type_conflict` together — 61 → 54.** The
+counts are asserted exactly in `internal/csvbook/realdata_test.go`, so a regression becomes a failing
+test rather than something that slips through. **Every closed kind stays in that assertion at zero**
+rather than being deleted, because the "unexpected kind" sweep only catches kinds never listed.
 
 | kind | n | what it is |
 |---|---:|---|
-| `landings_unverified` | 30 | rows carrying `Night_Time`; the day/night landing split was inferred (Task 8). Every night row in the books: 20 in Book 1, 3 in Book 2, 7 in Book 3 |
+| `landings_unverified` | 30 | rows carrying `Night_Time`; the day/night landing split was inferred. **Stays open permanently** (Task 8 is *will not do*): every night row in the books — 20 in Book 1, 3 in Book 2, 7 in Book 3 |
 | `registration_format` | 15 | not Finnish `OH-xxx`: `SE-GKT` ×14 (real), `SE-LWI` ×1 (real). Was 16 before the `OK-PDP` fix |
 | `date_format` | 8 | Book 2 lines 83–90 transcribed `DD.MM.YYYY` — see below |
-| `unknown_aircraft_type` | 4 | type `C192` on `OH-CTL` ×2 and `OH-GKT` ×2; not a real Cessna type |
-| `type_conflict` | 3 | one registration written with two types: `OH-CTL`, `OH-GKT`, `OH-CMU` |
 | `block_total_mismatch` | 1 | 08/09/2025, block 0:45 vs total 0:38 (already known and correct) |
+| `unknown_aircraft_type` | **0** | was 4 (`C192`) until the owner ruled on 2026-08-02 — see below |
+| `type_conflict` | **0** | was 3 (`OH-CTL`, `OH-GKT`, `OH-CMU`), closed by the same ruling |
 | `cumulative_break` | **0** | was 1 (Book 1 line 28) until the owner ruled on it — see below |
 | `component_exceeds_total` | **0** | the same row |
 
@@ -324,11 +325,14 @@ Notes on the individual items:
 - ~~**`OK-PDP`** (1 row)~~ — **fixed 2026-08-01.** It was a transcription typo for `OH-PDP` and was
   seeding a phantom one-flight aircraft; the owner ruled that any `OK-` registration in these books
   is `OH-`. Aircraft count dropped 39 → 38.
-- **Type `C192`** (4 rows) — almost certainly `C172`. The flight keeps the type as written; the
-  derived `aircraft` row takes the most-flown type, so `OH-CTL` and `OH-GKT` are seeded `C172`.
-- **`OH-CMU` typed as both `C152` (×2) and `C172` (×1)** — reference.md warns `OH-CMU` and `OH-CMV`
-  are genuinely different aircraft whose registrations differ only in the last letter, so this needs
-  the user's eye rather than a guess.
+- ~~**Type `C192`** (4 rows) and **`OH-CMU` typed as both `C152` and `C172`** (1 row)~~ — **✅ closed
+  2026-08-02** by owner ruling: *"C172 there is no C192. Also OH-CMU is always C152."* **Cessna has
+  never built a 192**, so no correct reading of any page could produce it, and book 2 line 139 is the
+  same aeroplane on the same day written `C172`. Five cells in one column — book 2 lines 132, 133,
+  137, 138 and book 3 line 434. **No time, landing, class or licence figure moved**: the sea/land
+  split derives from the **registration**, never the type. Guarded by name, permanently, in
+  `TestEveryRegistrationNamesOneRealAircraftType`, which asserts that every registration maps to
+  exactly one type. Full reasoning in `claude-docs/drift.md`.
 - **`SE-GKT` → `OH-GKT`** — the same airframe re-registered. Two `aircraft` rows, linked via `notes`.
 - **30 rows with `Night_Time`** (was 22, then 28, then 30 as the 2026-08-01 night reconciliation
   progressed) — day/night landing split unverified (Task 8). ⚠ **The split inked at p.62

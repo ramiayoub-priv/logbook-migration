@@ -200,9 +200,14 @@ re-running something.
 ```
 flights 1296 | total 1222:10 | pic 1054:45 | dual 167:25 | instrument 107:58
 night 22:45  | instructor 189:41 | seaplane 407:39 | landings 3444 | aircraft 38
-discrepancies 61 | EASA export 87 pages
+discrepancies 54 | EASA export 87 pages
 ```
 All seven `Cumulative_*` series reconcile with **zero breaks**.
+
+⚠ **Discrepancies moved 61 → 54 on 2026-08-02** and that was an owner ruling, not drift: the five
+aircraft-type cells (`C192` ×4, `OH-CMU` ×1). **No other figure above moved by a single minute** —
+sea/land comes from the registration, not the type. See the decision-log entry "The five cells that
+could not be true". Anything else moving is still a defect.
 
 ⚠ **These moved once, on 2026-08-01**, and the previous values are still all over the git history:
 they were `1293 / 1219:35 / 1053:03 / 166:32 / 107:05 / 3439`. Three flights of **28/08/2025** were
@@ -213,12 +218,14 @@ Asserted in `internal/csvbook/realdata_test.go` and again, by a different code p
 `internal/stats/realdata_test.go`. **If one of them changes unexpectedly, the import is wrong until
 proven otherwise — do not adjust the expectation to make the test pass.**
 
-⚠ **These tests no longer have ANY legitimate reason to fail.** Until 2026-08-02 there was one —
-`logbook_3.csv` growing as pages were transcribed — and this file carried a procedure for updating
-the constants when it did. **That procedure is void.** The CSVs are closed, so a red
-`realdata_test.go` now means the importer, the store or the stats code has broken, and the fix is
-never to touch the expectation. If you find yourself editing a number in `realdata_test.go`, stop
-and re-read `CLAUDE.md` §0.8.
+⚠ **These tests have exactly ONE legitimate reason to fail, and it is not yours to invoke.** Until
+2026-08-02 the reason was `logbook_3.csv` growing as pages were transcribed, and this file carried a
+procedure for updating the constants when it did. **That procedure is void.** The only thing that may
+move a constant now is an **explicit owner ruling on named cells** — it has happened twice, and both
+times the owner said which cells and why (the three missing 28/08/2025 flights; the five
+aircraft-type cells). Absent that, a red `realdata_test.go` means the importer, the store or the
+stats code has broken. **If you find yourself editing a number in `realdata_test.go` without the
+owner having named the cells, stop and re-read `CLAUDE.md` §0.8.**
 
 ### ⛔ THE DATA IS CLOSED — these items stay open forever, and that is deliberate
 Do **not** re-validate the books on spec, and do **not** offer to finish these. Closing either one
@@ -231,6 +238,11 @@ record that hides what it has not verified is worse than one that says so.
   only**, moves no total, and no electronic source can settle it.
 - Paper-side only: the **p.62 inked landing split** `59 night / 3335 day` recomputes to **`68 /
   3326`** (the sum 3394 never moved). Nothing to do — the CSV was always right.
+
+✅ **What is NO LONGER on this list, closed 2026-08-02:** the `C192` type (4 rows) and `OH-CMU`'s
+type (1 row). The owner ruled them transcription slips. **Do not reopen them and do not read the
+line above as licence to close the other two** — the difference is that a Cessna 192 does not exist,
+so no page could correctly say it, whereas lines 89–90 turn on a physical page nobody will re-read.
 
 ### The API surface, as built
 All under **`/logbook/api/`** — not `/api/`, which on `ayoub.fi` is taken by a stale transit proxy.
@@ -253,7 +265,8 @@ DELETE /flights/{seq}      private  deletes a HAND-ENTERED flight, returns what 
                                     403 on an imported row, 404 missing (so a double tap is safe).
 GET    /aircraft           private  the derived seed list for the new-flight form
 GET    /stats     ?from&to private  {summary:{...}, range}
-GET    /discrepancies      private  the "needs review" list, 61 rows today
+GET    /discrepancies      private  the "needs review" list, 54 rows today (was 61 before the
+                                    2026-08-02 aircraft-type ruling)
 GET    /sessions           private  the revocable device list; `current` marks the caller
 DELETE /sessions/{id}      private  revoke one, scoped to the owner
 GET    /export/easa.pdf        private  the whole logbook, EASA format. IGNORES from/to on purpose.
@@ -503,6 +516,7 @@ day · landings night.
 | 7 | PWA + deploy to `ayoub.fi/logbook` | **PWA done** 2026-08-01 — manifest, icons, and a hand-written service worker that caches the shell and **never** an API response, proven in a browser with the HTTP cache disabled; the shell is now fetched `no-store` and a new worker reloads the page (`src/swupdate.ts`). **Deployed and LIVE** 2026-08-01 at `https://ayoub.fi/logbook` — service user, binary, systemd unit, frontend, the additive Apache block and the account are all in place, and the owner's other seven sites still answer 200. The deploy scripts now live in **`app/deploy/`** instead of only on the box. **NOT finished**: the box runs an older binary and a **1293**-flight database while the repo is at **1296** (the three 28/08/2025 flights). Current binaries and scripts are staged on the box and md5-matched; two owner `sudo` commands remain. See the runbook in "Where the deploy actually stands". |
 | 8 | Backfill landings day/night for the **30** night rows | **WILL NOT DO** — closed 2026-08-02 by the owner's ruling that historical data is not to be touched (`CLAUDE.md` §0.8). The 30 rows keep their `landings_unverified` flag **permanently**: the API reports the count, the table asterisks the row and the statistics page names it in a paragraph. That is the honest state and it must not be quietly dropped to make a page look tidier. |
 | 9 | Rule on the open source-data problems | **closed** 2026-08-02 — two of three were ruled and fixed on 2026-08-01. The third (`logbook_2_final.csv` lines 89–90, `04.05.2018` ×2) stands **unresolved forever**: it affects row order only, moves no total, and settling it needs a physical page that will not be re-read. Recorded, not fixed. |
+| 15 | **The `C192` / `OH-CMU` aircraft types** | **done** 2026-08-02 — owner ruling, five cells in one column: `C192` → `C172` (book 2 lines 132, 133, 137, 138) and `OH-CMU` → `C152` (book 3 line 434). There is no Cessna 192, and book 2 line 139 is the same aeroplane the same day written `C172`. Discrepancies **61 → 54** (`unknown_aircraft_type` 4 → 0, `type_conflict` 3 → 0); **no other figure moved at all** — sea/land comes from the registration. Closed permanently by `TestEveryRegistrationNamesOneRealAircraftType`, watched red before it was accepted. Second and last lift of the §0.8 freeze to date. |
 | 11 | **Saving a flight must be unmissable** | **planned, not started** — from the first real day of use: the owner logged two flights on the phone and could not tell whether either had saved. Ruled: **the success takes over the screen**. See the 2026-08-02 "first day of use" decision-log entry for the full design. |
 | 12 | **Takeoff / landing / air time in the table, and out of the disclosure** | **planned, not started** — the aircraft's own logbook is filled from airborne times, not block times, so they have to be readable straight off the flights table. Includes promoting the two fields out of the collapsed section, ruled by the owner. Needs the **staged binary deployed**: `takeoff_utc`/`landing_utc` only reach the client from the new build. |
 | 13 | **Aircraft time page (block vs air, by aircraft and date range)** | **planned, not started** — the owner pays for aeroplanes by the hour, some owners charging block time and some air time. Pick an aircraft and a range, get both totals in H:MM **and** in minutes, plus the flights behind the figure. The load-bearing part is honesty about coverage — see the decision-log entry. |
@@ -511,6 +525,50 @@ day · landings night.
 ---
 
 ## 5. Decision Log
+
+### 2026-08-02 — The five cells that could not be true, and how a frozen dataset gets corrected
+
+Owner ruling, verbatim: *"C172 there is no C192. Also OH-CMU is always C152. We need to close this
+permanently, now."* It came in while Task 11 was being built, after an aircraft-time question
+surfaced that three registrations were flown as two types each.
+
+**The finding is the argument.** Four rows gave `OH-GKT` and `OH-CTL` the type **`C192`**, and one
+gave `OH-CMU` as a `C172`. *Cessna has never built a 192.* That is what separates this from every
+other open item in the books: it is not a hard-to-read page or a disputed reading, it is a string
+that no correct transcription of any page could have produced. The corroboration is one line away —
+**book 2 line 139 is the same aeroplane on the same day**, `18/07/2018 · OH-CTL`, written `C172`.
+
+**Five cells, one column, and not one figure moved.** `unknown_aircraft_type` 4 → 0 and
+`type_conflict` 3 → 0, so discrepancies went **61 → 54**. Flights, total, PIC, dual, instrument,
+night, instructor, seaplane, landings and the aircraft count are all **byte-for-byte unchanged**, and
+that is structural rather than lucky: the seaplane/landplane split — the thing a rating is evidenced
+by — derives from the **registration**, never the type (`stats.IsSea`, verified row by row against
+`Cumulative_SEP_Sea` on 2026-08-01). The type column is provenance and display.
+
+**This is the second time the freeze has been lifted, and the shape of both is the same**: the owner
+names the cells, the correction is applied to those cells only, and the freeze resumes at the new
+figures. The first was the three missing 28/08/2025 flights. `CLAUDE.md` §0.8 now says this
+explicitly, because as written it forbade exactly this edit — *"not to fix a typo, not to close a
+known discrepancy"* — and a rule that a session must quietly break is worse than no rule. **What a
+session still may never do is decide on its own that a value looks wrong enough to change.** These
+five sat surfaced and untouched for the whole project, which is the process working.
+
+**Why this does not unfreeze the two items that stay open.** `logbook_2_final.csv` lines 89–90
+(`04.05.2018` ×2) turn on a physical page nobody will re-read, and the 30 `landings_unverified` rows
+need paper columns that were never photographed. Neither is settleable by inspection the way "there
+is no Cessna 192" is. **The test is whether the data contradicts itself or merely disappoints us.**
+
+**Closed with two guards that deliberately do not share a mechanism.**
+`TestEveryRegistrationNamesOneRealAircraftType` asserts, in the language of the ruling, that no row
+says `C192`, that **every registration maps to exactly one type**, and the three registrations by
+name — and it was watched go red on all three axes by reintroducing one cell before it was accepted.
+Separately, both discrepancy kinds stay in the `want` map **at zero** rather than being deleted,
+because the "unexpected kind" sweep only catches kinds that were never listed. A guard living only
+inside the discrepancy machinery would vanish the day somebody prunes that map.
+
+`logbook_2.csv` (no `_final`) still reads `C192`. Nothing loads it — `csvbook.DefaultSources` names
+only the three live books — and it is left as found rather than rewritten, because it is a superseded
+artefact of the transcription workflow and not a fourth book.
 
 ### 2026-08-02 — The first real day of use, and the three things it asked for
 
@@ -1134,9 +1192,11 @@ with no line number is not actionable.
 
 **Result: 1293 flights, 39 aircraft, 56 discrepancies, all nine checksums matching.** Exactly one
 cumulative break survives across 1293 rows and seven series.
-*(Figures as of this entry. After the 2026-08-01 owner rulings they are **38 aircraft, 61
+*(Figures as of this entry. After the 2026-08-01 owner rulings they were **38 aircraft, 61
 discrepancies, and ZERO cumulative breaks** — the one break was Book 1 line 28, which the owner
-ruled on and the CSV was corrected. The test now asserts zero.)*
+ruled on and the CSV was corrected. The test now asserts zero. The 2026-08-02 aircraft-type ruling
+then took discrepancies to **54**; the current figures are always the block near the top of this
+file, not here.)*
 
 ### 2026-08-01 — Sea/land comes from the registration, and it is verified rather than assumed
 

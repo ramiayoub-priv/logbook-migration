@@ -4,6 +4,67 @@ Log every correction that alters a row later rows built on. Fix cumulatives from
 
 ---
 
+## ✅ CLOSED 2026-08-02 — "C192" AND OH-CMU'S TYPE (owner ruling; 5 cells, no figure moved)
+
+**The last two open transcription defects in the books, and the smallest change ever made to them.**
+Recorded at the top because it is the most recent change to the data.
+
+**What was wrong.** Five cells in one column — `Aircraft_Type` — said something that cannot be true:
+
+| book | CSV line | date | reg | said | is |
+|---|---|---|---|---|---|
+| 2 | 132 | 25/06/2018 | OH-GKT | `C192` | **C172** |
+| 2 | 133 | 04/07/2018 | OH-GKT | `C192` | **C172** |
+| 2 | 137 | 18/07/2018 | OH-CTL | `C192` | **C172** |
+| 2 | 138 | 18/07/2018 | OH-CTL | `C192` | **C172** |
+| 3 | 434 | 01/01/2026 | OH-CMU | `C172` | **C152** |
+
+**Why these were transcription slips and not paper readings.** *Cessna has never built a 192.* The
+type is not merely unknown to `knownTypes`, it does not exist, so no reading of any page could
+produce it correctly. The corroboration is one line further on: **book 2 line 139 is the same
+aeroplane on the same day** — `18/07/2018 · OH-CTL · Ristiina→Tuusulanjärvi` — and is written
+**`C172`**. OH-CMU is a C152 on every one of its other flights. `2` and `5`/`7` are adjacent slips
+on a keyboard and the surrounding rows settle both.
+
+**Both had been surfaced and were never silently absorbed** — they are the whole of
+`unknown_aircraft_type` (4) and `type_conflict` (3), which is how they were found in the first
+place. They sat open until the owner ruled.
+
+**Owner ruling, 2026-08-02, verbatim:** *"C172 there is no C192. Also OH-CMU is always C152. We need
+to close this permanently, now."*
+
+**What moved, and what did not.**
+
+```
+discrepancies    61 -> 54     unknown_aircraft_type 4 -> 0, type_conflict 3 -> 0
+everything else  UNCHANGED    flights 1296 | total 1222:10 | pic 1054:45 | dual 167:25
+                              instrument 107:58 | night 22:45 | instructor 189:41
+                              seaplane 407:39 | landings 3444 | aircraft 38
+```
+
+**No licence figure could move, and that is structural rather than lucky.** The seaplane/landplane
+split — the thing a rating is evidenced by — is derived from the **registration**, never from the
+type (`stats.IsSea`, and the 2026-08-01 decision-log entry that verified the registration rule row
+by row against `Cumulative_SEP_Sea`). OH-GKT and OH-CTL are on floats before and after this change;
+OH-CMU is not. The type column is provenance and display only. **This is exactly why the freeze
+could be lifted here and cannot be for `logbook_2_final.csv` lines 89–90**, which turn on a physical
+page nobody will re-read and which affect row order.
+
+**How it is closed permanently.** Two independent guards, deliberately not sharing a mechanism:
+
+1. `TestEveryRegistrationNamesOneRealAircraftType` (`internal/csvbook/realdata_test.go`) — asserts
+   no row anywhere says `C192`, that **every registration maps to exactly one type**, and the three
+   registrations by name. Verified to go red on all three axes by reintroducing one cell before it
+   was accepted.
+2. The two discrepancy kinds are **kept in the `want` map at 0** rather than deleted, because the
+   "unexpected kind" sweep only catches kinds that were never listed.
+
+**`logbook_2.csv`** (no `_final`) is a superseded artefact of the transcription workflow and still
+reads `C192`. Nothing loads it — `csvbook.DefaultSources` names only the three `_final`/`_3` files.
+Left untouched on purpose; it is not a fourth book.
+
+---
+
 ## ✅ CLOSED 2026-08-01 — THREE FLIGHTS OF 28/08/2025 WERE MISSING ENTIRELY (owner-found)
 
 **The largest single omission found in this project, and the only change ever permitted to move the
