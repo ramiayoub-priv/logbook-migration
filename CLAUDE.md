@@ -30,9 +30,25 @@ Read the rules below every session, then **`app/APP.md`**.
 
 2. **THE LOGBOOK IS A LEGAL RECORD — NEVER LOSE OR SILENTLY CORRUPT A ROW.** This data backs licence
    privileges and currency; a wrong total is a real-world problem, not a bug report.
+   - **⛔ THE PRODUCTION DATABASE IS THE SOURCE OF TRUTH.** *(Owner ruling, 2026-08-02: "we should
+     start treating the production database now as the source of truth. We don't need the importer
+     anymore.")* The migration is finished; the CSVs are frozen; re-importing them reproduces data
+     that cannot have changed. **The importer is retired from production** — `update.sh` no longer
+     imports, so no deploy runs a destructive operation on the live record to achieve a no-op. What
+     protects the data is **the off-box backup** (`app/deploy/backup.sh`, daily, proven restorable on
+     2026-08-02), not the ability to rebuild from CSVs — which stopped being a complete answer the
+     moment the first flight was entered in the app.
+     - **`logbookctl verify` STAYS, and is now the point.** It is read-only and compares the database
+       against the CSVs on nine checksums, so it is a **drift and tamper check on the 1296 frozen
+       historical rows** rather than a rebuild. Keep it in the deploy.
+     - **`logbookctl import` still exists for dev scratch databases and tests only.** Never point it
+       at production. **`logbookctl check`** is the restore check (no CSVs, no `sqlite3`).
+     - The three CSVs stay in the repo as the frozen provenance record behind `claude-docs/drift.md`.
+       They are simply no longer *loaded*.
    - **Every import/migration is idempotent, reversible, and verified.** It must be safe to re-run.
      Verify with **row counts AND total-time checksums** against the source CSVs, and refuse to
-     complete on a mismatch.
+     complete on a mismatch. Schema migrations (`store.migrate`) run on the live file at every
+     service start, so they must be **additive only** — never a rewrite, never a drop.
    - **Back up before any destructive operation.** The SQLite file is copied (or `VACUUM INTO`) before
      a migration runs, on both dev and prod.
    - **Discrepancies get surfaced, never silently fixed.** This rule is inherited from the migration

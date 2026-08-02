@@ -31,10 +31,28 @@ and the rule wins.
 **Where to start.** This file, then `docs/data-model.md` / `docs/security.md` / `docs/deploy.md` as
 the work requires.
 
-**THE QUEUE IS EMPTY, EVERYTHING BUILT IS NOW LIVE, AND THE BACKUP IS RUNNING.** Tasks 11, 12, 13
-and 14 are deployed and verified in production, and the off-box backup pushed its first snapshot and
-is on a timer. As of the end of 2026-08-02 there is **no task in progress and nothing staged but not
-shipped**. What is left is listed under "Where to pick up" below, and none of it blocks.
+**⛔ READ THIS FIRST: THE BOX IS NOW BEHIND THE REPO, AND THE IMPORTER HAS BEEN RETIRED.**
+
+Earlier on 2026-08-02 the box was level with the repo. **It is not any more.** A later session on the
+same day shipped three things that are committed, pushed, tested and **NOT DEPLOYED**:
+
+1. **`logbookctl check`** — the restore check (Task 16). `RESTORE.md` used to tell the reader to run
+   `sqlite3`, which is not on the box and is not a dependency of this project.
+2. **Aircraft CRUD** (Task 17) — `POST /aircraft`, `PUT /aircraft/{reg}`, **no DELETE**, plus a
+   schema migration adding `aircraft.user_added`, and a filterable aircraft picker in the form.
+3. **`update.sh` no longer imports** (Task 18) — the owner's ruling below.
+
+**⛔ THE RULING THAT CHANGES THE DEPLOY (2026-08-02, owner, verbatim): "we should start treating the
+production database now as the source of truth. We don't need the importer anymore."** See
+`CLAUDE.md` §0.2. The migration is finished, the CSVs are frozen, and re-importing them could only
+reproduce rows that cannot have changed — while running `DELETE` against a live legal record to do
+it. **`update.sh` step 4 is now a READ-ONLY `verify`**, which turns the CSVs into a drift and tamper
+check on the 1296 frozen historical rows instead of a rebuild. `logbookctl import` survives for dev
+scratch databases and tests only. **The backup, not the repo, is what protects production.**
+
+⚠ **`update.sh` has been rewritten and NOT YET RUN.** It is the highest-risk item outstanding: read
+it before running it, and note that step 4 failing now means *the live historical rows disagree with
+the frozen books* — a defect to investigate, **never** a reason to re-import.
 
 ### ✅ Deployed and verified 2026-08-02 (late session)
 
@@ -484,9 +502,28 @@ other sites. Baseline before the change: all seven **200**, `/logbook/` **404**.
 **The PWA half is done**: manifest, icons and `public/sw.js`, which caches the shell so the app opens
 at an airfield with no signal and never caches a logbook response. Offline *writes* stay out of v1.
 
-### Where to pick up
+### Where to pick up — 2026-08-02, late
 
-**Nothing here blocks, and there is no half-finished work.** In rough order of value:
+**THE FIRST TWO ITEMS ARE THE ONLY ONES THAT MATTER.** Everything below them predates this session.
+
+1. **DEPLOY WHAT IS IN THE REPO.** Three shipped-but-undeployed changes (above). Follow the runbook,
+   **binary first, frontend second**. Two notes specific to this deploy:
+   - **Step 2 is the rewritten `update.sh`, which no longer imports.** Read it first. Its step 4 is a
+     read-only `verify`; if that fails, **investigate — do not re-import**.
+   - The new binary applies an **additive schema migration** (`aircraft.user_added`) on first start.
+     Proven against a copy of the real production database: `flights=1298` unchanged and every figure
+     identical afterwards, only the file bytes moved. `update.sh` backs up first regardless.
+2. **OPEN THE AIRCRAFT PICKER IN A REAL BROWSER, ON THE PHONE.** It has **111 green tests and has
+   never been looked at**. On this project a green jsdom suite has now **five times** loved something
+   that thirty seconds of real use exposed — the untypeable colon, the stale service worker, the
+   off-screen save confirmation, the empty clone, the unrunnable restore instructions. A dropdown
+   that opens under the thumb, on a form, on a phone, is exactly that shape of risk. Specifically:
+   does the list close when you expect, does the keyboard cover it, can you reach the "Add …" row.
+3. **The fleet management page is NOT built.** `PUT /aircraft/{reg}` exists and is tested; nothing in
+   the UI calls it. The owner asked for "both: inline + a manage page" and only the inline half
+   shipped. This is the largest known gap.
+
+**Then, in rough order of value (all pre-dating this session):**
 
 1. ✅ **DONE 2026-08-02 — the restore drill.** The backup was cloned, verified, booted and read back
    without SQLite; it passed on every substantive claim. Its **instructions did not** — step 3 told
@@ -631,11 +668,80 @@ day · landings night.
 | 13 | **Aircraft time page (block vs air, by aircraft and date range)** | **done** 2026-08-02 — `internal/stats/aircraft.go` (`AirMinutes`, `ByAircraft`, `TotalAircraftTime`; pure, **100%**), `GET /aircraft-time?from&to&reg`, and the **Aircraft** tab. Block and air are separate fields with separate coverage and are never mixed; both totals in **H:MM and whole minutes**; `reg` adds the flights behind one figure without narrowing the comparison. The real books make the case: **OH-CTL has 267:16 of block time and 2:51 of air time from 4 of its 286 flights** — one merged "hours" figure would be catastrophically wrong. |
 | 14 | **Daily off-box backup to a private git repo** | **INSTALLED AND RUNNING** 2026-08-02 — `logbookctl backup` (`internal/backup`) writes four files: `logbook.db` (sessions stripped), `logbook.csv` (every flight, every field), `MANIFEST.txt`, `RESTORE.md`. A systemd timer runs `backup.sh` as the **`logbook` user** → commit → push to `ramiayoub-priv/logbook-backup`. First snapshot pushed as **`fc5cec9` — 1298 flights, 1223:03, 3446 landings**; timer **enabled and active**, next **2026-08-03 03:22 UTC**. Auth is an **account-level key on the dedicated `ramiayoub-priv` account** (owner ruling — not a deploy key). Installing it took four attempts and exposed **four bugs in `install-backup.sh`'s own checks and none in the backup** — see the decision log. ✅ **Step 8, the clone-back, passed**: four files out of a fresh clone, `logbook.db` matching its own manifest sha256, 1298 flights / 1223:03 / 3446 landings / 1 user. |
 | 16 | **The restore drill, and `logbookctl check`** | **done** 2026-08-02 — the backup was cloned and restored for real with no emergency running. It passed everything: both sha256s match, `logbook.db` is byte-identical across three snapshots, the server boots on it reading **`flights=1298`** with all six private routes still 401, and `logbook.csv` reconciles to 1298 / 1223:03 / 3446 / 38 with no SQLite involved. **Its instructions did not pass**: step 3 told the reader to run `sqlite3`, absent from the box and not a dependency of this project, so the mandatory rule-0.2 verification was `command not found` on a fresh server. New **`logbookctl check -db <db> [-manifest <file>]`** (no CSVs, no sqlite3, hashes before opening, shares `Figures` with the manifest writer so the two cannot drift), regenerated `RESTORE.md`, and **`install-backend.sh` now installs `logbookctl`** — step 1 of the restore never did, so fixing only the sqlite3 line would have swapped one missing command for another. Backend **87.6%**, core still 100%. |
+| 17 | **Aircraft CRUD** | **backend + picker done, NOT DEPLOYED, manage page NOT built** 2026-08-02 — owner ask: a first flight in an aeroplane never flown was unenterable, because the aircraft list was purely derived and the form's registration was a `<select>` fed by it. Now: `aircraft.user_added` (additive migration in `store.migrate`, proven safe on a copy of real production), `store/aircraft.go` (`AircraftList`/`AircraftByReg`/`AddAircraft`/`UpdateAircraft`, `last_flown` and flight counts **derived, never stored**), **`POST /aircraft`** and **`PUT /aircraft/{reg}`** — and **NO DELETE**, by ruling, asserted against the route table. The importer's unqualified `DELETE FROM aircraft` is scoped to `user_added = 0`. Frontend: `AircraftPicker.tsx`, a filterable combobox that also adds an aeroplane inline; **no retired/active concept**, nothing hidden, ordered never-flown-first then most-recently-flown. **111 frontend tests, backend 87.3%.** ⚠ **Never opened in a real browser, and `PUT` has no UI** — the owner asked for "both: inline + a manage page" and the manage page is not built. |
+| 18 | **Retire the importer from production** | **done in the repo, NOT DEPLOYED** 2026-08-02 — owner ruling: the production database is the source of truth. `update.sh` no longer imports; step 4 is a **read-only `verify`**, turning the frozen CSVs into a drift/tamper check on the 1296 historical rows rather than a rebuild. `CLAUDE.md` §0.2 rewritten. `logbookctl import` survives for dev scratch databases and tests only. Removes the stale-CSV class of failure entirely, and rests on the backup having been *proven* restorable the same day. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-02 — Retiring the importer, and aircraft becoming records
+
+Two owner rulings in one exchange, and they turn out to be the same decision seen from two sides.
+
+**The ask was aircraft CRUD**: *"if I fly new aircraft that I have never flown yet, there needs to be
+CRUD for aircraft."* The gap was real and worse than it looked. `GET /aircraft` was the only route,
+and the list behind it was **purely derived** — rebuilt from the flights on every import — so the
+only aeroplanes that could exist were the ones already flown. The form's registration was a
+`<select>` fed by that list, which made **the first flight in a new aeroplane unenterable**. The API
+would have taken it (`entry` only requires reg and type to be non-empty); the UI could not say it.
+
+And the trap `source_book = 0` solves for flights was wide open next door: `store.Import` ran an
+**unqualified `DELETE FROM aircraft`**. The moment aircraft got a write path, every hand-added
+aeroplane was one import away from deletion. Scoped to `user_added = 0` now, with a test that
+re-imports and looks for the row.
+
+**What the owner ruled, and what it cost the design.** Asked whether imported aircraft should be
+editable, the answer redirected the question: *"The retire note is totally obsolete for many
+aircraft. You are assuming that some aircraft is retired because I haven't flown it in a year… I say
+we drop this retired thing completely."* So:
+
+- **No retired/active concept**, at all. The `active` column stays in the schema as **vestigial and
+  documented as such** — dropping a column from a live legal-record schema to delete a feature is the
+  worse trade — and nothing reads it.
+- **No delete route.** An aeroplane once added stays; a wrong one is corrected with a `PUT`. Asserted
+  by a test that inspects the route table, because a later session adding one "for symmetry" is
+  exactly how a ruling gets lost.
+- **What replaces both is ordering and filtering.** The list is ordered never-flown first (you added
+  it *because* you are about to fly it), then most recently flown, and the picker filters as you type
+  — on registration **and** type, since typing `C172` is as natural as typing `OH-`. Nothing is ever
+  hidden. That ordering lives in the server's SQL and is deliberately not re-sorted in the component:
+  two authorities for it would disagree.
+
+**Editing is allowed on all 38 aeroplanes from the books, and that is not a hole in rule 0.8.** This
+table seeds a form; it is not the record. Every flight carries its own registration, type and class
+denormalized exactly as written on paper, so no edit here can move one minute — asserted twice, once
+in the store by reading every flight back field by field and once at the API by diffing the whole
+`GET /flights` body. It is also the shape of the owner's own observation in the same message:
+**SE-GKT and OH-GKT are one airframe whose registration changed.** Recorded, not acted on — closing
+it would mean touching frozen data.
+
+**Then the larger ruling, which the owner raised and asked for an opinion on**: *"we should start
+treating the production database now as the source of truth. We don't need the importer anymore… Do
+you?"* **Yes — with one amendment.**
+
+The importer had become pure risk. It re-imported *frozen* data on every deploy, so its only possible
+outcomes were "reproduces exactly what is already there" or "something went wrong" — and to achieve
+the first it ran `DELETE FROM flights WHERE source_book <> 0` against a live legal record. **A
+recurring destructive operation whose best case is a no-op.** It had already nearly bitten: the
+stale-CSV incident was one root command from writing `C192` back into production. Retiring it deletes
+that entire class of failure. And the argument it used to rest on — "production is rebuildable from
+the repo in one command" — **had been false since the owner logged two flights in the app**.
+
+**The amendment: stop importing, do not stop verifying.** `verify` is read-only and checks nine
+checksums against the CSVs. Kept in `update.sh`, it stops being "rebuild and hope" and becomes a
+**drift and tamper check on the 1296 frozen historical rows** — which is what rule 0.2 actually wants
+— without ever writing. The CSVs stay in the repo as the provenance record behind `drift.md`; they
+are simply no longer loaded.
+
+So the shape is now: **production database = source of truth · off-box backup = what protects it ·
+CSVs = frozen provenance plus a read-only checksum.** That the backup can carry that weight is not an
+assumption — it was cloned, restored, booted and reconciled earlier the same day.
+
+The two rulings meet here: aircraft could only become editable records *because* the importer stopped
+rebuilding them. Had the import stayed in the deploy, every aircraft edit would have been silently
+reverted on the next one.
 
 ### 2026-08-02 — The restore drill: the backup was fine, its instructions were not runnable
 
