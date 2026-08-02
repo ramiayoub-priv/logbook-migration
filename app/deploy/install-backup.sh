@@ -98,15 +98,26 @@ asuser_ssh() { sudo -u logbook ssh "${SSH_OPTS[@]}" "$@"; }
 # authentication, and sent the debugging after the wrong thing entirely.
 # Reporting an assumption as a discovery is the same defect this script exists
 # to catch one step later.
+# THREE outcomes, not two, and the first version collapsed the last two into a
+# scary message. A brand-new empty repository HAS no default branch to report:
+# ls-remote succeeds and prints nothing. That is the normal first run, and
+# saying "could not read the branch, the key probably cannot authenticate" about
+# it sends the reader after a problem that does not exist -- which is what
+# happened on 2026-08-02, one line above a step 5 that authenticated perfectly.
+# So branch it on ls-remote's EXIT STATUS, not on whether the output was empty.
 ls_err=$(mktemp)
-BRANCH=$(asuser git ls-remote --symref "$REMOTE" HEAD 2>"$ls_err" |
+if ls_out=$(asuser git ls-remote --symref "$REMOTE" HEAD 2>"$ls_err"); then ls_rc=0; else ls_rc=$?; fi
+BRANCH=$(printf '%s\n' "${ls_out:-}" |
          awk '$1=="ref:" {sub("refs/heads/","",$2); print $2; exit}')
 if [ -n "$BRANCH" ]; then
     echo "   the remote's default branch is '$BRANCH', read from the remote"
+elif [ "$ls_rc" -eq 0 ]; then
+    BRANCH=main
+    echo "   the remote is reachable and EMPTY -- no default branch yet, using '$BRANCH'"
 else
     BRANCH=main
-    echo "   !! could NOT read the default branch from the remote -- ASSUMING '$BRANCH'."
-    echo "   !! Usually this means the key cannot authenticate; step 5 decides. git said:"
+    echo "   !! could NOT REACH the remote (git exit $ls_rc) -- ASSUMING '$BRANCH'."
+    echo "   !! Step 5 decides whether this is an authentication problem. git said:"
     sed 's/^/     /' "$ls_err"
 fi
 rm -f "$ls_err"
@@ -188,7 +199,22 @@ echo "   remote refs: $remote_refs, local commits: $local_commits -- ok"
 
 say "7. first run, now, so a failure is seen by a human rather than at 03:17"
 systemctl start logbook-backup.service
-systemctl --no-pager --full status logbook-backup.service | head -20
+# `systemctl status` EXITS 3 for a oneshot that has finished -- "inactive (dead)"
+# is its success state, not a fault. Under `set -euo pipefail` that exit killed
+# this script on 2026-08-02 at exactly this line: the backup had run, committed
+# and PUSHED, and the run still aborted before the clone-back check and before
+# the timer was enabled. The owner saw a wall of successful output and no timer.
+# So: never let a status display decide control flow...
+systemctl --no-pager --full status logbook-backup.service 2>&1 | head -20 || true
+# ...and ask the question that actually matters separately, of a property with a
+# defined value rather than of a human-readable page.
+result=$(systemctl show logbook-backup.service -p Result --value)
+if [ "$result" != "success" ]; then
+    echo "   !! the backup run did not succeed (Result=$result). Timer NOT enabled."
+    echo "   !! journalctl -u logbook-backup.service -n 40"
+    exit 1
+fi
+echo "   the run reports Result=success"
 
 say "8. CLONE IT BACK -- the only check that proves a backup exists"
 # This is the step that would have caught the branch-name bug that made every
@@ -196,6 +222,11 @@ say "8. CLONE IT BACK -- the only check that proves a backup exists"
 # is evidence about the push. Only a clone is evidence about the BACKUP.
 CHECK=$(mktemp -d)
 trap 'rm -rf "$CHECK"' EXIT
+# The clone runs as the logbook user (it is the only account holding the key),
+# but mktemp -d here runs as ROOT and makes the directory 0700 root:root -- so
+# the clone died with "could not create work tree dir ... Permission denied".
+# Hand the directory to logbook. Root can still read and rm -rf it afterwards.
+chown logbook:logbook "$CHECK"
 asuser git clone -q "$REMOTE" "$CHECK/clone"
 missing=0
 for f in logbook.db logbook.csv MANIFEST.txt RESTORE.md; do
