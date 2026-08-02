@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AuthProvider } from '../auth'
 import { App } from '../App'
@@ -56,9 +56,15 @@ beforeEach(() => {
   vi.spyOn(api, 'flights').mockResolvedValue({ flights: [flight()], count: 1 })
   vi.spyOn(api, 'stats').mockResolvedValue({ summary: summary(), range: { from: '', to: '' } })
   vi.spyOn(api, 'aircraft').mockResolvedValue({
+    // In the order the server sends: never-flown first, then most recently
+    // flown. The picker must not re-sort it.
     aircraft: [
-      { registration: 'OH-CTL', type: 'C172', default_class: 'SEP_SEA', ifr_capable: false, active: true, notes: '' },
-      { registration: 'OH-CAM', type: 'C172', default_class: 'SEP_LAND', ifr_capable: true, active: true, notes: '' },
+      { registration: 'OH-PDP', type: 'P28A', default_class: 'SEP_LAND', ifr_capable: false,
+        notes: '', user_added: true, last_flown: '', flights: 0 },
+      { registration: 'OH-CTL', type: 'C172', default_class: 'SEP_SEA', ifr_capable: false,
+        notes: '', user_added: false, last_flown: '2026-07-30', flights: 286 },
+      { registration: 'OH-CAM', type: 'C172', default_class: 'SEP_LAND', ifr_capable: true,
+        notes: '', user_added: false, last_flown: '2026-07-01', flights: 12 },
     ],
   })
   vi.spyOn(api, 'discrepancies').mockResolvedValue({ discrepancies: [], count: 0 })
@@ -449,13 +455,144 @@ describe('deleting a flight', () => {
   })
 })
 
+/**
+ * Choosing an aeroplane in the filterable picker.
+ *
+ * It is a combobox rather than a <select>: the owner asked for type-to-filter
+ * ("if I write P it should filter OH-PDP, OH-PIF and so on") in place of the
+ * retired/active idea, which was dropped -- an aeroplane you flew once in 2009
+ * is not retired, so nothing is ever hidden. Filtering is what keeps a growing
+ * list usable.
+ */
+async function pickAircraft(user: ReturnType<typeof userEvent.setup>, reg: string) {
+  await user.click(await screen.findByLabelText('Aircraft'))
+  await user.click(await screen.findByRole('option', { name: new RegExp(reg) }))
+}
+
+describe('the aircraft picker', () => {
+  it('filters the list as the registration is typed', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+
+    const input = await screen.findByLabelText('Aircraft')
+    await user.click(input)
+    // Scoped to the picker's own listbox: the Class <select> further down the
+    // form has options too, and they carry the same ARIA role.
+    const list = await screen.findByRole('listbox', { name: 'Aircraft' })
+    // Everything is offered before anything is typed: nothing is ever hidden.
+    expect(within(list).getAllByRole('option')).toHaveLength(3)
+
+    await user.type(input, 'P')
+    const shown = within(await screen.findByRole('listbox', { name: 'Aircraft' }))
+      .getAllByRole('option')
+      .map((o) => o.textContent)
+    expect(shown.some((t) => t?.includes('OH-PDP'))).toBe(true)
+    expect(shown.some((t) => t?.includes('OH-CTL'))).toBe(false)
+  })
+
+  // Typing the type is as natural as typing the registration.
+  it('filters on the aircraft type too', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+
+    await user.type(await screen.findByLabelText('Aircraft'), 'P28')
+    const shown = within(await screen.findByRole('listbox', { name: 'Aircraft' }))
+      .getAllByRole('option')
+      .map((o) => o.textContent)
+    expect(shown.some((t) => t?.includes('OH-PDP'))).toBe(true)
+    expect(shown.some((t) => t?.includes('OH-CAM'))).toBe(false)
+  })
+
+  // The server orders the list -- never-flown first, then most recently flown.
+  // The picker must present it as sent rather than re-sorting alphabetically.
+  it('keeps the order the server sent', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+
+    await user.click(await screen.findByLabelText('Aircraft'))
+    const shown = within(await screen.findByRole('listbox', { name: 'Aircraft' }))
+      .getAllByRole('option')
+      .map((o) => o.textContent ?? '')
+    expect(shown[0]).toContain('OH-PDP')
+    expect(shown[1]).toContain('OH-CTL')
+    expect(shown[2]).toContain('OH-CAM')
+  })
+
+  it('lets a brand-new aeroplane be added without leaving the form', async () => {
+    const user = userEvent.setup()
+    const create = vi.spyOn(api, 'createAircraft').mockResolvedValue({
+      aircraft: {
+        registration: 'OH-XYZ', type: 'C152', default_class: 'SEP_LAND',
+        ifr_capable: false, notes: '', user_added: true, last_flown: '', flights: 0,
+      },
+    })
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+
+    await user.type(await screen.findByLabelText('Aircraft'), 'OH-XYZ')
+    // Nothing matches, so the way forward is to add it.
+    await user.click(await screen.findByRole('option', { name: /Add OH-XYZ/ }))
+
+    await user.type(screen.getByLabelText('New aircraft type'), 'C152')
+    await user.click(screen.getByRole('button', { name: 'Save aircraft' }))
+
+    await waitFor(() =>
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({ registration: 'OH-XYZ', type: 'C152' }),
+      ),
+    )
+    // And it is now the selected aeroplane, with its type and class carried
+    // into the flight -- the pilot does not type the type twice.
+    await waitFor(() => expect(screen.getByLabelText('Aircraft')).toHaveValue('OH-XYZ'))
+    expect(screen.getByLabelText('Type')).toHaveValue('C152')
+    expect(screen.getByLabelText('Class')).toHaveValue('SEP_LAND')
+  })
+
+  // A refusal has to be visible and must not lose what was typed.
+  it('shows why a new aeroplane was refused', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(api, 'createAircraft').mockRejectedValue(
+      new ApiError(409, 'that registration is already in the aircraft list'),
+    )
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+
+    await user.type(await screen.findByLabelText('Aircraft'), 'OH-ZZZ')
+    await user.click(await screen.findByRole('option', { name: /Add OH-ZZZ/ }))
+    await user.type(screen.getByLabelText('New aircraft type'), 'C152')
+    await user.click(screen.getByRole('button', { name: 'Save aircraft' }))
+
+    expect(await screen.findByText(/already in the aircraft list/)).toBeInTheDocument()
+    expect(screen.getByLabelText('New aircraft type')).toHaveValue('C152')
+  })
+
+  // An aeroplane cannot be saved without a type -- the flight needs one, and
+  // asking for it later means asking for it on the phone at the airfield.
+  it('will not add an aeroplane with no type', async () => {
+    const user = userEvent.setup()
+    const create = vi.spyOn(api, 'createAircraft')
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+
+    await user.type(await screen.findByLabelText('Aircraft'), 'OH-ZZZ')
+    await user.click(await screen.findByRole('option', { name: /Add OH-ZZZ/ }))
+    await user.click(screen.getByRole('button', { name: 'Save aircraft' }))
+
+    expect(create).not.toHaveBeenCalled()
+    expect(await screen.findByText(/type is required/i)).toBeInTheDocument()
+  })
+})
+
 describe('the new-flight form', () => {
   it('fills the type and class from the chosen aircraft', async () => {
     const user = userEvent.setup()
     renderApp()
     await user.click(await screen.findByRole('link', { name: 'New' }))
 
-    await user.selectOptions(await screen.findByLabelText('Aircraft'), 'OH-CTL')
+    await pickAircraft(user, 'OH-CTL')
     expect(screen.getByLabelText('Type')).toHaveValue('C172')
     // OH-CTL is on floats, so the class defaults to sea -- which is what
     // decides whether the flight counts towards the seaplane rating.
@@ -468,7 +605,7 @@ describe('the new-flight form', () => {
     const user = userEvent.setup()
     renderApp()
     await user.click(await screen.findByRole('link', { name: 'New' }))
-    await user.selectOptions(await screen.findByLabelText('Aircraft'), 'OH-CTL')
+    await pickAircraft(user, 'OH-CTL')
     await user.selectOptions(screen.getByLabelText('Class'), 'SEP_LAND')
     expect(screen.getByLabelText('Class')).toHaveValue('SEP_LAND')
   })
@@ -550,7 +687,7 @@ describe('the new-flight form', () => {
     const user = userEvent.setup()
     renderApp()
     await user.click(await screen.findByRole('link', { name: 'New' }))
-    await user.selectOptions(await screen.findByLabelText('Aircraft'), 'OH-CAM')
+    await pickAircraft(user, 'OH-CAM')
     await user.click(screen.getByRole('button', { name: 'Log this flight' }))
 
     await user.click(await screen.findByRole('button', { name: 'Log another flight' }))

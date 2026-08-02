@@ -149,12 +149,36 @@ export interface Summary {
   landings_unverified: number
 }
 
+/**
+ * One aeroplane in the seed list behind the new-flight form.
+ *
+ * There is no `active` field, deliberately. The owner ruled on 2026-08-02 that
+ * there is no retired concept — not flying something for a year does not retire
+ * it — and a long list is solved by filtering, never by hiding rows.
+ *
+ * `last_flown` and `flights` are derived by the server on every request, never
+ * stored. They are what the list is ordered on: never-flown first (you added it
+ * because you are about to fly it), then most recently flown.
+ */
 export interface Aircraft {
   registration: string
   type: string
   default_class: string
   ifr_capable: boolean
-  active: boolean
+  notes: string
+  /** false: it came from the paper books. true: it was typed into the app. */
+  user_added: boolean
+  /** YYYY-MM-DD, or '' if this aeroplane has no flights yet. */
+  last_flown: string
+  flights: number
+}
+
+/** An aeroplane as submitted. The same shape creates and replaces one. */
+export interface AircraftDraft {
+  registration: string
+  type: string
+  default_class: string
+  ifr_capable: boolean
   notes: string
 }
 
@@ -259,6 +283,26 @@ export const api = {
     request<{ summary: Summary; range: { from: string; to: string } }>(`/stats${query(range)}`),
 
   aircraft: () => request<{ aircraft: Aircraft[] }>('/aircraft'),
+
+  /** Adds an aeroplane that has never been flown. 409 if the registration exists. */
+  createAircraft: (draft: AircraftDraft) =>
+    request<{ aircraft: Aircraft }>('/aircraft', {
+      method: 'POST',
+      body: JSON.stringify(draft),
+    }),
+
+  /**
+   * Corrects an aeroplane. A full replacement, like updateFlight.
+   *
+   * It never rewrites the flights that reference it: those record what was
+   * written on paper. There is no delete, by owner ruling — a wrong aeroplane
+   * is corrected here rather than removed.
+   */
+  updateAircraft: (reg: string, draft: AircraftDraft) =>
+    request<{ aircraft: Aircraft }>(`/aircraft/${encodeURIComponent(reg)}`, {
+      method: 'PUT',
+      body: JSON.stringify(draft),
+    }),
 
   /**
    * What each aeroplane cost over a range.

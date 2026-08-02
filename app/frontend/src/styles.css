@@ -437,3 +437,90 @@ dl.detail dd { margin: 0; font-variant-numeric: tabular-nums; }
   padding: 20px;
 }
 .login .card { width: 100%; max-width: 380px; margin: 0; }
+
+/* --- The aircraft picker -------------------------------------------------- */
+/* A filterable combobox rather than a <select>. The owner asked for
+   type-to-filter in place of the retired/active idea, which was dropped: an
+   aeroplane flown once in 2009 is not retired, so NOTHING here is ever hidden
+   and filtering is what keeps a growing list usable. */
+
+.aircraftpicker { position: relative; }
+
+.aircraftpicker .options {
+  position: absolute;
+  /* Under the input, not under the whole field: the field carries a label
+     above and an error message below, and the list must not jump when an
+     error appears. */
+  top: calc(100% - 12px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+  /* Long enough to scan, short enough to leave the form visible behind it.
+     38 aeroplanes will not fit on a phone and are not meant to: that is what
+     typing three characters is for. */
+  max-height: 46vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.aircraftpicker .options li { margin: 0; }
+
+.aircraftpicker .options button {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 8px 10px;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.aircraftpicker .options button:hover,
+.aircraftpicker .options button:focus-visible {
+  background: var(--bg);
+}
+
+.aircraftpicker .options .reg { font-weight: 600; }
+.aircraftpicker .options .type { color: var(--muted); font-size: 0.85rem; }
+/* The right-hand column tells each aeroplane's own story -- how much it has
+   been flown and when -- so the list is scannable without anything being
+   hidden. It is the first thing to go when the screen is narrow. */
+.aircraftpicker .options .when {
+  justify-self: end;
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+@media (max-width: 22rem) {
+  .aircraftpicker .options .when { display: none; }
+}
+
+.aircraftpicker .options .addnew { color: var(--accent); font-weight: 600; }
+.aircraftpicker .options .empty { padding: 10px; color: var(--muted); }
+
+/* The inline "add an aeroplane" panel. It is inside the flight form on
+   purpose: adding it on another screen first would mean two trips on exactly
+   the day you are standing at an airfield with a phone. */
+.newaircraft {
+  margin: -4px 0 12px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.newaircraft .lead { margin: 0 0 10px; font-size: 0.9rem; color: var(--muted); }
+.newaircraft .lead strong { color: var(--ink); }
+.newaircraft .error { color: var(--danger); margin: 0 0 10px; font-size: 0.88rem; }
+.newaircraft .actions { display: flex; gap: 8px; }
+.newaircraft .actions button { flex: 1; }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { api, ApiError, type Flight, type FlightDraft } from '../api'
+import { api, ApiError, type Aircraft, type Flight, type FlightDraft } from '../api'
 import { useApi } from '../auth'
 import {
   clock,
@@ -12,6 +12,7 @@ import {
   todayISO,
 } from '../format'
 import { Link } from '../router'
+import { AircraftPicker } from './AircraftPicker'
 
 // The flight form, shared by the new-flight page and the edit page.
 //
@@ -207,14 +208,29 @@ export function FlightForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refusals])
 
+  // Aeroplanes added from inside this form, before the fleet is fetched again.
+  // Without this a newly created aircraft would vanish from the picker the
+  // moment the panel closed, because `fleet` is the response of a request that
+  // was made before it existed.
+  const [added, setAdded] = useState<Aircraft[]>([])
+
+  /**
+   * The picker's list.
+   *
+   * The ORDER IS THE SERVER'S and is deliberately not re-sorted here: it sends
+   * never-flown first, then most recently flown, and having two authorities for
+   * that would guarantee they disagree. Aeroplanes created in this session go
+   * on the front, which is the same rule (they have not been flown at all).
+   *
+   * Nothing is filtered out. The owner dropped the retired/active concept on
+   * 2026-08-02 -- an aeroplane flown once in 2009 is not retired -- so the
+   * picker filters as you type instead of hiding rows.
+   */
   const aircraft = useMemo(() => {
     const list = fleet?.aircraft ?? []
-    // Active first -- the aeroplanes actually being flown -- then the rest, so
-    // the picker is short without hiding history.
-    return [...list].sort((a, b) =>
-      a.active === b.active ? a.registration.localeCompare(b.registration) : a.active ? -1 : 1,
-    )
-  }, [fleet])
+    const known = new Set(list.map((a) => a.registration))
+    return [...added.filter((a) => !known.has(a.registration)), ...list]
+  }, [fleet, added])
 
   function set<K extends keyof FlightDraft>(key: K, value: FlightDraft[K]) {
     setDraft((d) => ({ ...d, [key]: value }))
@@ -234,14 +250,20 @@ export function FlightForm({
    * flown on floats or wheels, and it is the class that decides which rating
    * the flight counts towards -- so the field stays editable underneath.
    */
-  function chooseAircraft(reg: string) {
-    const a = aircraft.find((x) => x.registration === reg)
+  function chooseAircraft(reg: string, chosen?: Aircraft) {
+    const a = chosen ?? aircraft.find((x) => x.registration === reg)
     setDraft((d) => ({
       ...d,
       aircraft_reg: reg,
       aircraft_type: a?.type ?? d.aircraft_type,
       class: a?.default_class ?? d.class,
     }))
+    setFieldErrors((e) => {
+      if (!e['aircraft_reg']) return e
+      const next = { ...e }
+      delete next['aircraft_reg']
+      return next
+    })
     setSaved(null)
   }
 
@@ -393,29 +415,13 @@ export function FlightForm({
           />
         </Field>
 
-        <Field id="aircraft_reg" label="Aircraft" error={fieldErrors['aircraft_reg']}>
-          <select
-            id="aircraft_reg"
-            value={draft.aircraft_reg}
-            onChange={(e) => chooseAircraft(e.target.value)}
-            aria-invalid={!!fieldErrors['aircraft_reg']}
-          >
-            <option value="">Choose an aircraft…</option>
-            {aircraft.map((a) => (
-              <option key={a.registration} value={a.registration}>
-                {a.registration} — {a.type}
-                {a.active ? '' : ' (retired)'}
-              </option>
-            ))}
-            {/* An edited flight may name an aeroplane that has since left the
-                seed list. Without this the select would silently show blank
-                and the next save would clear the registration. */}
-            {draft.aircraft_reg !== '' &&
-              !aircraft.some((a) => a.registration === draft.aircraft_reg) && (
-                <option value={draft.aircraft_reg}>{draft.aircraft_reg}</option>
-              )}
-          </select>
-        </Field>
+        <AircraftPicker
+          value={draft.aircraft_reg}
+          fleet={aircraft}
+          error={fieldErrors['aircraft_reg']}
+          onChoose={chooseAircraft}
+          onAdded={(a) => setAdded((list) => [a, ...list])}
+        />
 
         <div className="row">
           <Field id="aircraft_type" label="Type" error={fieldErrors['aircraft_type']}>
