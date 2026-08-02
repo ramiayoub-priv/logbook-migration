@@ -607,6 +607,12 @@ sudo -u logbook /opt/logbook/logbookctl check \
    If either check disagrees, **stop** and find out why before the application
    is allowed to write to the file (CLAUDE.md rule 0.2).
 
+   ⚠ **Do these BEFORE starting the service, in the order given.** Starting the
+   application applies any pending schema migration, which rewrites the file --
+   so the sha256 stops matching from that moment on, permanently and harmlessly.
+   The figures still match, and after that they are the check that means
+   something. Verify first and this never comes up.
+
 4. Start it: @sudo systemctl start logbook@. The startup line reports the flight
    count, and it must read %d.
 

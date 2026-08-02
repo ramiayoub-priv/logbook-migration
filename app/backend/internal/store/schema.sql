@@ -19,8 +19,16 @@ CREATE TABLE IF NOT EXISTS schema_version (
     applied_at TEXT    NOT NULL
 );
 
--- The seed list behind the new-flight form. Derived from the flights on
--- import, so it can never drift from what was actually flown.
+-- The seed list behind the new-flight form.
+--
+-- It was ONLY derived, rebuilt from the flights on every import -- which meant
+-- the only aeroplanes that could exist were the ones already flown, and a first
+-- flight in a new aeroplane was unenterable. Since 2026-08-02 it also holds rows
+-- written by hand, marked user_added, and they survive an import.
+--
+-- IT IS A SEED LIST, NOT THE RECORD. Every flight carries its own registration,
+-- type and class as written on paper, so nothing here can move a total. Editing
+-- an aeroplane is therefore safe in a way that editing a flight is not.
 CREATE TABLE IF NOT EXISTS aircraft (
     id            INTEGER PRIMARY KEY,
     registration  TEXT    NOT NULL UNIQUE,
@@ -29,8 +37,17 @@ CREATE TABLE IF NOT EXISTS aircraft (
                   CHECK (default_class IN ('SEP_LAND','SEP_SEA','MEP_LAND','MEP_SEA','TMG')),
     -- A hint for the form only. It never constrains what a flight may record.
     ifr_capable   INTEGER NOT NULL DEFAULT 0 CHECK (ifr_capable IN (0,1)),
+    -- VESTIGIAL. The owner ruled on 2026-08-02 that there is no retired/active
+    -- concept: an aeroplane you flew once in 2009 is not "retired", and the long
+    -- list is solved by a filterable dropdown ordered by what was flown most
+    -- recently. Nothing reads this column. It is left in place rather than
+    -- migrated away, because dropping a column from a live legal-record schema
+    -- to delete a feature is a worse trade than an unused column.
     active        INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0,1)),
     notes         TEXT    NOT NULL DEFAULT ''
+    -- user_added is added by migrate() in store.go: SQLite has no
+    -- ADD COLUMN IF NOT EXISTS, and every statement in this file must stay
+    -- idempotent so that opening a live database is a no-op.
 );
 
 CREATE TABLE IF NOT EXISTS flights (

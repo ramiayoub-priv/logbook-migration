@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"regexp"
@@ -530,30 +531,179 @@ func (s *Server) writeFlightChangeError(w http.ResponseWriter, what string, seq 
 	}
 }
 
+// aircraftJSON is one aeroplane as the form sees it.
+//
+// last_flown and flights are DERIVED on every request, never stored (rule 0.5
+// in spirit). They are what the dropdown orders on: the aeroplane flown most
+// recently is the one most likely to be logged next. There is no `active`
+// field -- the owner ruled on 2026-08-02 that there is no retired concept, and
+// a long list is solved by filtering, not by hiding rows.
+type aircraftJSON struct {
+	Registration string `json:"registration"`
+	Type         string `json:"type"`
+	DefaultClass string `json:"default_class"`
+	IFRCapable   bool   `json:"ifr_capable"`
+	Notes        string `json:"notes"`
+
+	// Provenance: false means it came from the paper books, true means it was
+	// typed into the app.
+	UserAdded bool `json:"user_added"`
+
+	LastFlown string `json:"last_flown"`
+	Flights   int    `json:"flights"`
+}
+
+func toAircraftJSON(a store.AircraftRow) aircraftJSON {
+	return aircraftJSON{
+		Registration: a.Registration,
+		Type:         a.Type,
+		DefaultClass: string(a.DefaultClass),
+		IFRCapable:   a.IFRCapable,
+		Notes:        a.Notes,
+		UserAdded:    a.UserAdded,
+		LastFlown:    a.LastFlown,
+		Flights:      a.Flights,
+	}
+}
+
 func (s *Server) handleAircraft(w http.ResponseWriter, r *http.Request) {
-	list, err := s.db.Aircraft()
+	list, err := s.db.AircraftList()
 	if err != nil {
 		s.log.Error("listing aircraft", "error", err)
 		writeError(w, http.StatusInternalServerError, "could not read the aircraft list")
 		return
 	}
-	type item struct {
-		Registration string `json:"registration"`
-		Type         string `json:"type"`
-		DefaultClass string `json:"default_class"`
-		IFRCapable   bool   `json:"ifr_capable"`
-		Active       bool   `json:"active"`
-		Notes        string `json:"notes"`
-	}
-	out := make([]item, 0, len(list))
+	out := make([]aircraftJSON, 0, len(list))
 	for _, a := range list {
-		out = append(out, item{
-			Registration: a.Registration, Type: a.Type,
-			DefaultClass: string(a.DefaultClass), IFRCapable: a.IFRCapable,
-			Active: a.Active, Notes: a.Notes,
-		})
+		out = append(out, toAircraftJSON(a))
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"aircraft": out})
+}
+
+// aircraftDraft is a submitted aeroplane. Same shape for create and update:
+// an update is a full replacement, so a field left out is a field cleared,
+// which is the honest reading of a PUT.
+type aircraftDraft struct {
+	Registration string `json:"registration"`
+	Type         string `json:"type"`
+	DefaultClass string `json:"default_class"`
+	IFRCapable   bool   `json:"ifr_capable"`
+	Notes        string `json:"notes"`
+}
+
+// validate returns the aircraft and a per-field error map.
+//
+// Per-field rather than one sentence, in the same shape POST /flights uses, so
+// the form can put each message against its own control instead of printing a
+// paragraph above everything.
+func (d aircraftDraft) validate() (csvbook.Aircraft, map[string]string) {
+	bad := map[string]string{}
+
+	a := csvbook.Aircraft{
+		Registration: strings.ToUpper(strings.TrimSpace(d.Registration)),
+		Type:         strings.ToUpper(strings.TrimSpace(d.Type)),
+		DefaultClass: csvbook.Class(strings.ToUpper(strings.TrimSpace(d.DefaultClass))),
+		IFRCapable:   d.IFRCapable,
+		Notes:        strings.TrimSpace(d.Notes),
+	}
+	if a.Registration == "" {
+		bad["registration"] = "a registration is required"
+	}
+	if a.Type == "" {
+		bad["type"] = "an aircraft type is required"
+	}
+	if !csvbook.ValidClass(a.DefaultClass) {
+		bad["default_class"] = fmt.Sprintf("%q is not a known class", d.DefaultClass)
+	}
+	if len(bad) > 0 {
+		return csvbook.Aircraft{}, bad
+	}
+	return a, nil
+}
+
+// handleCreateAircraft adds an aeroplane that has never been flown.
+//
+// This is what makes a first flight in a new aeroplane enterable at all: the
+// form's registration is a dropdown fed by GET /aircraft, so until 2026-08-02
+// the only aeroplanes that could be logged were the ones already in the books.
+func (s *Server) handleCreateAircraft(w http.ResponseWriter, r *http.Request) {
+	var d aircraftDraft
+	if err := decodeJSON(r, &d); err != nil {
+		writeError(w, http.StatusBadRequest, "malformed request")
+		return
+	}
+	a, bad := d.validate()
+	if bad != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{
+			"error": "this aircraft cannot be added as written", "fields": bad,
+		})
+		return
+	}
+
+	stored, err := s.db.AddAircraft(a)
+	if err != nil {
+		s.writeAircraftError(w, "adding", a.Registration, err)
+		return
+	}
+
+	s.log.Info("aircraft added", "user", callerOf(r).User.Username,
+		"reg", stored.Registration, "type", stored.Type)
+	writeJSON(w, http.StatusCreated, map[string]any{"aircraft": toAircraftJSON(stored)})
+}
+
+// handleUpdateAircraft corrects an aeroplane.
+//
+// IT IS ALLOWED ON EVERY AEROPLANE, including the 38 that came from the paper
+// books, and that is not a hole in rule 0.8. This table seeds a form; it is not
+// the record. Every flight carries its own registration, type and class exactly
+// as written on paper, so no edit here can move one minute of a total -- there
+// is a test that reads every flight back before and after and asserts it.
+//
+// There is NO delete, by owner ruling: an aeroplane once added stays, and a
+// wrong one is corrected here.
+func (s *Server) handleUpdateAircraft(w http.ResponseWriter, r *http.Request) {
+	reg := r.PathValue("reg")
+
+	var d aircraftDraft
+	if err := decodeJSON(r, &d); err != nil {
+		writeError(w, http.StatusBadRequest, "malformed request")
+		return
+	}
+	a, bad := d.validate()
+	if bad != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{
+			"error": "this aircraft cannot be saved as written", "fields": bad,
+		})
+		return
+	}
+
+	stored, err := s.db.UpdateAircraft(reg, a)
+	if err != nil {
+		s.writeAircraftError(w, "updating", reg, err)
+		return
+	}
+
+	s.log.Info("aircraft updated", "user", callerOf(r).User.Username,
+		"was", strings.ToUpper(strings.TrimSpace(reg)), "now", stored.Registration)
+	writeJSON(w, http.StatusOK, map[string]any{"aircraft": toAircraftJSON(stored)})
+}
+
+// writeAircraftError turns a store refusal into the right status, shared by
+// both write paths so they cannot come to disagree about what a refusal means.
+func (s *Server) writeAircraftError(w http.ResponseWriter, what, reg string, err error) {
+	switch {
+	case errors.Is(err, store.ErrAircraftNotFound):
+		writeError(w, http.StatusNotFound, "no aircraft with that registration")
+	case errors.Is(err, store.ErrDuplicateAircraft):
+		// The message names the cause: "conflict" on your own aircraft list is
+		// baffling otherwise, and the aeroplane may be one from the books that
+		// the pilot has not thought about in fifteen years.
+		writeError(w, http.StatusConflict,
+			"that registration is already in the aircraft list")
+	default:
+		s.log.Error(what+" an aircraft", "reg", reg, "error", err)
+		writeError(w, http.StatusInternalServerError, "could not save the aircraft")
+	}
 }
 
 // summaryJSON is the statistics page's payload: the twelve figures from

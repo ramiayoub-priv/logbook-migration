@@ -119,6 +119,12 @@ func NewServer(db *store.DB, cfg Config) *Server {
 	s.private("PUT", "/flights/{seq}", s.handleUpdateFlight)
 	s.private("DELETE", "/flights/{seq}", s.handleDeleteFlight)
 	s.private("GET", "/aircraft", s.handleAircraft)
+	s.private("POST", "/aircraft", s.handleCreateAircraft)
+	// No DELETE, deliberately. Owner ruling 2026-08-02: an aeroplane once added
+	// stays, a wrong one is corrected with a PUT, and the list is kept usable by
+	// being filterable rather than by hiding rows. A test asserts the absence,
+	// because a later session adding one "for symmetry" is how a ruling is lost.
+	s.private("PUT", "/aircraft/{reg}", s.handleUpdateAircraft)
 	s.private("GET", "/stats", s.handleStats)
 	s.private("GET", "/aircraft-time", s.handleAircraftTime)
 	s.private("GET", "/discrepancies", s.handleDiscrepancies)

@@ -103,6 +103,10 @@ func Open(path string) (*DB, error) {
 		sqlDB.Close()
 		return nil, fmt.Errorf("store: applying schema to %s: %w", path, err)
 	}
+	if err := migrate(sqlDB); err != nil {
+		sqlDB.Close()
+		return nil, err
+	}
 	if _, err := sqlDB.Exec(
 		`INSERT INTO schema_version (version, applied_at)
 		 SELECT ?, ? WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = ?)`,
@@ -112,6 +116,58 @@ func Open(path string) (*DB, error) {
 		return nil, fmt.Errorf("store: recording schema version: %w", err)
 	}
 	return &DB{sql: sqlDB, path: path, clock: time.Now}, nil
+}
+
+// migrate applies the schema changes that cannot be written idempotently in
+// SQL. SQLite has no ADD COLUMN IF NOT EXISTS, and a bare ALTER would fail on
+// the second Open -- so the column is added only if PRAGMA table_info says it
+// is absent.
+//
+// EVERY MIGRATION HERE MUST BE ADDITIVE AND SAFE ON A LIVE PRODUCTION FILE.
+// Open() runs on the real logbook at every service start (CLAUDE.md rule 0.2);
+// this is not a place for anything that rewrites or drops.
+func migrate(sqlDB *sql.DB) error {
+	for _, m := range []struct{ table, column, spec string }{
+		// Which rows the importer owns. Without it, `DELETE FROM aircraft`
+		// takes every hand-added aeroplane with it -- the same trap that
+		// source_book = 0 solves for flights.
+		{"aircraft", "user_added", "INTEGER NOT NULL DEFAULT 0 CHECK (user_added IN (0,1))"},
+	} {
+		has, err := hasColumn(sqlDB, m.table, m.column)
+		if err != nil {
+			return err
+		}
+		if has {
+			continue
+		}
+		if _, err := sqlDB.Exec(fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s",
+			m.table, m.column, m.spec)); err != nil {
+			return fmt.Errorf("store: adding %s.%s: %w", m.table, m.column, err)
+		}
+	}
+	return nil
+}
+
+func hasColumn(sqlDB *sql.DB, table, column string) (bool, error) {
+	rows, err := sqlDB.Query(fmt.Sprintf("PRAGMA table_info(%s)", table))
+	if err != nil {
+		return false, fmt.Errorf("store: reading %s columns: %w", table, err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var (
+			cid, notnull, pk int
+			name, ctype      string
+			dflt             any
+		)
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			return false, fmt.Errorf("store: reading %s columns: %w", table, err)
+		}
+		if name == column {
+			return true, rows.Err()
+		}
+	}
+	return false, rows.Err()
 }
 
 // Close releases the database.
@@ -235,10 +291,15 @@ func (db *DB) Import(lb *csvbook.Logbook, note string) (Result, error) {
 
 	// Replace rather than merge. A merge would leave a row that disappeared
 	// from the CSVs alive in the database as a phantom total.
-	for _, table := range []string{"aircraft", "discrepancies"} {
-		if _, err := tx.Exec("DELETE FROM " + table); err != nil {
-			return res, fmt.Errorf("store: clearing %s: %w", table, err)
-		}
+	if _, err := tx.Exec("DELETE FROM discrepancies"); err != nil {
+		return res, fmt.Errorf("store: clearing discrepancies: %w", err)
+	}
+	// Aircraft are cleared only where the importer owns them. This DELETE was
+	// unqualified until 2026-08-02, which would have destroyed every aeroplane
+	// added by hand -- the same trap source_book = 0 solves for flights, and it
+	// was wide open the moment aircraft got a write path.
+	if _, err := tx.Exec("DELETE FROM aircraft WHERE user_added = 0"); err != nil {
+		return res, fmt.Errorf("store: clearing the imported aircraft: %w", err)
 	}
 	// Flights are cleared only where the importer owns them. Rows typed into
 	// the app carry source_book 0, are not in any CSV, and would be destroyed
