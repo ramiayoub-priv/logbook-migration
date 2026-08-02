@@ -16,6 +16,16 @@ Rules live in the repo root **`CLAUDE.md` §0** — read those first, they are n
 
 *Assume you remember nothing. This block is the whole brief.*
 
+**Paused 2026-08-02 after the Tasks 16/17/18 deploy; work resumes 2026-08-03.** Nothing is
+in flight, nothing is half-finished, and the box is level with the repo. **Start with the two items
+below, in this order:**
+
+1. ⚠ **Confirm the owner rotated the `rami` sudo password.** They undertook to, twice. Until it is
+   done it is the project's largest exposure — details in pick-up item 1 and `docs/security.md`.
+2. **Build the fleet management page** — the `U` of aircraft CRUD, the only feature gap the owner has
+   named. Full state and the exact reason it matters are in **pick-up item 3**, which is written to be
+   read cold. It is frontend-only and does not touch the record.
+
 **What this is.** A private, mobile-first pilot logbook web app for one user (the repo owner, a
 Finnish pilot), live at `https://ayoub.fi/logbook`. It holds 1296 flights transcribed from three
 paper logbooks, computes every total on demand, and exports an EASA-format PDF for the authority.
@@ -577,9 +587,31 @@ at an airfield with no signal and never caches a logbook response. Offline *writ
    a deploy. The live bundle is provably `index-xgdC8L2o.js`; if the picker is missing on the phone,
    check the device, not the deploy (see the trap below), and escape it with `/logbook/?v=3` plus a
    full close-and-reopen of the home-screen app.
-3. **The fleet management page is NOT built.** `PUT /aircraft/{reg}` exists, is tested, and is **now
-   live** — but nothing in the UI calls it. The owner asked for "both: inline + a manage page" and
-   only the inline half shipped. **This is the largest known feature gap.**
+3. **THE FLEET MANAGEMENT PAGE IS NOT BUILT — this is where tomorrow's work starts.** The owner
+   asked on 2026-08-02 whether "the aircraft CRUD is live", and the honest answer is *partly*. The
+   exact state, verified against the source rather than remembered:
+
+   | | API | Reachable in the UI? |
+   |---|---|---|
+   | **R** — `GET /aircraft` | live | ✅ feeds the picker (`FlightForm.tsx:170`) |
+   | **C** — `POST /aircraft` | live | ✅ the picker's "Add … as a new aircraft" row (`AircraftPicker.tsx:220`) |
+   | **U** — `PUT /aircraft/{reg}` | live | ❌ **nothing calls it** |
+   | **D** | does not exist, by ruling | n/a — enforced live (**405**) |
+
+   **What the owner actually asked for works**: an aeroplane never flown before can be added inline
+   and the flight logged, without leaving the form. **What is missing is the U.**
+   **`api.updateAircraft` (`src/api.ts:301`) has exactly zero callers — not even a test.** It is dead
+   code in the frontend sitting on a working, deployed, tested endpoint.
+
+   **The consequence to state plainly: a typo'd registration or a wrong type cannot be corrected from
+   the app, and cannot be deleted either (by design).** That combination is the gap — the no-delete
+   ruling is only humane if editing exists, and right now it does not.
+
+   It is a **frontend-only job**: the endpoint, its validation, the `user_added` scoping and the store
+   tests all exist and are deployed. It needs a page that lists the fleet and lets a row be edited,
+   built failing-test-first (§0.6). Shipping it is a frontend-only redeploy — **no `sudo`, and it does
+   not touch the record.** ⚠ Do **not** add a delete route while you are in there; that ruling is
+   asserted by a route-table test precisely because "symmetry" is how it would get lost.
 
 **Then, in rough order of value (all pre-dating this session):**
 
@@ -729,7 +761,7 @@ day · landings night.
 | 13 | **Aircraft time page (block vs air, by aircraft and date range)** | **done** 2026-08-02 — `internal/stats/aircraft.go` (`AirMinutes`, `ByAircraft`, `TotalAircraftTime`; pure, **100%**), `GET /aircraft-time?from&to&reg`, and the **Aircraft** tab. Block and air are separate fields with separate coverage and are never mixed; both totals in **H:MM and whole minutes**; `reg` adds the flights behind one figure without narrowing the comparison. The real books make the case: **OH-CTL has 267:16 of block time and 2:51 of air time from 4 of its 286 flights** — one merged "hours" figure would be catastrophically wrong. |
 | 14 | **Daily off-box backup to a private git repo** | **INSTALLED AND RUNNING** 2026-08-02 — `logbookctl backup` (`internal/backup`) writes four files: `logbook.db` (sessions stripped), `logbook.csv` (every flight, every field), `MANIFEST.txt`, `RESTORE.md`. A systemd timer runs `backup.sh` as the **`logbook` user** → commit → push to `ramiayoub-priv/logbook-backup`. First snapshot pushed as **`fc5cec9` — 1298 flights, 1223:03, 3446 landings**; timer **enabled and active**, next **2026-08-03 03:22 UTC**. Auth is an **account-level key on the dedicated `ramiayoub-priv` account** (owner ruling — not a deploy key). Installing it took four attempts and exposed **four bugs in `install-backup.sh`'s own checks and none in the backup** — see the decision log. ✅ **Step 8, the clone-back, passed**: four files out of a fresh clone, `logbook.db` matching its own manifest sha256, 1298 flights / 1223:03 / 3446 landings / 1 user. |
 | 16 | **The restore drill, and `logbookctl check`** | **done, and DEPLOYED 2026-08-02 19:07 UTC** (`logbookctl` `59e089d3…` now on the box, installed by `update.sh` step 3) — the backup was cloned and restored for real with no emergency running. It passed everything: both sha256s match, `logbook.db` is byte-identical across three snapshots, the server boots on it reading **`flights=1298`** with all six private routes still 401, and `logbook.csv` reconciles to 1298 / 1223:03 / 3446 / 38 with no SQLite involved. **Its instructions did not pass**: step 3 told the reader to run `sqlite3`, absent from the box and not a dependency of this project, so the mandatory rule-0.2 verification was `command not found` on a fresh server. New **`logbookctl check -db <db> [-manifest <file>]`** (no CSVs, no sqlite3, hashes before opening, shares `Figures` with the manifest writer so the two cannot drift), regenerated `RESTORE.md`, and **`install-backend.sh` now installs `logbookctl`** — step 1 of the restore never did, so fixing only the sqlite3 line would have swapped one missing command for another. Backend **87.6%**, core still 100%. |
-| 17 | **Aircraft CRUD** | **backend + picker DEPLOYED, manage page NOT built** 2026-08-02 — owner ask: a first flight in an aeroplane never flown was unenterable, because the aircraft list was purely derived and the form's registration was a `<select>` fed by it. Now: `aircraft.user_added` (additive migration in `store.migrate`, proven safe on a copy of real production), `store/aircraft.go` (`AircraftList`/`AircraftByReg`/`AddAircraft`/`UpdateAircraft`, `last_flown` and flight counts **derived, never stored**), **`POST /aircraft`** and **`PUT /aircraft/{reg}`** — and **NO DELETE**, by ruling, asserted against the route table. The importer's unqualified `DELETE FROM aircraft` is scoped to `user_added = 0`. Frontend: `AircraftPicker.tsx`, a filterable combobox that also adds an aeroplane inline; **no retired/active concept**, nothing hidden, ordered never-flown-first then most-recently-flown. **111 frontend tests, backend 87.3%.** ✅ **Live since 2026-08-02 19:07 UTC** — `POST`/`PUT` both answer **403** unauthenticated (CSRF refused before auth, stricter than 401) and `DELETE` answers **405**, so the no-delete ruling is enforced in production. ⚠ **Still never opened in a real browser, and `PUT` still has no UI** — the owner asked for "both: inline + a manage page" and the manage page is not built. |
+| 17 | **Aircraft CRUD** | **backend + picker DEPLOYED, manage page NOT built** 2026-08-02 — owner ask: a first flight in an aeroplane never flown was unenterable, because the aircraft list was purely derived and the form's registration was a `<select>` fed by it. Now: `aircraft.user_added` (additive migration in `store.migrate`, proven safe on a copy of real production), `store/aircraft.go` (`AircraftList`/`AircraftByReg`/`AddAircraft`/`UpdateAircraft`, `last_flown` and flight counts **derived, never stored**), **`POST /aircraft`** and **`PUT /aircraft/{reg}`** — and **NO DELETE**, by ruling, asserted against the route table. The importer's unqualified `DELETE FROM aircraft` is scoped to `user_added = 0`. Frontend: `AircraftPicker.tsx`, a filterable combobox that also adds an aeroplane inline; **no retired/active concept**, nothing hidden, ordered never-flown-first then most-recently-flown. **111 frontend tests, backend 87.3%.** ✅ **Live since 2026-08-02 19:07 UTC** — `POST`/`PUT` both answer **403** unauthenticated (CSRF refused before auth, stricter than 401) and `DELETE` answers **405**, so the no-delete ruling is enforced in production. ⚠ **Still never opened in a real browser, and the U of CRUD has no UI at all**: `api.updateAircraft` (`src/api.ts:301`) has **zero callers, not even a test**, so a typo'd registration cannot be corrected from the app and cannot be deleted either. Create/read work end-to-end. See pick-up item 3 for the full table — that is where the next session starts. |
 | 18 | **Retire the importer from production** | **done and DEPLOYED** 2026-08-02 — owner ruling: the production database is the source of truth. **The rewritten `update.sh` ran at 19:07 UTC**: step 4's read-only `verify` matched all nine checksums against the frozen CSVs and nothing was written to the record. That was the first deploy in this project's history that did not run a destructive operation on a live legal record. `update.sh` no longer imports; step 4 is a **read-only `verify`**, turning the frozen CSVs into a drift/tamper check on the 1296 historical rows rather than a rebuild. `CLAUDE.md` §0.2 rewritten. `logbookctl import` survives for dev scratch databases and tests only. Removes the stale-CSV class of failure entirely, and rests on the backup having been *proven* restorable the same day. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
