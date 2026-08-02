@@ -31,16 +31,20 @@ and the rule wins.
 **Where to start.** This file, then `docs/data-model.md` / `docs/security.md` / `docs/deploy.md` as
 the work requires.
 
-**⛔ READ THIS FIRST: THE BOX IS NOW BEHIND THE REPO, AND THE IMPORTER HAS BEEN RETIRED.**
+**✅ THE BOX IS LEVEL WITH THE REPO, AND THE IMPORTER IS RETIRED IN PRODUCTION.**
 
-Earlier on 2026-08-02 the box was level with the repo. **It is not any more.** A later session on the
-same day shipped three things that are committed, pushed, tested and **NOT DEPLOYED**:
+The three changes that were committed-but-undeployed all day on 2026-08-02 **shipped that evening**
+and were verified from off-box:
 
 1. **`logbookctl check`** — the restore check (Task 16). `RESTORE.md` used to tell the reader to run
    `sqlite3`, which is not on the box and is not a dependency of this project.
 2. **Aircraft CRUD** (Task 17) — `POST /aircraft`, `PUT /aircraft/{reg}`, **no DELETE**, plus a
    schema migration adding `aircraft.user_added`, and a filterable aircraft picker in the form.
 3. **`update.sh` no longer imports** (Task 18) — the owner's ruling below.
+
+**The first production deploy that did not write to the legal record ran at 19:07 UTC** and is
+described under "Deployed and verified" below. `update.sh` had never been executed in its rewritten
+form until then; it is no longer the outstanding risk this block used to warn about.
 
 **⛔ THE RULING THAT CHANGES THE DEPLOY (2026-08-02, owner, verbatim): "we should start treating the
 production database now as the source of truth. We don't need the importer anymore."** See
@@ -50,9 +54,42 @@ it. **`update.sh` step 4 is now a READ-ONLY `verify`**, which turns the CSVs int
 check on the 1296 frozen historical rows instead of a rebuild. `logbookctl import` survives for dev
 scratch databases and tests only. **The backup, not the repo, is what protects production.**
 
-⚠ **`update.sh` has been rewritten and NOT YET RUN.** It is the highest-risk item outstanding: read
-it before running it, and note that step 4 failing now means *the live historical rows disagree with
-the frozen books* — a defect to investigate, **never** a reason to re-import.
+✅ **`update.sh` has now been run in its rewritten form (2026-08-02 19:07 UTC) and behaved exactly as
+designed.** Step 4's read-only `verify` matched the live database against the frozen CSVs on **all
+nine checksums** — 1296 / 1222:10 / 1054:45 / 167:25 / 107:58 / 22:45 / 189:41 / 407:39 / 3444 — which
+is the first time that drift-and-tamper check has been exercised as the *point* of the deploy rather
+than as a rebuild's afterthought. Nothing was written to the record. Step 4 failing still means *the
+live historical rows disagree with the frozen books* — a defect to investigate, **never** a reason to
+re-import.
+
+### ✅ Deployed and verified 2026-08-02 (final session) — Tasks 16, 17, 18
+
+The deploy a session could not previously finish: the owner supplied the sudo password in-session, so
+steps 2–4 were run from here rather than by hand. **The password must be rotated as a result** —
+`docs/security.md`, and it is now the second such exposure.
+
+- **Backend**: `/opt/logbook/logbook-server` md5 **`f4b539aa9930419d820a81e6f45266a6`**, byte-equal to
+  a `CGO_ENABLED=0` build of HEAD `c634556`. `logbookctl` **`59e089d3…`** installed alongside it —
+  Task 16's fix, so a restore no longer arrives at step 3 without the tool.
+  `logbook-server.prev` holds the previous `284a93fb…` for rollback.
+- **Migration**: `aircraft.user_added` applied on first start with no incident; `flights=1298`
+  unchanged across it, and a pre-migration copy sits in `/var/lib/logbook/backups/`.
+- **Frontend**: `index-xgdC8L2o.js`, fetched back over HTTPS and **md5-identical** to the repo build
+  (`fce1a22db8e0c0d69105b375128bbf81`), `index.html` pointing at it. Verified **by content**, not by
+  filename: `Registration or type`, `as a new aircraft`, `No aircraft match.`, `New aircraft type`,
+  `New aircraft class`, `route:"aircraft"`, `aircraft-time` and `Keep editing this flight` all
+  present.
+- **The new write routes are default-deny, and stricter than expected**: `POST /aircraft` and
+  `PUT /aircraft/{reg}` answer **403**, not 401 — `checkOrigin` (`cmd/server/server.go:206`) wraps
+  *outside* the auth check, so a state-changing request with no `Origin` header is refused as CSRF
+  before authentication is even considered. Asserted in `flightentry_test.go:206`. **`DELETE
+  /aircraft/{reg}` answers 405**: the no-delete ruling is live, not just tested.
+- **Apache was deliberately NOT touched.** All three cache layers were already correct
+  (`index.html` `no-cache, no-store, must-revalidate` + `Pragma` + `Expires: 0`; `sw.js` `no-cache`;
+  hashed assets `immutable`) and `apache-logbook.conf` was byte-identical to the installed block, so
+  `install-apache.sh` would have been a no-op reload on a box serving seven other sites (§0.3).
+  **Skipping a no-op step is part of the runbook, not a shortcut.**
+- **Service** active, **21.4 MB** against the 192 MB `MemoryMax`. **All seven other sites still 200.**
 
 ### ✅ Deployed and verified 2026-08-02 (late session)
 
@@ -127,8 +164,10 @@ test figure disagree **must not reconcile them**: they are answers to different 
 scoped `source_book <> 0` for exactly this reason.
 
 **Status: LIVE at `https://ayoub.fi/logbook`, in real use, and the box is LEVEL WITH THE REPO** as of
-2026-08-02 (late session) — binary `284a93fb…`, bundle `index-OExDQCHH.js`, both verified against
-HEAD from here. The owner logged two flights from the field that day and both survived the re-import
+2026-08-02 (final session) — binary **`f4b539aa…`**, `logbookctl` **`59e089d3…`**, bundle
+**`index-xgdC8L2o.js`**, all three verified against HEAD from off-box. *(The figures below —
+`284a93fb…` / `index-OExDQCHH.js` — are the previous evening's deploy, kept because the paragraph
+records what was learned then; `284a93fb…` is now `logbook-server.prev`, the rollback target.)* The owner logged two flights from the field that day and both survived the re-import
 (**1298** on the live Flights page, owner-confirmed) and are now in the off-box backup.
 
 The re-import reported **54 discrepancies, not 61** — the 2026-08-02 aircraft-type ruling, expected
@@ -410,21 +449,22 @@ each by an independent check rather than by trusting the script's own output:
 - The live bundle is the four-digit form (`index-C1WjdtsT.js`), and `index.html` points at it.
 - **All seven of the owner's other sites still answer 200.**
 
-⏳ **The one item a session cannot confirm: the `flights=1296` startup line.** The database and the
-unit's journal are readable only by root and the service user, so this must be read off the owner's
-own `update.sh` output, or from the app once signed in. Everything else above was checked from here.
+✅ **That item is now confirmed, 2026-08-02 (final session).** The startup line was read directly off
+`update.sh`'s output: **`flights=1298`**. It is no longer expected to say 1296 — see the warning under
+step 2 below.
 
-**The runbook, for next time** — four steps, in this order. The two `sudo` ones are the owner's;
-there is no passwordless sudo, and a session cannot run them. Before running it, note that the staged
-CSVs on the box were confirmed **byte-identical (md5) to the repo's**, which is what put the three
-28/08/2025 flights in front of the importer.
+**The runbook, for next time** — five steps, in this order. The `sudo` ones are **the owner's unless
+they hand over the password in session**, which happened on 2026-08-02 (and cost a rotation — see
+`docs/security.md`). Before running it, note that the staged CSVs on the box are confirmed
+**byte-identical (md5) to the repo's**; that is now a *verification* input rather than an import
+input, but it is still checked, because step 4 compares the live database against those files.
 
 ```bash
 # 1. Stage the current build. rami owns /home/rami/logbook-deploy, so no sudo.
 #    Binaries are cross-compiled CGO_ENABLED=0 from this repo's HEAD.
 #    Re-run it whenever you have rebuilt; then re-verify the md5s, do not assume.
 #    ⚠ The `csv/` copy is the one update.sh reads. Staging only the top-level
-#      copies leaves the importer reading whatever was there before.
+#      copies leaves step 4's VERIFY comparing against whatever was there before.
 cd app/backend && export PATH=$HOME/.local/go/bin:$PATH
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /tmp/logbook-server ./cmd/server
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /tmp/logbookctl   ./cmd/logbookctl
@@ -434,8 +474,9 @@ cd ../.. && rsync -a /tmp/logbook-server /tmp/logbookctl \
 rsync -a logbook_1_final.csv logbook_2_final.csv logbook_3.csv rami@ayoub.fi:/home/rami/logbook-deploy/csv/
 rsync -a app/deploy/ rami@ayoub.fi:/home/rami/logbook-deploy/   # scripts live in the repo now
 
-# 2. OWNER, sudo: new binary + backup + re-import + verify + restart.
-#    The startup log line must read flights=1296.
+# 2. sudo: backup + new binaries + READ-ONLY verify + restart. NO IMPORT.
+#    The startup log line reads the LIVE count: 1296 + every app-entered
+#    flight. It was 1298 on 2026-08-02 and only goes up. NOT 1296.
 ssh -t rami@ayoub.fi 'sudo /home/rami/logbook-deploy/update.sh'
 
 # 3. The frontend, AFTER step 2 -- the ORDER matters, see the pairing warning
@@ -456,9 +497,18 @@ ssh -t rami@ayoub.fi 'sudo /home/rami/logbook-deploy/install-apache.sh'
 ssh -t rami@ayoub.fi 'sudo /home/rami/logbook-deploy/install-backup.sh'
 ```
 
-⚠ **Step 2's import will now report `54 discrepancies`, not 61.** That is the owner's 2026-08-02
-aircraft-type ruling, and the flight count and every time total are unchanged. **The startup line
-must still read `flights=1296`.** Anything else is a defect.
+⚠ **Step 2 NO LONGER IMPORTS, so it no longer reports a discrepancy count at all.** It prints the
+nine `verify` checksums instead. What they must read is the frozen-CSV figures — **1296 / 1222:10 /
+1054:45 / 167:25 / 107:58 / 22:45 / 189:41 / 407:39 / 3444** — because `verify` is scoped
+`source_book <> 0` and therefore describes *the historical rows only*. **The startup line, which
+counts everything, read `flights=1298` on 2026-08-02.** Those two numbers disagreeing is the design,
+not a fault; see the warning about it further up.
+
+⚠ **A step-4 mismatch is NEVER a reason to re-import.** It means the live historical rows have
+drifted from the frozen books — a defect to investigate before the service writes again (`CLAUDE.md`
+§0.2). Note also that step 4 runs under `set -euo pipefail` **before** step 5 starts the service, so a
+failed verify leaves the service **stopped**. That is deliberate, but it means you must not walk away
+from a red step 4: the site is down until it is resolved or the service is started by hand.
 
 ⚠ **`install-apache.sh` now REPLACES its block rather than skipping it.** The first version refused
 to touch a vhost that already had a `BEGIN logbook` block, which meant a changed snippet could never
@@ -469,12 +519,15 @@ unchanged. Rehearsed against a copy of the vhost before it was ever run as root,
 bugs: an inserted blank line made every run differ from the last, breaking both that safety check
 and idempotence.
 
-`update.sh` installs the new binary (keeping `.prev` for rollback), backs the database up to
-`/var/lib/logbook/backups/`, **re-imports** the corrected CSVs, verifies by a separate code path,
-restarts, and re-checks the other six sites. **The startup log line must read `flights=1296`.**
+`update.sh` backs the database up to `/var/lib/logbook/backups/` **first, always**, installs the new
+binaries (keeping `logbook-server.prev` for rollback), runs the **read-only `verify`**, restarts, and
+re-checks the other six sites. The backup step survives the importer's retirement on purpose: the
+server may apply an **additive schema migration** on first start, and a copy taken beforehand costs a
+second and is the only way back.
 
-⚠ **Re-import, never a file swap.** The `users` and `sessions` tables live in the same SQLite file,
-so replacing it would delete the owner's account. The importer's `DELETE` is scoped to `aircraft`,
+⚠ **Never a file swap.** The `users` and `sessions` tables live in the same SQLite file, so replacing
+it would delete the owner's account. This mattered when the importer ran, and it still governs any
+future restore. The importer's `DELETE` was scoped to `aircraft`,
 `discrepancies` and `flights WHERE source_book <> 0`, inside one transaction that rolls back on any
 checksum mismatch — so users, sessions and app-entered flights all survive.
 
@@ -502,26 +555,31 @@ other sites. Baseline before the change: all seven **200**, `/logbook/` **404**.
 **The PWA half is done**: manifest, icons and `public/sw.js`, which caches the shell so the app opens
 at an airfield with no signal and never caches a logbook response. Offline *writes* stay out of v1.
 
-### Where to pick up — 2026-08-02, late
+### Where to pick up — 2026-08-02, final session (post-deploy)
 
-**THE FIRST TWO ITEMS ARE THE ONLY ONES THAT MATTER.** Everything below them predates this session.
+**THE DEPLOY IS DONE. Nothing is committed-but-undeployed.** The box and the repo are level at
+`c634556` + this commit. The two items below are the only ones that matter.
 
-1. **DEPLOY WHAT IS IN THE REPO.** Three shipped-but-undeployed changes (above). Follow the runbook,
-   **binary first, frontend second**. Two notes specific to this deploy:
-   - **Step 2 is the rewritten `update.sh`, which no longer imports.** Read it first. Its step 4 is a
-     read-only `verify`; if that fails, **investigate — do not re-import**.
-   - The new binary applies an **additive schema migration** (`aircraft.user_added`) on first start.
-     Proven against a copy of the real production database: `flights=1298` unchanged and every figure
-     identical afterwards, only the file bytes moved. `update.sh` backs up first regardless.
-2. **OPEN THE AIRCRAFT PICKER IN A REAL BROWSER, ON THE PHONE.** It has **111 green tests and has
-   never been looked at**. On this project a green jsdom suite has now **five times** loved something
-   that thirty seconds of real use exposed — the untypeable colon, the stale service worker, the
-   off-screen save confirmation, the empty clone, the unrunnable restore instructions. A dropdown
-   that opens under the thumb, on a form, on a phone, is exactly that shape of risk. Specifically:
-   does the list close when you expect, does the keyboard cover it, can you reach the "Add …" row.
-3. **The fleet management page is NOT built.** `PUT /aircraft/{reg}` exists and is tested; nothing in
-   the UI calls it. The owner asked for "both: inline + a manage page" and only the inline half
-   shipped. This is the largest known gap.
+1. ⚠ **ROTATE THE `rami` SUDO PASSWORD — this is now the top item, and it is overdue.** It was pasted
+   into a chat session on 2026-08-01, typed repeatedly on 2026-08-02, and **handed over in-session
+   again on 2026-08-02** so that this deploy's `sudo` steps could be run without the owner. The owner
+   said they would rotate it "as soon as we are done". **We are done.** Until it is rotated, a
+   credential to a box serving eight sites is sitting in two chat transcripts. Tracked in
+   `docs/security.md`.
+2. **OPEN THE AIRCRAFT PICKER IN A REAL BROWSER, ON THE PHONE.** It is now **live** and still has
+   **111 green tests and has never been looked at**. On this project a green jsdom suite has now
+   **five times** loved something that thirty seconds of real use exposed — the untypeable colon, the
+   stale service worker, the off-screen save confirmation, the empty clone, the unrunnable restore
+   instructions. A dropdown that opens under the thumb, on a form, on a phone, is exactly that shape
+   of risk. Specifically: does the list close when you expect, does the keyboard cover it, can you
+   reach the "Add …" row.
+   ⚠ **The phone may still serve the old bundle** — a service worker installed before today survives
+   a deploy. The live bundle is provably `index-xgdC8L2o.js`; if the picker is missing on the phone,
+   check the device, not the deploy (see the trap below), and escape it with `/logbook/?v=3` plus a
+   full close-and-reopen of the home-screen app.
+3. **The fleet management page is NOT built.** `PUT /aircraft/{reg}` exists, is tested, and is **now
+   live** — but nothing in the UI calls it. The owner asked for "both: inline + a manage page" and
+   only the inline half shipped. **This is the largest known feature gap.**
 
 **Then, in rough order of value (all pre-dating this session):**
 
@@ -536,16 +594,19 @@ at an airfield with no signal and never caches a logbook response. Offline *writ
    real browser** — and six tabs plus a seven-column table are exactly the shapes that have broken
    on this project before. Four times now a green suite has loved something that thirty seconds of
    real use exposed. Same for Task 12's three new table columns.
-3. **Rotate the `rami` sudo password** — the oldest open item in `docs/security.md`. It went into a
-   chat session on 2026-08-01 and was typed repeatedly on 2026-08-02.
+3. **Rotate the `rami` sudo password** — see the top of this list; it was exposed a **second** time on
+   2026-08-02 and is no longer merely the oldest open item, it is the most urgent one.
 
 **Task 10's ruling is spent** — edit/delete shipped on 2026-08-02. The old open question recorded
 here (correct in place vs. append a correction) was answered: app-entered flights only, real delete
 with an append-only `flight_audit` copy, double confirmation. Nothing left to decide.
 
-**Security and the box** (unchanged, all pre-dating today):
-- **Rotate the `rami` sudo password.** It was pasted into a chat session on 2026-08-01 and must be
-  treated as compromised. Tracked in `docs/security.md`. **This is the oldest open item.**
+**Security and the box:**
+- ⚠ **Rotate the `rami` sudo password. UPGRADED TO THE TOP OPEN ITEM 2026-08-02.** It was pasted into
+  a chat session on 2026-08-01, typed repeatedly during that day's deploys, and **handed over
+  in-session on 2026-08-02** to let this session run the deploy's `sudo` steps unattended. Two
+  transcripts now contain it. The owner accepted the trade explicitly ("i will change the password as
+  soon as we are done") — **and we are done.** Tracked in `docs/security.md`.
 - Is the `kraken-predictor-python-2` container on `:8000` still wanted? Publicly exposed, up 2 years,
   and the box's largest memory consumer (~759 MB / 38%).
 - Prune the stale ufw rules for `30814` and `19132` (nothing listens on either)?
@@ -659,7 +720,7 @@ day · landings night.
 | 5b | `POST /flights` — the write path | **done** 2026-08-01 — `internal/entry` (validation, pure, 100%), `store.AddFlight`, the hand-entered `seq` band, the duplicate guard, and the import scoping that stops a re-import deleting app-entered flights. |
 | 6 | Three PDF exports (EASA clone + table + stats) | **done** 2026-08-01 — `internal/pdfmodel` (the cells and totals, pure, 100%) + `internal/pdfbook` (rendering, `go-pdf/fpdf`). Live against the real logbook: **87 EASA pages**, totals block reconciling, Finnish place names intact. |
 | 7b | **Deploy Tasks 11–14 to production** | **done** 2026-08-02 (late) — binary `284a93fb…` and bundle `index-OExDQCHH.js` both live and verified from off-box: the bundle was fetched back over HTTPS and md5-matched to the repo build, then greped for the save-takeover strings, `Takeoff`, `route:"aircraft"` and `aircraft-time`. `/aircraft-time` answers **401** unauthenticated, so default deny covers the new route. All seven other sites still 200. For part of the day the box ran the **new binary with the old frontend** (`index-8hKHsSxu.js`, 0 markers) — harmless in that direction, and the reason the pairing rule now specifies an *order*. |
-| 7 | PWA + deploy to `ayoub.fi/logbook` | **PWA done** 2026-08-01 — manifest, icons, and a hand-written service worker that caches the shell and **never** an API response, proven in a browser with the HTTP cache disabled; the shell is now fetched `no-store` and a new worker reloads the page (`src/swupdate.ts`). **Deployed and LIVE** 2026-08-01 at `https://ayoub.fi/logbook` — service user, binary, systemd unit, frontend, the additive Apache block and the account are all in place, and the owner's other seven sites still answer 200. The deploy scripts now live in **`app/deploy/`** instead of only on the box. **NOT finished**: the box runs an older binary and a **1293**-flight database while the repo is at **1296** (the three 28/08/2025 flights). Current binaries and scripts are staged on the box and md5-matched; two owner `sudo` commands remain. See the runbook in "Where the deploy actually stands". |
+| 7 | PWA + deploy to `ayoub.fi/logbook` | **PWA done** 2026-08-01 — manifest, icons, and a hand-written service worker that caches the shell and **never** an API response, proven in a browser with the HTTP cache disabled; the shell is now fetched `no-store` and a new worker reloads the page (`src/swupdate.ts`). **Deployed and LIVE** 2026-08-01 at `https://ayoub.fi/logbook` — service user, binary, systemd unit, frontend, the additive Apache block and the account are all in place, and the owner's other seven sites still answer 200. The deploy scripts now live in **`app/deploy/`** instead of only on the box. ✅ **Finished.** The 1293-vs-1296 gap this row used to record was closed by the 2026-08-02 re-import, and the box has been level with the repo at every deploy since; the last one (Tasks 16/17/18, 19:07 UTC) put binary `f4b539aa…` and bundle `index-xgdC8L2o.js` live. See "Deployed and verified 2026-08-02 (final session)". |
 | 8 | Backfill landings day/night for the **30** night rows | **WILL NOT DO** — closed 2026-08-02 by the owner's ruling that historical data is not to be touched (`CLAUDE.md` §0.8). The 30 rows keep their `landings_unverified` flag **permanently**: the API reports the count, the table asterisks the row and the statistics page names it in a paragraph. That is the honest state and it must not be quietly dropped to make a page look tidier. |
 | 9 | Rule on the open source-data problems | **closed** 2026-08-02 — two of three were ruled and fixed on 2026-08-01. The third (`logbook_2_final.csv` lines 89–90, `04.05.2018` ×2) stands **unresolved forever**: it affects row order only, moves no total, and settling it needs a physical page that will not be re-read. Recorded, not fixed. |
 | 15 | **The `C192` / `OH-CMU` aircraft types** | **done** 2026-08-02 — owner ruling, five cells in one column: `C192` → `C172` (book 2 lines 132, 133, 137, 138) and `OH-CMU` → `C152` (book 3 line 434). There is no Cessna 192, and book 2 line 139 is the same aeroplane the same day written `C172`. Discrepancies **61 → 54** (`unknown_aircraft_type` 4 → 0, `type_conflict` 3 → 0); **no other figure moved at all** — sea/land comes from the registration. Closed permanently by `TestEveryRegistrationNamesOneRealAircraftType`, watched red before it was accepted. Second and last lift of the §0.8 freeze to date. |
@@ -667,14 +728,57 @@ day · landings night.
 | 12 | **Takeoff / landing / air time in the table, and out of the disclosure** | **done** 2026-08-02 — the flights table gains **Takeoff, Landing and Air**; air time is `format.airMinutes`, computed at render from the two instants and **never stored**, blank (never `0:00`) on the 1277 rows that have none. The airborne pair is **out of the `<details>`** and sits in the Times card next to off/on block; the `details.airborne` CSS is gone. |
 | 13 | **Aircraft time page (block vs air, by aircraft and date range)** | **done** 2026-08-02 — `internal/stats/aircraft.go` (`AirMinutes`, `ByAircraft`, `TotalAircraftTime`; pure, **100%**), `GET /aircraft-time?from&to&reg`, and the **Aircraft** tab. Block and air are separate fields with separate coverage and are never mixed; both totals in **H:MM and whole minutes**; `reg` adds the flights behind one figure without narrowing the comparison. The real books make the case: **OH-CTL has 267:16 of block time and 2:51 of air time from 4 of its 286 flights** — one merged "hours" figure would be catastrophically wrong. |
 | 14 | **Daily off-box backup to a private git repo** | **INSTALLED AND RUNNING** 2026-08-02 — `logbookctl backup` (`internal/backup`) writes four files: `logbook.db` (sessions stripped), `logbook.csv` (every flight, every field), `MANIFEST.txt`, `RESTORE.md`. A systemd timer runs `backup.sh` as the **`logbook` user** → commit → push to `ramiayoub-priv/logbook-backup`. First snapshot pushed as **`fc5cec9` — 1298 flights, 1223:03, 3446 landings**; timer **enabled and active**, next **2026-08-03 03:22 UTC**. Auth is an **account-level key on the dedicated `ramiayoub-priv` account** (owner ruling — not a deploy key). Installing it took four attempts and exposed **four bugs in `install-backup.sh`'s own checks and none in the backup** — see the decision log. ✅ **Step 8, the clone-back, passed**: four files out of a fresh clone, `logbook.db` matching its own manifest sha256, 1298 flights / 1223:03 / 3446 landings / 1 user. |
-| 16 | **The restore drill, and `logbookctl check`** | **done** 2026-08-02 — the backup was cloned and restored for real with no emergency running. It passed everything: both sha256s match, `logbook.db` is byte-identical across three snapshots, the server boots on it reading **`flights=1298`** with all six private routes still 401, and `logbook.csv` reconciles to 1298 / 1223:03 / 3446 / 38 with no SQLite involved. **Its instructions did not pass**: step 3 told the reader to run `sqlite3`, absent from the box and not a dependency of this project, so the mandatory rule-0.2 verification was `command not found` on a fresh server. New **`logbookctl check -db <db> [-manifest <file>]`** (no CSVs, no sqlite3, hashes before opening, shares `Figures` with the manifest writer so the two cannot drift), regenerated `RESTORE.md`, and **`install-backend.sh` now installs `logbookctl`** — step 1 of the restore never did, so fixing only the sqlite3 line would have swapped one missing command for another. Backend **87.6%**, core still 100%. |
-| 17 | **Aircraft CRUD** | **backend + picker done, NOT DEPLOYED, manage page NOT built** 2026-08-02 — owner ask: a first flight in an aeroplane never flown was unenterable, because the aircraft list was purely derived and the form's registration was a `<select>` fed by it. Now: `aircraft.user_added` (additive migration in `store.migrate`, proven safe on a copy of real production), `store/aircraft.go` (`AircraftList`/`AircraftByReg`/`AddAircraft`/`UpdateAircraft`, `last_flown` and flight counts **derived, never stored**), **`POST /aircraft`** and **`PUT /aircraft/{reg}`** — and **NO DELETE**, by ruling, asserted against the route table. The importer's unqualified `DELETE FROM aircraft` is scoped to `user_added = 0`. Frontend: `AircraftPicker.tsx`, a filterable combobox that also adds an aeroplane inline; **no retired/active concept**, nothing hidden, ordered never-flown-first then most-recently-flown. **111 frontend tests, backend 87.3%.** ⚠ **Never opened in a real browser, and `PUT` has no UI** — the owner asked for "both: inline + a manage page" and the manage page is not built. |
-| 18 | **Retire the importer from production** | **done in the repo, NOT DEPLOYED** 2026-08-02 — owner ruling: the production database is the source of truth. `update.sh` no longer imports; step 4 is a **read-only `verify`**, turning the frozen CSVs into a drift/tamper check on the 1296 historical rows rather than a rebuild. `CLAUDE.md` §0.2 rewritten. `logbookctl import` survives for dev scratch databases and tests only. Removes the stale-CSV class of failure entirely, and rests on the backup having been *proven* restorable the same day. |
+| 16 | **The restore drill, and `logbookctl check`** | **done, and DEPLOYED 2026-08-02 19:07 UTC** (`logbookctl` `59e089d3…` now on the box, installed by `update.sh` step 3) — the backup was cloned and restored for real with no emergency running. It passed everything: both sha256s match, `logbook.db` is byte-identical across three snapshots, the server boots on it reading **`flights=1298`** with all six private routes still 401, and `logbook.csv` reconciles to 1298 / 1223:03 / 3446 / 38 with no SQLite involved. **Its instructions did not pass**: step 3 told the reader to run `sqlite3`, absent from the box and not a dependency of this project, so the mandatory rule-0.2 verification was `command not found` on a fresh server. New **`logbookctl check -db <db> [-manifest <file>]`** (no CSVs, no sqlite3, hashes before opening, shares `Figures` with the manifest writer so the two cannot drift), regenerated `RESTORE.md`, and **`install-backend.sh` now installs `logbookctl`** — step 1 of the restore never did, so fixing only the sqlite3 line would have swapped one missing command for another. Backend **87.6%**, core still 100%. |
+| 17 | **Aircraft CRUD** | **backend + picker DEPLOYED, manage page NOT built** 2026-08-02 — owner ask: a first flight in an aeroplane never flown was unenterable, because the aircraft list was purely derived and the form's registration was a `<select>` fed by it. Now: `aircraft.user_added` (additive migration in `store.migrate`, proven safe on a copy of real production), `store/aircraft.go` (`AircraftList`/`AircraftByReg`/`AddAircraft`/`UpdateAircraft`, `last_flown` and flight counts **derived, never stored**), **`POST /aircraft`** and **`PUT /aircraft/{reg}`** — and **NO DELETE**, by ruling, asserted against the route table. The importer's unqualified `DELETE FROM aircraft` is scoped to `user_added = 0`. Frontend: `AircraftPicker.tsx`, a filterable combobox that also adds an aeroplane inline; **no retired/active concept**, nothing hidden, ordered never-flown-first then most-recently-flown. **111 frontend tests, backend 87.3%.** ✅ **Live since 2026-08-02 19:07 UTC** — `POST`/`PUT` both answer **403** unauthenticated (CSRF refused before auth, stricter than 401) and `DELETE` answers **405**, so the no-delete ruling is enforced in production. ⚠ **Still never opened in a real browser, and `PUT` still has no UI** — the owner asked for "both: inline + a manage page" and the manage page is not built. |
+| 18 | **Retire the importer from production** | **done and DEPLOYED** 2026-08-02 — owner ruling: the production database is the source of truth. **The rewritten `update.sh` ran at 19:07 UTC**: step 4's read-only `verify` matched all nine checksums against the frozen CSVs and nothing was written to the record. That was the first deploy in this project's history that did not run a destructive operation on a live legal record. `update.sh` no longer imports; step 4 is a **read-only `verify`**, turning the frozen CSVs into a drift/tamper check on the 1296 historical rows rather than a rebuild. `CLAUDE.md` §0.2 rewritten. `logbookctl import` survives for dev scratch databases and tests only. Removes the stale-CSV class of failure entirely, and rests on the backup having been *proven* restorable the same day. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-02 — The first deploy that did not write to the record
+
+Tasks 16, 17 and 18 went to production. The mechanics were unremarkable — stage, md5, binary, verify,
+restart, frontend, probe — which is itself the point: **this is the first deploy in the project's
+history whose step 4 wrote nothing.** Every previous one ran `DELETE FROM flights WHERE source_book
+<> 0` against a live legal record in order to reproduce rows that could not have changed. Today step 4
+read the database, compared it to the frozen CSVs on nine checksums, printed them, and stopped.
+
+**The check that used to be a side effect is now the deliverable.** `verify` matched on all nine —
+1296 / 1222:10 / 1054:45 / 167:25 / 107:58 / 22:45 / 189:41 / 407:39 / 3444 — and because it is scoped
+`source_book <> 0`, that is a positive statement about *the 1296 frozen historical rows specifically*:
+they are byte-for-byte what the books say, three months of app use later. A re-import could never have
+told us that. It would have overwritten the evidence and then reported success.
+
+Meanwhile the startup line read **`flights=1298`**. Those two numbers coexisting — 1296 verified,
+1298 served — is the whole architecture in one screen, and a session that "reconciles" them breaks it.
+
+**Two smaller rulings, both about not doing things.**
+
+*Apache was not touched.* The runbook's step 4 is `install-apache.sh`, and it was skipped: all three
+cache layers were already correct live, and `apache-logbook.conf` in the repo was byte-identical to
+the installed block. Running it would have been a no-op reload of a webserver fronting seven other
+sites. §0.3 says changes to Apache are additive, reversible and verified — the cheapest way to satisfy
+that is to establish there is no change to make. **Verifying that a step is unnecessary is part of
+running the runbook, not a shortcut past it**, and the md5 comparison is what makes the difference
+between the two.
+
+*The 403 was not "fixed".* `POST /aircraft` and `PUT /aircraft/{reg}` answer **403**, not the 401 the
+probe expected. That is `checkOrigin` wrapping *outside* the auth check: a state-changing request with
+no `Origin` header is refused as CSRF before authentication is considered. It is stricter than 401 and
+it is asserted in `flightentry_test.go:206`. Worth writing down because an unexpected status code on a
+security route is exactly the shape of thing a later session "corrects" into a weaker one. **`DELETE`
+answers 405** — the no-delete ruling of the previous session is enforced by the live route table, not
+only by a test.
+
+**And the cost, which is not technical.** The owner handed the sudo password over in-session so these
+steps could run without them. That was their call and they attached a condition to it — rotate as soon
+as the deploy is done. The deploy is done. The credential is now in two transcripts, and until it is
+rotated it is the largest open exposure in the project, ahead of everything in `docs/security.md`.
+**Convenience during a deploy is exactly when this rule gets bent**, which is why it is written down
+here rather than only in the security doc: the next session should find it at the top of the pick-up
+list, not buried.
 
 ### 2026-08-02 — Retiring the importer, and aircraft becoming records
 

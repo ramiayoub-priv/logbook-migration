@@ -190,8 +190,19 @@ separate binary from the server for exactly this reason.
 
 ## Action items
 
-- [ ] **Rotate the `rami` sudo password.** It was pasted into a chat session on 2026-08-01 to allow
-      server setup, which means it must be treated as compromised. Rotate it once deployment is done.
+- [ ] ⚠ **Rotate the `rami` sudo password. THE MOST URGENT OPEN ITEM — exposed twice.**
+      - **2026-08-01**: pasted into a chat session to allow server setup.
+      - **2026-08-02**: handed over in-session again ("`… <-- for sudo, you deploy`") so that the
+        Tasks 16/17/18 deploy could run its `sudo` steps without the owner present. The owner
+        accepted the trade explicitly and undertook to rotate immediately afterwards; **that deploy
+        is complete**, so the condition attached to the exposure has been met.
+      - It therefore exists in **two transcripts**, and it is `sudo` on a box serving eight sites,
+        including the logbook's live legal record.
+      - **Rotation is not enough on its own if either transcript is ever shared.** Treat the
+        credential as burned: change it, and do not re-enter the new one into a session. The
+        deploy runbook's `sudo` steps are the owner's to run for exactly this reason.
+      - The rule this violates is `CLAUDE.md` §0.3: *"If a secret is ever pasted into chat or a
+        file, treat it as compromised and rotate it."*
 - [ ] Decide the fate of the publicly-exposed `:8000` container (see `deploy.md`).
 - [ ] Prune stale ufw rules (`30814`, `19132`) and the duplicated Apache profile rules.
 
