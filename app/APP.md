@@ -42,24 +42,36 @@ read that before touching any of them, then build.
 | **Task 12** | Takeoff / landing / air time in the table, fields un-collapsed | The aircraft's own logbook is filled from airborne times. **Needs the staged binary deployed.** |
 | **Task 13** | Aircraft time page: block vs air, by aircraft and range | He pays by the hour, some owners by block time and some by air time. Honesty about coverage is the load-bearing part. |
 
-⚠ **DEPLOY FIRST — IT IS ALREADY BUILT AND STAGED.** The box is running the morning's binary and
-frontend; the repo is two features ahead (edit/delete, and `takeoff_utc`/`landing_utc` on the wire).
-The binary is staged at `/home/rami/logbook-deploy/logbook-server`, md5
-`64c47992cc8d949aa0e84fdf4ae2ccaf`, matching a build of this repo's HEAD. Shipping is the owner's
-`sudo /home/rami/logbook-deploy/update.sh` followed by the frontend rsync — **in that order**,
-because the edit page calls `PUT`/`DELETE /flights/{seq}`, which the deployed binary does not have.
-**Task 12 cannot even be seen to work until this lands.** See the runbook below.
+✅ **DEPLOYED 2026-08-02 14:44 UTC** — edit/delete and `takeoff_utc`/`landing_utc` are live. Binary
+`64c47992cc8d949aa0e84fdf4ae2ccaf` on the box equals a build of HEAD; `/health` 200, `/flights`
+unauthenticated 401, `PUT`/`DELETE /flights/{seq}` unauthenticated 403 (the origin check refusing
+before auth is even consulted); the live bundle carries the delete confirmation and the four-digit
+form; all seven of the owner's other sites still 200. **Task 12 can now be built against a
+production API that actually returns the airborne times.**
+
+This was also the first deploy where `reloadWhenUpdated` was already on the device, so the phone
+picked the new build up by itself — no query-string trick needed. That mechanism is now proven.
 
 ⚠ **THERE ARE NOW REAL FLIGHTS IN PRODUCTION THAT EXIST NOWHERE ELSE.** The owner logged two on
 2026-08-02. They carry `source_book = 0`, so the re-import inside `update.sh` leaves them alone (its
-`DELETE` is scoped, and there is a test) — but they are no longer reconstructible from the CSVs, and
-"rebuild it from the CSVs in one command" no longer means "lose nothing". **The backups under
-`/var/lib/logbook/backups/` are the only copy of those rows.**
+`DELETE` is scoped, and there is a test) — **and that was confirmed against the live site rather than
+taken on trust**: the Flights page read 1298 after the re-import. But they are not reconstructible
+from the CSVs, so "rebuild it from the CSVs in one command" no longer means "lose nothing". **The
+backups under `/var/lib/logbook/backups/` are the only copy of those rows.**
 
-**Status: LIVE at `https://ayoub.fi/logbook` and in real use — the owner logged two flights from the
-field on 2026-08-02. The morning's deploy (binary, frontend, the three 28/08/2025 flights, the
-no-cache headers) is on the box and verified. Since then the repo has moved TWO features ahead of it
-and the queue above is what the first day of use asked for.**
+⚠ **THE LIVE COUNT AND THE TEST CONSTANTS ARE DIFFERENT NUMBERS, AND BOTH ARE RIGHT.**
+`realdata_test.go` asserts **1296 / 1222:10 / 1054:45 / …** — those describe **the CSVs**, and they
+are frozen (`CLAUDE.md` §0.8). Production is **1296 + every flight the owner has since entered in the
+app**, so it read 1298 on 2026-08-02 and only goes up. A session that sees the live figure and the
+test figure disagree **must not reconcile them**: they are answers to different questions, and
+"fixing" the constant would silently unfreeze the historical record. The import's own checksums are
+scoped `source_book <> 0` for exactly this reason.
+
+**Status: LIVE at `https://ayoub.fi/logbook`, in real use, and the box is LEVEL with the repo as of
+2026-08-02 14:44 UTC — binary md5-matched, frontend shipped, edit/delete and the airborne times on
+the wire. The owner logged two flights from the field that day and both survived the re-import
+(**1298** on the live Flights page, owner-confirmed). The queue above is what that first day of use
+asked for.**
 
 ### Done (2026-08-01)
 - **Task 2** — `app/backend/` Go module, `internal/hhmm` and `internal/timeutil`. Both 100%.
