@@ -151,6 +151,17 @@ h3 { font-size: 0.82rem; margin: 16px 0 8px; color: var(--muted);
 .error { color: var(--danger); border-color: currentColor; }
 .warn  { color: var(--warn); background: var(--warn-bg); border-color: currentColor; }
 
+/* A refused save gets the same weight as a successful one. The old message was
+   one line of ordinary text at the top of a form three cards long -- which on a
+   phone is the same as no message at all. */
+.error.big {
+  font-size: 1rem;
+  font-weight: 600;
+  border-width: 2px;
+  padding: 14px;
+}
+.error.big:focus-visible { outline: 2px solid var(--danger); outline-offset: 2px; }
+
 /* --- Figures -------------------------------------------------------------- */
 
 .figures {
@@ -290,16 +301,50 @@ input.derived {
 }
 input.derived:focus { outline: none; }
 
-/* The airborne pair is folded away because most flights have none. */
-details.airborne { margin: 4px 0 14px; }
-details.airborne > summary {
-  min-height: var(--tap);
+/* The airborne pair used to be folded into a <details> here, because most rows
+   in the paper books have none. Removed 2026-08-02 (Task 12): that was a fact
+   about 1296 historical rows, not about the flights being flown now, and the
+   aircraft's own logbook is filled from exactly these two times. */
+
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* --- The saved-flight takeover (Task 11) ---------------------------------- */
+
+/* The whole screen after a save, because the previous confirmation -- one line
+   above three cards of form -- was never on screen at the moment the pilot
+   wanted it. Green, large, and holding the flight it is about. */
+.card.saved {
+  border-color: var(--accent);
+  border-width: 2px;
+  text-align: left;
+}
+.card.saved:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.card.saved h2 { font-size: 1.25rem; margin-bottom: 14px; }
+
+.card.saved .tick {
+  margin: 4px 0 6px;
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--accent);
+}
+
+/* A link that has to look like the button beside it -- "See it in the table"
+   is a real <a href> so it can be long-pressed and opened in a tab, but it
+   sits next to "Log another flight" and the pair must read as one choice. */
+a.buttonlike {
   display: flex;
   align-items: center;
-  cursor: pointer;
-  padding: 6px 0;
+  justify-content: center;
+  min-height: var(--tap);
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+  text-align: center;
 }
-button:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* --- Tables --------------------------------------------------------------- */
 

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { api, type DateRange } from '../api'
 import { useApi } from '../auth'
-import { clock, hhmm, hhmmOrBlank } from '../format'
+import { airMinutes, clock, hhmm, hhmmOrBlank } from '../format'
 import { Link } from '../router'
 import { RangePicker } from './RangePicker'
 
@@ -61,6 +61,15 @@ export function TablePage() {
                       <th>Off</th>
                       <th>On</th>
                       <th className="num">Total</th>
+                      {/* The airborne group. It sits after the block group
+                          rather than interleaved, so the two pairs cannot be
+                          misread for one another at a glance -- off/on block
+                          and takeoff/landing are four times in the same
+                          format, and the aircraft's logbook is filled from
+                          only one of the pairs. */}
+                      <th>Takeoff</th>
+                      <th>Landing</th>
+                      <th className="num">Air</th>
                       <th className="num">PIC</th>
                       <th className="num">Dual</th>
                       <th className="num">Night</th>
@@ -85,6 +94,14 @@ export function TablePage() {
                         <td>{clock(f.off_block_utc)}</td>
                         <td>{clock(f.on_block_utc)}</td>
                         <td className="num">{hhmm(f.total_minutes)}</td>
+                        {/* Blank, not 0:00, when the row has no airborne pair.
+                            Only 19 of the 1296 transcribed rows carry one, and
+                            a zero would say the aeroplane never left the
+                            ground. Air time is computed here, at render, from
+                            the two instants -- never stored. */}
+                        <td>{clock(f.takeoff_utc)}</td>
+                        <td>{clock(f.landing_utc)}</td>
+                        <td className="num">{airTime(f.takeoff_utc, f.landing_utc)}</td>
                         <td className="num">{hhmmOrBlank(f.pic_minutes)}</td>
                         <td className="num">{hhmmOrBlank(f.dual_minutes)}</td>
                         <td className="num">{hhmmOrBlank(f.night_minutes)}</td>
@@ -133,8 +150,11 @@ export function TablePage() {
           )}
 
           <p className="muted small">
-            All times UTC. <span className="flag">*</span> marks a day/night landing split
-            that was inferred rather than read from the paper page.
+            All times UTC. <strong>Total</strong> is chocks to chocks;{' '}
+            <strong>Air</strong> is wheels up to wheels down, worked out from the takeoff and
+            landing times and blank where the flight has none.{' '}
+            <span className="flag">*</span> marks a day/night landing split that was inferred
+            rather than read from the paper page.
           </p>
         </>
       )}
@@ -144,4 +164,10 @@ export function TablePage() {
 
 function isSea(cls: string): boolean {
   return cls === 'SEP_SEA' || cls === 'MEP_SEA'
+}
+
+/** airTime renders the derived airborne time, or nothing when it is unknown. */
+function airTime(takeoff: string | null, landing: string | null): string {
+  const m = airMinutes(takeoff, landing)
+  return m === null ? '' : hhmm(m)
 }

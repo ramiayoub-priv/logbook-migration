@@ -193,6 +193,44 @@ describe('the flights table', () => {
     expect(await screen.findByText('No flights in this range.')).toBeInTheDocument()
   })
 
+  // --- Task 12: the airborne times belong in the table ---------------------
+  //
+  // The aircraft's own logbook -- a separate, legally required document the
+  // owner fills after flying -- records AIRBORNE times, not block times.
+  // Reading them off the app instead of off the paper is the whole point of
+  // having the app in the field.
+
+  it('shows takeoff, landing and a derived air time', async () => {
+    vi.spyOn(api, 'flights').mockResolvedValue({
+      flights: [
+        flight({
+          takeoff_utc: '2021-06-01T15:20:00Z',
+          landing_utc: '2021-06-01T16:25:00Z',
+        }),
+      ],
+      count: 1,
+    })
+    renderApp()
+
+    expect(await screen.findByRole('columnheader', { name: 'Takeoff' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Landing' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Air' })).toBeInTheDocument()
+
+    const cells = screen.getAllByRole('cell').map((c) => c.textContent)
+    expect(cells).toContain('15:20')
+    expect(cells).toContain('16:25')
+    // 65 minutes, computed here from the two instants -- never stored.
+    expect(cells).toContain('1:05')
+  })
+
+  // 19 rows in 1296 carry airborne times. A 0:00 in the other 1277 would be a
+  // claim that the aeroplane never left the ground.
+  it('leaves the airborne columns blank when the row has none', async () => {
+    renderApp()
+    await screen.findAllByText('1:21')
+    expect(screen.queryByText('0:00')).not.toBeInTheDocument()
+  })
+
   it('asks the server again when the range changes', async () => {
     const user = userEvent.setup()
     renderApp()
@@ -311,6 +349,24 @@ describe('editing a flight', () => {
       ),
     )
     expect(await screen.findByRole('status')).toHaveTextContent(/saved/i)
+  })
+
+  // The same takeover as a new flight, minus the offer to log another one --
+  // there is nothing to log another of when you came here to correct one.
+  it('takes over the screen after a correction too, and can go back to it', async () => {
+    vi.spyOn(api, 'flight').mockResolvedValue({ flight: flight(APP_FLIGHT) })
+    vi.spyOn(api, 'updateFlight').mockResolvedValue({ flight: flight(APP_FLIGHT) })
+    const user = userEvent.setup()
+    window.history.pushState({}, '', '/logbook/edit/1000000')
+    renderApp()
+
+    await user.click(await screen.findByRole('button', { name: 'Save this flight' }))
+    await screen.findByRole('status')
+    expect(screen.queryByLabelText('Off block')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Log another flight' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Keep editing this flight' }))
+    expect(await screen.findByLabelText('Off block')).toHaveValue('0915')
   })
 
   // A flight the server will not let us touch has to say why. "Forbidden" on
@@ -442,6 +498,124 @@ describe('the new-flight form', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Logged 2026-07-30, OH-CAM, 1:15.')
   })
 
+  // --- Task 11: the save has to be unmissable ------------------------------
+  //
+  // From the first real day of use (2026-08-02): the owner logged two flights
+  // on the phone and could not tell whether either had saved. The confirmation
+  // existed and was rendered ABOVE a form three cards long -- off-screen, on
+  // the only device this app is used on. Ruled: the success takes over the
+  // screen.
+
+  it('replaces the form with the confirmation, so the save cannot be missed', async () => {
+    vi.spyOn(api, 'createFlight').mockResolvedValue({
+      flight: flight({ date: '2026-07-30', aircraft_reg: 'OH-CAM', total_minutes: 75 }),
+    })
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.click(await screen.findByRole('button', { name: 'Log this flight' }))
+
+    // The confirmation names the flight, in full.
+    const panel = await screen.findByRole('status')
+    expect(panel).toHaveTextContent('2026-07-30')
+    expect(panel).toHaveTextContent('OH-CAM')
+    expect(panel).toHaveTextContent('1:15')
+
+    // And the form is GONE. A message rendered above three cards of form is a
+    // message a pilot on a phone never sees.
+    expect(screen.queryByLabelText('Off block')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Log this flight' })).not.toBeInTheDocument()
+  })
+
+  it('offers the next flight and the table from the confirmation', async () => {
+    vi.spyOn(api, 'createFlight').mockResolvedValue({
+      flight: flight({ date: '2026-07-30', aircraft_reg: 'OH-CAM', total_minutes: 75 }),
+    })
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.selectOptions(await screen.findByLabelText('Aircraft'), 'OH-CAM')
+    await user.click(screen.getByRole('button', { name: 'Log this flight' }))
+
+    await user.click(await screen.findByRole('button', { name: 'Log another flight' }))
+
+    // Back to a fresh form -- but still on the same aeroplane, because the next
+    // entry after a day of circuits is usually the same one.
+    expect(await screen.findByLabelText('Off block')).toHaveValue('')
+    expect(screen.getByLabelText('Aircraft')).toHaveValue('OH-CAM')
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('leads to the table from the confirmation', async () => {
+    vi.spyOn(api, 'createFlight').mockResolvedValue({
+      flight: flight({ date: '2026-07-30', aircraft_reg: 'OH-CAM', total_minutes: 75 }),
+    })
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.click(await screen.findByRole('button', { name: 'Log this flight' }))
+    await user.click(await screen.findByRole('link', { name: 'See it in the table' }))
+
+    expect(await screen.findByRole('columnheader', { name: 'Date' })).toBeInTheDocument()
+  })
+
+  // A phone that empties a twenty-field form because the server said 400 is a
+  // phone that does not get the flight logged at all.
+  it('keeps every field when the save fails', async () => {
+    vi.spyOn(api, 'createFlight').mockRejectedValue(
+      new ApiError(400, 'this flight cannot be logged as written', [
+        { field: 'pic_name', message: 'a name is required' },
+      ]),
+    )
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.type(await screen.findByLabelText('Off block'), '0915')
+    await user.type(screen.getByLabelText('On block'), '1030')
+    await user.type(screen.getByLabelText('Remarks'), 'circuits at Hyvinkää')
+    await user.click(screen.getByRole('button', { name: 'Log this flight' }))
+
+    expect(await screen.findByText('a name is required')).toBeInTheDocument()
+    expect(screen.getByLabelText('Off block')).toHaveValue('0915')
+    expect(screen.getByLabelText('On block')).toHaveValue('1030')
+    expect(screen.getByLabelText('Remarks')).toHaveValue('circuits at Hyvinkää')
+  })
+
+  // "A failure gets the same prominence in red, scrolled to the field that
+  // caused it." Focus is what scrolling means on a phone, and it is the part a
+  // test can assert.
+  it('moves to the field the server refused', async () => {
+    vi.spyOn(api, 'createFlight').mockRejectedValue(
+      new ApiError(400, 'this flight cannot be logged as written', [
+        // Deliberately out of page order: the topmost failing control wins,
+        // not whichever one the server happened to name first.
+        { field: 'remarks', message: 'too long' },
+        { field: 'off_block', message: 'an off-block time is required' },
+      ]),
+    )
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.click(await screen.findByRole('button', { name: 'Log this flight' }))
+
+    await waitFor(() => expect(screen.getByLabelText('Off block')).toHaveFocus())
+  })
+
+  // The page learned this the hard way once already, when an <output>'s
+  // implicit role="status" collided with the saved-flight announcement.
+  it('has exactly one live region on the confirmation', async () => {
+    vi.spyOn(api, 'createFlight').mockResolvedValue({
+      flight: flight({ date: '2026-07-30', aircraft_reg: 'OH-CAM', total_minutes: 75 }),
+    })
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.click(await screen.findByRole('button', { name: 'Log this flight' }))
+
+    await screen.findByRole('status')
+    expect(screen.getAllByRole('status')).toHaveLength(1)
+  })
+
   // --- The times: four digits, on a number pad -----------------------------
   //
   // Every time on this form is typed as HHMM and nothing else. The first
@@ -498,6 +672,22 @@ describe('the new-flight form', () => {
     await user.type(await screen.findByLabelText('Off block'), '2330')
     await user.type(screen.getByLabelText('On block'), '0040')
     expect(screen.getByLabelText('Total time')).toHaveValue('1:10')
+  })
+
+  // The airborne pair is NOT folded away any more (Task 12, owner-ruled). It
+  // was hidden because most rows in the PAPER BOOKS have none -- a fact about
+  // 1296 historical rows, not about the flights being flown now. A field you
+  // have to remember to expand is a field that ends up empty, and an empty
+  // airborne time is what makes an air-time total unusable a year later when
+  // it is being billed from.
+  it('shows the airborne times without anything to expand', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await screen.findByLabelText('Takeoff')
+
+    expect(document.querySelector('details.airborne')).toBeNull()
+    expect(screen.queryByText(/Takeoff and landing \(optional\)/i)).not.toBeInTheDocument()
   })
 
   it('derives the air time from the optional takeoff and landing', async () => {

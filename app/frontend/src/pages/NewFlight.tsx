@@ -15,9 +15,13 @@ export function NewFlightPage() {
       initial={emptyDraft()}
       submitLabel="Log this flight"
       busyLabel="Saving…"
+      againLabel="Log another flight"
       onSave={async (payload) => {
         const { flight } = await api.createFlight(payload)
-        return `Logged ${flight.date}, ${flight.aircraft_reg}, ${hhmm(flight.total_minutes)}.`
+        return {
+          message: `Logged ${flight.date}, ${flight.aircraft_reg}, ${hhmm(flight.total_minutes)}.`,
+          flight,
+        }
       }}
       // A fresh form, but keep the date and aircraft: the next entry after a
       // day of circuits is usually the same aeroplane on the same day.

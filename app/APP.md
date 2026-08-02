@@ -517,14 +517,50 @@ day · landings night.
 | 8 | Backfill landings day/night for the **30** night rows | **WILL NOT DO** — closed 2026-08-02 by the owner's ruling that historical data is not to be touched (`CLAUDE.md` §0.8). The 30 rows keep their `landings_unverified` flag **permanently**: the API reports the count, the table asterisks the row and the statistics page names it in a paragraph. That is the honest state and it must not be quietly dropped to make a page look tidier. |
 | 9 | Rule on the open source-data problems | **closed** 2026-08-02 — two of three were ruled and fixed on 2026-08-01. The third (`logbook_2_final.csv` lines 89–90, `04.05.2018` ×2) stands **unresolved forever**: it affects row order only, moves no total, and settling it needs a physical page that will not be re-read. Recorded, not fixed. |
 | 15 | **The `C192` / `OH-CMU` aircraft types** | **done** 2026-08-02 — owner ruling, five cells in one column: `C192` → `C172` (book 2 lines 132, 133, 137, 138) and `OH-CMU` → `C152` (book 3 line 434). There is no Cessna 192, and book 2 line 139 is the same aeroplane the same day written `C172`. Discrepancies **61 → 54** (`unknown_aircraft_type` 4 → 0, `type_conflict` 3 → 0); **no other figure moved at all** — sea/land comes from the registration. Closed permanently by `TestEveryRegistrationNamesOneRealAircraftType`, watched red before it was accepted. Second and last lift of the §0.8 freeze to date. |
-| 11 | **Saving a flight must be unmissable** | **planned, not started** — from the first real day of use: the owner logged two flights on the phone and could not tell whether either had saved. Ruled: **the success takes over the screen**. See the 2026-08-02 "first day of use" decision-log entry for the full design. |
-| 12 | **Takeoff / landing / air time in the table, and out of the disclosure** | **planned, not started** — the aircraft's own logbook is filled from airborne times, not block times, so they have to be readable straight off the flights table. Includes promoting the two fields out of the collapsed section, ruled by the owner. Needs the **staged binary deployed**: `takeoff_utc`/`landing_utc` only reach the client from the new build. |
+| 11 | **Saving a flight must be unmissable** | **done** 2026-08-02 — the success **takes over the screen**: the form is replaced by a confirmation naming what the SERVER stored (date, registration, route, both clock pairs, total, landings), scrolled to and focused, offering *Log another flight* / *Keep editing this flight* and *See it in the table*. A refusal gets the same weight in red and **jumps to the first failing control by page order**, not by the order the server listed them. The draft survives every failure path, and there is still **exactly one live region**. |
+| 12 | **Takeoff / landing / air time in the table, and out of the disclosure** | **done** 2026-08-02 — the flights table gains **Takeoff, Landing and Air**; air time is `format.airMinutes`, computed at render from the two instants and **never stored**, blank (never `0:00`) on the 1277 rows that have none. The airborne pair is **out of the `<details>`** and sits in the Times card next to off/on block; the `details.airborne` CSS is gone. |
 | 13 | **Aircraft time page (block vs air, by aircraft and date range)** | **planned, not started** — the owner pays for aeroplanes by the hour, some owners charging block time and some air time. Pick an aircraft and a range, get both totals in H:MM **and** in minutes, plus the flights behind the figure. The load-bearing part is honesty about coverage — see the decision-log entry. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-02 — Tasks 11 and 12 as built, and the two decisions that were not in the plan
+
+Both were designed in the "first real day of use" entry below; this records what building them
+actually settled.
+
+**The confirmation replaces the form rather than joining it.** The old message was a
+`<p role="status">` at the top of a three-card form — the design flaw was not that it was too quiet,
+it was that it *shared the page with the thing it was about*, so on a phone the submit button and
+the answer to "did that work?" could never be on screen together. Anything that stays on the same
+page can be scrolled away from. So `FlightForm` returns the confirmation **instead of** the form,
+which is also what makes "exactly one live region" true by construction rather than by care.
+
+**It names what the server stored, not what was typed.** The panel is built from the `Flight` that
+came back, which is why `onSave` now returns `{message, flight}` instead of a string. A screen that
+read the draft back would agree with the pilot rather than with the logbook — and the whole reason
+this panel exists is that the pilot could not tell what the logbook had.
+
+**The refusal jumps by PAGE order, not server order.** `entry.Validate` deliberately reports every
+problem at once, so a refusal routinely names three fields. Focusing whichever the server listed
+first can scroll past two untouched errors to reach a third, and a form that behaves that way is a
+form that gets abandoned — which means the flight is not logged at all. Hence `FIELD_ORDER`, and a
+`refusals` counter rather than watching the error map: two submissions failing on the same field
+must both move the pilot there, and comparing maps would call the second one "no change".
+
+**Air time is derived in exactly two places and they solve different problems.** `format.airMinutes`
+subtracts two stored **instants**, which carry their dates and therefore cross midnight on their
+own; `FlightForm.blockFrom` rolls a bare four-digit **clock** by hand because the form has no date to
+work with. Conflating them is how one of the two would quietly get the midnight case wrong, so both
+are tested at midnight separately.
+
+**Blank, never `0:00`.** 19 of the 1296 transcribed rows carry airborne times. A zero in the other
+1277 is a claim that the aeroplane never left the ground — the same class of untruth as an empty
+flight list after a failed fetch (rule §0.2).
+
+Frontend tests **83 → 97**.
 
 ### 2026-08-02 — The five cells that could not be true, and how a frozen dataset gets corrected
 

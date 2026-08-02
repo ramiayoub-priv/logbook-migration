@@ -58,9 +58,15 @@ function EditableFlight({ flight }: { flight: Flight }) {
         initial={draftFromFlight(flight)}
         submitLabel="Save this flight"
         busyLabel="Saving…"
+        // No "log another" here: there is nothing to log another of when you
+        // came to correct one. The way back is to the same flight.
+        againLabel="Keep editing this flight"
         onSave={async (payload) => {
           const { flight: saved } = await api.updateFlight(flight.seq, payload)
-          return `Saved ${saved.date}, ${saved.aircraft_reg}, ${hhmm(saved.total_minutes)}.`
+          return {
+            message: `Saved ${saved.date}, ${saved.aircraft_reg}, ${hhmm(saved.total_minutes)}.`,
+            flight: saved,
+          }
         }}
         footer={<DeletePanel flight={flight} />}
       />

@@ -111,3 +111,33 @@ export function clock(instant: string | null): string {
   if (Number.isNaN(d.getTime())) return ''
   return d.toISOString().slice(11, 16)
 }
+
+/**
+ * airMinutes is wheels-up to wheels-down, from the two stored instants.
+ *
+ * DERIVED at render, never stored and never sent. Rule 0.5 forbids a persisted
+ * running total because the seven Cumulative_* columns were this project's
+ * largest source of drift, and the reasoning is about any figure that can be
+ * computed from others rather than about cumulatives specifically: a second
+ * copy of a number is a second thing that can disagree with the first.
+ *
+ * The instants carry their dates, so a flight that lands after midnight comes
+ * out right by plain subtraction. That is NOT the same problem the form solves
+ * with blockFrom(), where the pilot types a bare clock with no date and the
+ * roll has to be applied by hand.
+ *
+ * null means "not recorded", which is most rows -- 19 of the 1296 transcribed
+ * flights carry airborne times. It must render as blank rather than 0:00: a
+ * zero is a claim that the aeroplane never left the ground.
+ */
+export function airMinutes(takeoff: string | null, landing: string | null): number | null {
+  if (!takeoff || !landing) return null
+  const a = new Date(takeoff).getTime()
+  const b = new Date(landing).getTime()
+  if (Number.isNaN(a) || Number.isNaN(b)) return null
+  const minutes = Math.round((b - a) / 60000)
+  // Cannot arise from stored data: the server builds the pair through
+  // timeutil.BlockPair, which rolls forward. If it ever does, a negative air
+  // time is not a figure to print.
+  return minutes < 0 ? null : minutes
+}

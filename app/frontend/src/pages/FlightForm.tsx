@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, ApiError, type Flight, type FlightDraft } from '../api'
 import { useApi } from '../auth'
 import {
+  clock,
   clockWire,
   digits,
   hhmm,
@@ -10,6 +11,7 @@ import {
   parseDurationDigits,
   todayISO,
 } from '../format'
+import { Link } from '../router'
 
 // The flight form, shared by the new-flight page and the edit page.
 //
@@ -40,6 +42,35 @@ const DURATION_FIELDS = [
   'dual_time',
   'instructor_time',
 ] as const
+
+/**
+ * The controls in the order they appear on the page.
+ *
+ * Used for one thing only: deciding which failing field to jump to. A refusal
+ * has to land on the FIRST problem the pilot would meet reading down the form,
+ * not on whichever one the server happened to list first -- scrolling past two
+ * untouched errors to reach a third is how a form gets abandoned, and an
+ * abandoned form means the flight never gets logged at all.
+ */
+const FIELD_ORDER = [
+  'date', 'aircraft_reg', 'aircraft_type', 'class', 'dep_place', 'arr_place',
+  'off_block', 'on_block', 'total_time', 'takeoff', 'landing', 'air_time',
+  'pic_time', 'dual_time', 'night_time', 'instrument_time', 'instructor_time',
+  'landings_day', 'landings_night', 'pic_name', 'remarks',
+]
+
+/**
+ * Saved is what a successful save hands back to the form.
+ *
+ * The flight comes with it, not just the sentence, because the confirmation
+ * names what was ACTUALLY STORED rather than what was typed: the server is the
+ * authority on the record, and a screen that read back the draft would agree
+ * with the pilot instead of with the logbook.
+ */
+export interface Saved {
+  message: string
+  flight: Flight
+}
 
 export function emptyDraft(): FlightDraft {
   return {
@@ -118,6 +149,7 @@ export function FlightForm({
   initial,
   submitLabel,
   busyLabel,
+  againLabel,
   onSave,
   resetAfterSave,
   footer,
@@ -125,9 +157,11 @@ export function FlightForm({
   initial: FlightDraft
   submitLabel: string
   busyLabel: string
-  /** Saves the flight and returns the line to show. May throw an ApiError. */
-  onSave: (payload: FlightDraft) => Promise<string>
-  /** What the form holds after a successful save. Absent means "leave it". */
+  /** The confirmation's way back to the form: "Log another flight" / "Keep editing…". */
+  againLabel: string
+  /** Saves the flight and returns what to confirm. May throw an ApiError. */
+  onSave: (payload: FlightDraft) => Promise<Saved>
+  /** What the form holds when the pilot goes back for another. Absent means "leave it". */
   resetAfterSave?: (previous: FlightDraft) => FlightDraft
   /** Rendered after the submit button -- the delete panel, on the edit page. */
   footer?: React.ReactNode
@@ -141,8 +175,37 @@ export function FlightForm({
   const [utc, setUTC] = useState(true)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string | null>(null)
-  const [saved, setSaved] = useState<string | null>(null)
+  const [saved, setSaved] = useState<Saved | null>(null)
   const [busy, setBusy] = useState(false)
+
+  // Bumped on every REFUSED submit, and the only thing the jump-to-the-problem
+  // effect watches. A counter rather than the error map itself: two submissions
+  // that fail on the same field must both move the pilot there, and comparing
+  // the maps would call the second one "no change" and leave them staring at a
+  // form that appeared to do nothing.
+  const [refusals, setRefusals] = useState(0)
+  const errorRef = useRef<HTMLParagraphElement>(null)
+
+  useEffect(() => {
+    if (refusals === 0) return
+    // The topmost failing control, by the order of the page rather than the
+    // order the server listed them in.
+    const first = FIELD_ORDER.find((f) => fieldErrors[f])
+    const el = first ? document.getElementById(first) : null
+    if (el) {
+      el.scrollIntoView?.({ block: 'center' })
+      el.focus?.({ preventScroll: true })
+      return
+    }
+    // No field to blame -- a 409, a 403, a dead network. The banner is the
+    // thing to get in front of, and it carries the whole message.
+    errorRef.current?.scrollIntoView?.({ block: 'center' })
+    errorRef.current?.focus?.({ preventScroll: true })
+    // fieldErrors is deliberately not a dependency: it is set in the same batch
+    // as `refusals`, so this closure already sees it, and watching it as well
+    // would re-run the jump every time a field is corrected.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refusals])
 
   const aircraft = useMemo(() => {
     const list = fleet?.aircraft ?? []
@@ -243,8 +306,7 @@ export function FlightForm({
     }
 
     if (Object.keys(errs).length > 0) {
-      setFieldErrors(errs)
-      setFormError('This flight cannot be saved as written. See the fields below.')
+      refuse(errs, 'This flight cannot be saved as written. See the fields below.')
       return
     }
 
@@ -258,34 +320,61 @@ export function FlightForm({
         // it -- this form is what states it.
         total_time: blockMinutes === null ? '' : hhmm(blockMinutes),
       }
-      const message = await onSave(payload)
-      setSaved(message)
-      if (resetAfterSave) setDraft(resetAfterSave(draft))
+      setSaved(await onSave(payload))
     } catch (err) {
+      // Note what is NOT here: the draft is untouched on every one of these
+      // paths. A phone that empties a twenty-field form because the server said
+      // 400 is a phone that does not get the flight logged at all.
       if (err instanceof ApiError && err.fields.length > 0) {
         const map: Record<string, string> = {}
         for (const f of err.fields) map[f.field] = f.message
-        setFieldErrors(map)
-        setFormError('This flight cannot be saved as written. See the fields below.')
+        refuse(map, 'This flight cannot be saved as written. See the fields below.')
       } else if (err instanceof ApiError && (err.status === 409 || err.status === 403)) {
-        setFormError(err.message)
+        refuse({}, err.message)
       } else {
-        setFormError(err instanceof Error ? err.message : 'Could not save the flight.')
+        refuse({}, err instanceof Error ? err.message : 'Could not save the flight.')
       }
     } finally {
       setBusy(false)
     }
   }
 
+  /** refuse records a rejected save and sends the pilot to what caused it. */
+  function refuse(fields: Record<string, string>, message: string) {
+    setFieldErrors(fields)
+    setFormError(message)
+    setRefusals((n) => n + 1)
+  }
+
+  /**
+   * The save takes over the screen.
+   *
+   * Ruled by the owner on 2026-08-02 after the first real day of use: the old
+   * confirmation was a <p role="status"> at the TOP of a form three cards long,
+   * so on a phone the submit button and the answer to "did that work?" were
+   * never on screen together. A screen-reader user was told; the pilot looking
+   * at the screen was not.
+   *
+   * Replacing the form is what makes it unmissable -- a message that shares the
+   * page with the thing it is about can always be scrolled away from.
+   */
+  if (saved) {
+    return (
+      <SavedFlight
+        saved={saved}
+        againLabel={againLabel}
+        onAgain={() => {
+          if (resetAfterSave) setDraft(resetAfterSave(draft))
+          setSaved(null)
+        }}
+      />
+    )
+  }
+
   return (
     <form onSubmit={submit}>
-      {saved && (
-        <p className="notice" role="status">
-          {saved}
-        </p>
-      )}
       {formError && (
-        <p className="error" role="alert">
+        <p className="error big" role="alert" tabIndex={-1} ref={errorRef}>
           {formError}
         </p>
       )}
@@ -454,44 +543,59 @@ export function FlightForm({
           <div className="muted small">Chocks to chocks, from the two times above.</div>
         </Field>
 
-        <details className="airborne" open={draft.takeoff !== '' || draft.landing !== ''}>
-          <summary>Takeoff and landing (optional)</summary>
-          <p className="muted small">
-            Airborne times. Most rows in the paper books have none, so leave these blank unless
-            you read them off the aeroplane. If you give one, give both.
-          </p>
-          <div className="row">
-            <Field id="takeoff" label="Takeoff" error={fieldErrors['takeoff']}>
-              <TimeDigits
-                id="takeoff"
-                kind="clock"
-                value={draft.takeoff}
-                onChange={(v) => set('takeoff', v)}
-                invalid={!!fieldErrors['takeoff']}
-              />
-            </Field>
-            <Field id="landing" label="Landing" error={fieldErrors['landing']}>
-              <TimeDigits
-                id="landing"
-                kind="clock"
-                value={draft.landing}
-                onChange={(v) => set('landing', v)}
-                invalid={!!fieldErrors['landing']}
-              />
-            </Field>
-          </div>
-          <Field id="air_time" label="Air time">
-            <input
-              id="air_time"
-              className="derived"
-              readOnly
-              tabIndex={-1}
-              value={airMinutes === null ? '' : hhmm(airMinutes)}
-              placeholder="—"
+        {/*
+          The airborne pair sits here in the open, next to off/on block.
+
+          It was folded behind a disclosure until 2026-08-02 because most rows
+          in the PAPER BOOKS have none -- 19 of 1296 -- but that is a fact about
+          history, not about the flights being flown now. The owner ruled it
+          out of the fold: the aircraft's own logbook, a separate and legally
+          required document, is filled from AIRBORNE times, so this is the pair
+          that gets copied out after every flight. A field you have to remember
+          to expand is a field that ends up empty, and an empty airborne time is
+          what makes an air-time total unusable a year later when it is being
+          billed from.
+
+          Still optional, and still all-or-nothing as a pair -- that rule is the
+          server's and is stated in internal/entry, not here.
+        */}
+        <p className="muted small">
+          Takeoff and landing are optional, but the aircraft's own logbook is filled from them.
+          If you give one, give both.
+        </p>
+
+        <div className="row">
+          <Field id="takeoff" label="Takeoff" error={fieldErrors['takeoff']}>
+            <TimeDigits
+              id="takeoff"
+              kind="clock"
+              value={draft.takeoff}
+              onChange={(v) => set('takeoff', v)}
+              invalid={!!fieldErrors['takeoff']}
             />
-            <div className="muted small">Wheels up to wheels down, from the two times above.</div>
           </Field>
-        </details>
+          <Field id="landing" label="Landing" error={fieldErrors['landing']}>
+            <TimeDigits
+              id="landing"
+              kind="clock"
+              value={draft.landing}
+              onChange={(v) => set('landing', v)}
+              invalid={!!fieldErrors['landing']}
+            />
+          </Field>
+        </div>
+
+        <Field id="air_time" label="Air time">
+          <input
+            id="air_time"
+            className="derived"
+            readOnly
+            tabIndex={-1}
+            value={airMinutes === null ? '' : hhmm(airMinutes)}
+            placeholder="—"
+          />
+          <div className="muted small">Wheels up to wheels down, from the two times above.</div>
+        </Field>
 
         {/*
           The durations are four digits on the same number pad. They were the
@@ -610,6 +714,107 @@ export function FlightForm({
 
       {footer}
     </form>
+  )
+}
+
+/**
+ * The whole screen, after a flight is saved.
+ *
+ * It names what the SERVER stored, not what was typed: date, registration, the
+ * two clock times, the total and the landings. "Saved" on its own is a claim
+ * the pilot cannot check, and the whole reason this panel exists is that the
+ * previous confirmation could not be seen at all.
+ *
+ * One live region, and it is this element. The page has been bitten once
+ * already by a second implicit role="status" (an <output>), which made the
+ * saved-flight announcement ambiguous. Focus moves here as well, because
+ * replacing the form removes the button that had focus -- without this, a
+ * screen reader lands on the document body and a keyboard user starts over at
+ * the top of the page.
+ */
+function SavedFlight({
+  saved,
+  againLabel,
+  onAgain,
+}: {
+  saved: Saved
+  againLabel: string
+  onAgain: () => void
+}) {
+  const panel = useRef<HTMLDivElement>(null)
+  const f = saved.flight
+  const landings = f.landings_day + f.landings_night
+
+  useEffect(() => {
+    panel.current?.scrollIntoView?.({ block: 'start' })
+    panel.current?.focus?.({ preventScroll: true })
+  }, [])
+
+  return (
+    <div className="card saved" role="status" tabIndex={-1} ref={panel}>
+      <p className="tick" aria-hidden="true">
+        ✓
+      </p>
+      <h2>{saved.message}</h2>
+
+      <dl className="detail">
+        <div>
+          <dt>Date</dt>
+          <dd>{f.date}</dd>
+        </div>
+        <div>
+          <dt>Aircraft</dt>
+          <dd>
+            {f.aircraft_reg} {f.aircraft_type}
+          </dd>
+        </div>
+        <div>
+          <dt>Route</dt>
+          <dd>
+            {f.dep_place} → {f.arr_place}
+          </dd>
+        </div>
+        <div>
+          <dt>Off / on</dt>
+          <dd>
+            {clock(f.off_block_utc)} – {clock(f.on_block_utc)} UTC
+          </dd>
+        </div>
+        {/* Only when they were given. A dash where an airborne time should be
+            reads as "none flown" rather than "none recorded". */}
+        {f.takeoff_utc && f.landing_utc && (
+          <div>
+            <dt>Airborne</dt>
+            <dd>
+              {clock(f.takeoff_utc)} – {clock(f.landing_utc)} UTC
+            </dd>
+          </div>
+        )}
+        <div>
+          <dt>Total</dt>
+          <dd>{hhmm(f.total_minutes)}</dd>
+        </div>
+        <div>
+          <dt>Landings</dt>
+          <dd>
+            {landings} ({f.landings_day} day, {f.landings_night} night)
+          </dd>
+        </div>
+      </dl>
+
+      <p className="muted small">
+        It is in the logbook now, and every total already includes it.
+      </p>
+
+      <div className="row">
+        <button type="button" className="primary" onClick={onAgain}>
+          {againLabel}
+        </button>
+        <Link to="table" className="buttonlike">
+          See it in the table
+        </Link>
+      </div>
+    </div>
   )
 }
 

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  airMinutes,
   hhmm,
   hhmmOrBlank,
   parseHHMM,
@@ -149,5 +150,41 @@ describe('isoDate', () => {
 
   it('todayISO returns a well-formed date', () => {
     expect(todayISO()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+})
+
+// Air time is DERIVED at render from the two stored instants and is never
+// stored (rule 0.5's reasoning applies to any derived figure, not only to
+// cumulatives). The aircraft's own logbook -- a separate, legally required
+// document -- is filled from airborne times, which is why it has to be readable
+// straight off the app.
+describe('airMinutes', () => {
+  it('is the difference between the two instants', () => {
+    expect(airMinutes('2026-07-30T09:20:00Z', '2026-07-30T10:25:00Z')).toBe(65)
+  })
+
+  // The stored instants carry their dates, so a flight that lands after
+  // midnight subtracts correctly with no rolling of its own. This is the case
+  // the four-digit FORM has to roll by hand, because there the pilot types a
+  // clock without a date -- two different problems that must not be conflated.
+  it('crosses midnight without going negative', () => {
+    expect(airMinutes('2026-07-30T23:30:00Z', '2026-07-31T00:40:00Z')).toBe(70)
+  })
+
+  // Most rows in the paper books have no airborne times at all: 19 of 1296.
+  // "Not recorded" must render as blank, never as 0:00 -- a zero is a claim
+  // that the aeroplane never left the ground.
+  it('is null when either instant is missing', () => {
+    expect(airMinutes(null, '2026-07-30T10:25:00Z')).toBeNull()
+    expect(airMinutes('2026-07-30T09:20:00Z', null)).toBeNull()
+    expect(airMinutes(null, null)).toBeNull()
+  })
+
+  it('is null rather than a lie when the pair makes no sense', () => {
+    expect(airMinutes('not a time', '2026-07-30T10:25:00Z')).toBeNull()
+    // Cannot arise from stored data -- the server builds the pair through
+    // timeutil.BlockPair, which rolls forward -- but a negative air time is
+    // never a figure to print.
+    expect(airMinutes('2026-07-30T10:25:00Z', '2026-07-30T09:20:00Z')).toBeNull()
   })
 })
