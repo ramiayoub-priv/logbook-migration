@@ -38,8 +38,11 @@ import (
 var schemaSQL string
 
 // schemaVersion is bumped when schema.sql changes in a way that needs a
-// migration. Version 1 is the initial schema.
-const schemaVersion = 1
+// migration. Version 1 is the initial schema; version 2 adds flight_audit
+// (2026-08-02), which needs no migration -- it is a new, empty table created
+// by an idempotent statement, so an existing database gains it on the next
+// open and loses nothing.
+const schemaVersion = 2
 
 // timeFormat is how instants are stored: RFC3339 in UTC, second precision.
 // Lexical order equals chronological order, which every range query relies on.
@@ -424,18 +427,74 @@ func (db *DB) AircraftLinkage() (linked, unlinked int, err error) {
 	return linked, unlinked, nil
 }
 
+// flightColumns is the one column list every flight read uses. Shared so that
+// the list query and the single-row read cannot drift apart -- a mismatch
+// between them would be a field silently missing from one of the two.
+const flightColumns = `seq, flight_date, aircraft_reg, aircraft_type, class, dep_place, arr_place,
+	        off_block_utc, on_block_utc, off_block_raw, on_block_raw, time_origin,
+	        takeoff_utc, landing_utc,
+	        block_minutes, total_minutes, night_minutes, instrument_minutes,
+	        pic_minutes, dual_minutes, instructor_minutes,
+	        copilot_minutes, multipilot_minutes,
+	        pic_name, landings_day, landings_night, landings_verified, remarks,
+	        source_book, source_row`
+
+// rowScanner is satisfied by both *sql.Row and *sql.Rows.
+type rowScanner interface{ Scan(...any) error }
+
+// scanFlight reads one row of flightColumns into a domain flight.
+func scanFlight(s rowScanner) (csvbook.Flight, error) {
+	var f csvbook.Flight
+	var class, origin string
+	var off, on, takeoff, landing sql.NullString
+	var verified int
+	if err := s.Scan(
+		&f.Seq, &f.Date, &f.AircraftReg, &f.AircraftType, &class, &f.DepPlace, &f.ArrPlace,
+		&off, &on, &f.OffBlockRaw, &f.OnBlockRaw, &origin,
+		&takeoff, &landing,
+		&f.BlockMinutes, &f.TotalMinutes, &f.NightMinutes, &f.InstrumentMinutes,
+		&f.PICMinutes, &f.DualMinutes, &f.InstructorMinutes,
+		&f.CopilotMinutes, &f.MultiPilotMinutes,
+		&f.PICName, &f.LandingsDay, &f.LandingsNight, &verified, &f.Remarks,
+		&f.SourceBook, &f.SourceRow,
+	); err != nil {
+		return csvbook.Flight{}, err
+	}
+	f.Class = csvbook.Class(class)
+	f.TimeOrigin = timeutil.Origin(origin)
+	f.LandingsVerified = verified == 1
+	for _, p := range []struct {
+		src sql.NullString
+		dst *time.Time
+	}{{off, &f.OffBlockUTC}, {on, &f.OnBlockUTC}, {takeoff, &f.TakeoffUTC}, {landing, &f.LandingUTC}} {
+		if !p.src.Valid {
+			continue
+		}
+		t, err := time.Parse(timeFormat, p.src.String)
+		if err != nil {
+			return csvbook.Flight{}, fmt.Errorf("store: flight seq %d has an unreadable instant %q: %w",
+				f.Seq, p.src.String, err)
+		}
+		*p.dst = t
+	}
+	return f, nil
+}
+
+// flightBySeq reads one flight, reporting ErrFlightNotFound if there is none.
+func flightBySeq(q querier, seq int) (csvbook.Flight, error) {
+	f, err := scanFlight(q.QueryRow(`SELECT `+flightColumns+` FROM flights WHERE seq = ?`, seq))
+	if errors.Is(err, sql.ErrNoRows) {
+		return csvbook.Flight{}, fmt.Errorf("%w: %d", ErrFlightNotFound, seq)
+	}
+	if err != nil {
+		return csvbook.Flight{}, fmt.Errorf("store: reading flight %d: %w", seq, err)
+	}
+	return f, nil
+}
+
 // Flights returns every flight in book order.
 func (db *DB) Flights() ([]csvbook.Flight, error) {
-	rows, err := db.sql.Query(
-		`SELECT seq, flight_date, aircraft_reg, aircraft_type, class, dep_place, arr_place,
-		        off_block_utc, on_block_utc, off_block_raw, on_block_raw, time_origin,
-		        takeoff_utc, landing_utc,
-		        block_minutes, total_minutes, night_minutes, instrument_minutes,
-		        pic_minutes, dual_minutes, instructor_minutes,
-		        copilot_minutes, multipilot_minutes,
-		        pic_name, landings_day, landings_night, landings_verified, remarks,
-		        source_book, source_row
-		 FROM flights ORDER BY seq`)
+	rows, err := db.sql.Query(`SELECT ` + flightColumns + ` FROM flights ORDER BY seq`)
 	if err != nil {
 		return nil, fmt.Errorf("store: reading flights: %w", err)
 	}
@@ -443,38 +502,9 @@ func (db *DB) Flights() ([]csvbook.Flight, error) {
 
 	var out []csvbook.Flight
 	for rows.Next() {
-		var f csvbook.Flight
-		var class, origin string
-		var off, on, takeoff, landing sql.NullString
-		var verified int
-		if err := rows.Scan(
-			&f.Seq, &f.Date, &f.AircraftReg, &f.AircraftType, &class, &f.DepPlace, &f.ArrPlace,
-			&off, &on, &f.OffBlockRaw, &f.OnBlockRaw, &origin,
-			&takeoff, &landing,
-			&f.BlockMinutes, &f.TotalMinutes, &f.NightMinutes, &f.InstrumentMinutes,
-			&f.PICMinutes, &f.DualMinutes, &f.InstructorMinutes,
-			&f.CopilotMinutes, &f.MultiPilotMinutes,
-			&f.PICName, &f.LandingsDay, &f.LandingsNight, &verified, &f.Remarks,
-			&f.SourceBook, &f.SourceRow,
-		); err != nil {
+		f, err := scanFlight(rows)
+		if err != nil {
 			return nil, fmt.Errorf("store: reading flights: %w", err)
-		}
-		f.Class = csvbook.Class(class)
-		f.TimeOrigin = timeutil.Origin(origin)
-		f.LandingsVerified = verified == 1
-		for _, p := range []struct {
-			src sql.NullString
-			dst *time.Time
-		}{{off, &f.OffBlockUTC}, {on, &f.OnBlockUTC}, {takeoff, &f.TakeoffUTC}, {landing, &f.LandingUTC}} {
-			if !p.src.Valid {
-				continue
-			}
-			t, err := time.Parse(timeFormat, p.src.String)
-			if err != nil {
-				return nil, fmt.Errorf("store: flight seq %d has an unreadable instant %q: %w",
-					f.Seq, p.src.String, err)
-			}
-			*p.dst = t
 		}
 		out = append(out, f)
 	}

@@ -1,9 +1,10 @@
 import { useAuth } from './auth'
-import { Link, useRoute, type Route } from './router'
+import { editSeqOf, Link, useRoute, type Route } from './router'
 import { LoginPage } from './pages/Login'
 import { TablePage } from './pages/Table'
 import { StatisticsPage } from './pages/Statistics'
 import { NewFlightPage } from './pages/NewFlight'
+import { EditFlightPage } from './pages/EditFlight'
 import { ExportPage } from './pages/Export'
 import { ReviewPage } from './pages/Review'
 import { SessionsPage } from './pages/Sessions'
@@ -65,6 +66,15 @@ function Page({ route }: { route: Route }) {
       return <ReviewPage />
     case 'sessions':
       return <SessionsPage />
+    case 'edit': {
+      // The one route with a parameter. Read from the URL at render time
+      // rather than held in state: useRoute already re-renders on every
+      // navigation, so a second source of truth for "which flight" could only
+      // be a way for the two to disagree. A malformed one cannot reach here --
+      // routeOf only answers 'edit' for a path ending in digits.
+      const seq = editSeqOf(window.location.pathname)
+      return seq === null ? <TablePage /> : <EditFlightPage seq={seq} />
+    }
     case 'table':
       return <TablePage />
   }

@@ -14,6 +14,7 @@ function flight(over: Partial<Flight> = {}): Flight {
     dep_place: 'EFHF', arr_place: 'EFHF',
     off_block_utc: '2021-06-01T15:13:00Z', on_block_utc: '2021-06-01T16:34:00Z',
     off_block_raw: '18:13', on_block_raw: '19:34', time_origin: 'converted_from_local',
+    takeoff_utc: null, landing_utc: null,
     block_minutes: 81, total_minutes: 81, night_minutes: 0, instrument_minutes: 0,
     pic_minutes: 81, dual_minutes: 0, instructor_minutes: 81,
     pic_name: 'self', landings_day: 7, landings_night: 0, landings_verified: true,
@@ -236,6 +237,143 @@ describe('the statistics page', () => {
     await user.click(await screen.findByRole('link', { name: 'Statistics' }))
     await screen.findByText('1219:35')
     expect(screen.queryByText(/landing split that was inferred/i)).not.toBeInTheDocument()
+  })
+})
+
+// --- Editing and deleting a flight (2026-08-02) -----------------------------
+//
+// The app became the only way the record grows when the transcription effort
+// closed, so a mistyped flight needs to be correctable. The rule underneath
+// every one of these: only a flight ENTERED IN THE APP (source_book === 0) can
+// be touched. The 1296 imported rows are closed data.
+
+const APP_FLIGHT: Partial<Flight> = {
+  seq: 1000000, source_book: 0, source_row: 1,
+  date: '2026-07-30', aircraft_reg: 'OH-CAM', aircraft_type: 'C172', class: 'SEP_LAND',
+  dep_place: 'EFHF', arr_place: 'EFHF',
+  off_block_utc: '2026-07-30T09:15:00Z', on_block_utc: '2026-07-30T10:30:00Z',
+  off_block_raw: '09:15Z', on_block_raw: '10:30Z', time_origin: 'utc_as_written',
+  block_minutes: 75, total_minutes: 75, pic_minutes: 75, night_minutes: 20,
+  instructor_minutes: 0, remarks: 'circuits',
+}
+
+describe('editing a flight', () => {
+  it('offers Edit on a flight entered in the app and not on one from the paper books', async () => {
+    vi.spyOn(api, 'flights').mockResolvedValue({
+      flights: [flight(), flight(APP_FLIGHT)],
+      count: 2,
+    })
+    renderApp()
+
+    const links = await screen.findAllByRole('link', { name: /^Edit/ })
+    expect(links).toHaveLength(1)
+    expect(links[0]).toHaveAttribute('href', '/logbook/edit/1000000')
+  })
+
+  it('prefills the form with the stored flight, as four digits', async () => {
+    vi.spyOn(api, 'flight').mockResolvedValue({ flight: flight(APP_FLIGHT) })
+    window.history.pushState({}, '', '/logbook/edit/1000000')
+    renderApp()
+
+    expect(await screen.findByLabelText('Off block')).toHaveValue('0915')
+    expect(screen.getByLabelText('On block')).toHaveValue('1030')
+    expect(screen.getByLabelText('PIC')).toHaveValue('0115')
+    expect(screen.getByLabelText('Night')).toHaveValue('0020')
+    expect(screen.getByLabelText('Total time')).toHaveValue('1:15')
+    expect(screen.getByLabelText('Remarks')).toHaveValue('circuits')
+    expect(screen.getByLabelText('Aircraft')).toHaveValue('OH-CAM')
+  })
+
+  it('sends the correction with the same wire format as a new flight', async () => {
+    vi.spyOn(api, 'flight').mockResolvedValue({ flight: flight(APP_FLIGHT) })
+    const update = vi.spyOn(api, 'updateFlight').mockResolvedValue({
+      flight: flight({ ...APP_FLIGHT, total_minutes: 90 }),
+    })
+    const user = userEvent.setup()
+    window.history.pushState({}, '', '/logbook/edit/1000000')
+    renderApp()
+
+    const on = await screen.findByLabelText('On block')
+    await user.clear(on)
+    await user.type(on, '1045')
+    await user.click(screen.getByRole('button', { name: 'Save this flight' }))
+
+    await waitFor(() =>
+      expect(update).toHaveBeenCalledWith(
+        1000000,
+        expect.objectContaining({
+          off_block: '09:15Z',
+          on_block: '10:45Z',
+          total_time: '1:30',
+          pic_time: '1:15',
+          night_time: '0:20',
+        }),
+      ),
+    )
+    expect(await screen.findByRole('status')).toHaveTextContent(/saved/i)
+  })
+
+  // A flight the server will not let us touch has to say why. "Forbidden" on
+  // your own logbook reads as a bug otherwise.
+  it('explains a refusal to edit a paper-book flight', async () => {
+    vi.spyOn(api, 'flight').mockResolvedValue({ flight: flight({ seq: 5, source_book: 3 }) })
+    window.history.pushState({}, '', '/logbook/edit/5')
+    renderApp()
+
+    expect(await screen.findByText(/transcribed from a paper logbook/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Save this flight' })).not.toBeInTheDocument()
+  })
+})
+
+describe('deleting a flight', () => {
+  async function openEdit() {
+    vi.spyOn(api, 'flight').mockResolvedValue({ flight: flight(APP_FLIGHT) })
+    window.history.pushState({}, '', '/logbook/edit/1000000')
+    renderApp()
+    return await screen.findByRole('button', { name: 'Delete this flight' })
+  }
+
+  // The owner asked for a double confirmation. One tap must never delete.
+  it('does not delete on the first tap', async () => {
+    const del = vi.spyOn(api, 'deleteFlight')
+    const user = userEvent.setup()
+    await user.click(await openEdit())
+
+    expect(del).not.toHaveBeenCalled()
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
+  })
+
+  // The confirmation names the flight. "Are you sure?" about an unnamed row is
+  // how the wrong flight gets deleted.
+  it('names the flight it is about to delete', async () => {
+    const user = userEvent.setup()
+    await user.click(await openEdit())
+
+    const dialog = await screen.findByRole('alertdialog')
+    expect(dialog).toHaveTextContent('2026-07-30')
+    expect(dialog).toHaveTextContent('OH-CAM')
+    expect(dialog).toHaveTextContent('1:15')
+  })
+
+  it('deletes only after the second confirmation', async () => {
+    const del = vi.spyOn(api, 'deleteFlight').mockResolvedValue({ flight: flight(APP_FLIGHT) })
+    const user = userEvent.setup()
+    await user.click(await openEdit())
+    await user.click(await screen.findByRole('button', { name: 'Yes, delete this flight' }))
+
+    await waitFor(() => expect(del).toHaveBeenCalledWith(1000000))
+  })
+
+  it('keeps the flight when the confirmation is dismissed', async () => {
+    const del = vi.spyOn(api, 'deleteFlight')
+    const user = userEvent.setup()
+    await user.click(await openEdit())
+    await user.click(await screen.findByRole('button', { name: 'Keep it' }))
+
+    expect(del).not.toHaveBeenCalled()
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    // And the form is still there to go on editing.
+    expect(screen.getByRole('button', { name: 'Save this flight' })).toBeInTheDocument()
   })
 })
 

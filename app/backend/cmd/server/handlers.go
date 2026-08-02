@@ -242,6 +242,15 @@ type flightJSON struct {
 	OnBlockRaw  string     `json:"on_block_raw"`
 	TimeOrigin  string     `json:"time_origin"`
 
+	// The optional airborne pair, null when the row has none -- which is most
+	// of them. They are here because the edit form has to be able to SHOW
+	// them: a form that submits a field it cannot display erases that field on
+	// the next save, and doing that quietly to a legal record is exactly what
+	// rule 0.2 forbids. Added 2026-08-02 with the edit path, which is what
+	// made the omission visible.
+	TakeoffUTC *time.Time `json:"takeoff_utc"`
+	LandingUTC *time.Time `json:"landing_utc"`
+
 	// Minutes throughout. H:MM is a presentation concern; one representation
 	// on the wire means no second figure can disagree with the first.
 	BlockMinutes      int `json:"block_minutes"`
@@ -271,6 +280,7 @@ func toFlightJSON(f csvbook.Flight) flightJSON {
 		DepPlace: f.DepPlace, ArrPlace: f.ArrPlace,
 		OffBlockUTC: nilIfZero(f.OffBlockUTC), OnBlockUTC: nilIfZero(f.OnBlockUTC),
 		OffBlockRaw: f.OffBlockRaw, OnBlockRaw: f.OnBlockRaw, TimeOrigin: string(f.TimeOrigin),
+		TakeoffUTC:  nilIfZero(f.TakeoffUTC), LandingUTC: nilIfZero(f.LandingUTC),
 		BlockMinutes: f.BlockMinutes, TotalMinutes: f.TotalMinutes,
 		NightMinutes: f.NightMinutes, InstrumentMinutes: f.InstrumentMinutes,
 		PICMinutes: f.PICMinutes, DualMinutes: f.DualMinutes,
@@ -367,6 +377,157 @@ func (s *Server) handleCreateFlight(w http.ResponseWriter, r *http.Request) {
 		"seq", stored.Seq, "date", stored.Date, "reg", stored.AircraftReg)
 
 	writeJSON(w, http.StatusCreated, map[string]any{"flight": toFlightJSON(stored)})
+}
+
+// handleFlight returns one flight by its number.
+//
+// It answers for imported rows as well as hand-entered ones: the edit page is
+// reachable by URL, and a page that 404s a flight the pilot can see in the
+// table would read as a broken link rather than as "this row is closed data".
+// The page loads it, shows it, and explains why it cannot be changed.
+func (s *Server) handleFlight(w http.ResponseWriter, r *http.Request) {
+	seq, ok := seqOf(w, r)
+	if !ok {
+		return
+	}
+	f, err := s.db.FlightBySeq(seq)
+	if err != nil {
+		if errors.Is(err, store.ErrFlightNotFound) {
+			writeError(w, http.StatusNotFound, "no flight with that number")
+			return
+		}
+		s.log.Error("reading a flight", "seq", seq, "error", err)
+		writeError(w, http.StatusInternalServerError, "could not read the flight")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"flight": toFlightJSON(f)})
+}
+
+// handleUpdateFlight corrects a hand-entered flight in place.
+//
+// Added 2026-08-02, when the transcription effort closed and this application
+// became the only way the record grows: until then a mistyped flight could
+// only be fixed by opening SQLite on the server.
+//
+// It is a full replacement rather than a partial patch. A twenty-field form
+// submits every field it holds, and a merge of "the fields that happened to be
+// sent" into a legal record is a class of bug nobody can see in a diff -- the
+// pilot would be looking at a form showing one thing and a database holding
+// another. The same entry.Validate that guards a new flight guards this one:
+// the rules about what may be written do not depend on which door it came
+// through.
+//
+// What may NOT be changed is the row's identity. seq is book order and the key
+// every cumulative computation walks; source_book is what tells the importer
+// this row is not its to delete. Both are the store's to preserve, and it does.
+func (s *Server) handleUpdateFlight(w http.ResponseWriter, r *http.Request) {
+	seq, ok := seqOf(w, r)
+	if !ok {
+		return
+	}
+
+	var draft entry.Draft
+	if err := decodeJSON(r, &draft); err != nil {
+		writeError(w, http.StatusBadRequest, "malformed request")
+		return
+	}
+
+	flight, err := entry.Validate(draft, s.now())
+	if err != nil {
+		var fieldErrs entry.Errors
+		if errors.As(err, &fieldErrs) {
+			writeJSON(w, http.StatusBadRequest, map[string]any{
+				"error":  "this flight cannot be saved as written",
+				"fields": fieldErrs,
+			})
+			return
+		}
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	c := callerOf(r)
+	updated, err := s.db.UpdateFlight(seq, flight, c.User.ID)
+	if err != nil {
+		s.writeFlightChangeError(w, "editing", seq, err)
+		return
+	}
+
+	s.log.Info("flight edited", "user", c.User.Username,
+		"seq", updated.Seq, "date", updated.Date, "reg", updated.AircraftReg)
+	writeJSON(w, http.StatusOK, map[string]any{"flight": toFlightJSON(updated)})
+}
+
+// handleDeleteFlight removes a hand-entered flight.
+//
+// The row goes and every total follows immediately, because totals are
+// computed and never stored (rule 0.5). Its full contents survive in
+// flight_audit, which is what makes this recoverable: the owner chose a real
+// delete with an audit copy over a soft delete, so that nothing lingers in the
+// logbook itself while nothing is truly lost either.
+//
+// The double confirmation the owner asked for lives in the page, not here. A
+// server that asked twice would be a server that trusted the second request
+// more than the first, which is not a thing HTTP can express -- and a client
+// that never showed the first prompt would sail through both.
+func (s *Server) handleDeleteFlight(w http.ResponseWriter, r *http.Request) {
+	seq, ok := seqOf(w, r)
+	if !ok {
+		return
+	}
+
+	c := callerOf(r)
+	deleted, err := s.db.DeleteFlight(seq, c.User.ID)
+	if err != nil {
+		s.writeFlightChangeError(w, "deleting", seq, err)
+		return
+	}
+
+	s.log.Info("flight deleted", "user", c.User.Username,
+		"seq", deleted.Seq, "date", deleted.Date, "reg", deleted.AircraftReg,
+		"total_minutes", deleted.TotalMinutes)
+	// What was removed comes back, so the page can name the flight it deleted
+	// rather than saying "done".
+	writeJSON(w, http.StatusOK, map[string]any{"flight": toFlightJSON(deleted)})
+}
+
+// seqOf reads the flight number out of the path.
+//
+// An unreadable one is a 404 rather than a 400: /flights/banana is not a
+// flight that exists, and answering "bad request" would invite a caller to
+// wonder whether some other spelling would work.
+func seqOf(w http.ResponseWriter, r *http.Request) (int, bool) {
+	seq, err := strconv.Atoi(r.PathValue("seq"))
+	if err != nil || seq <= 0 {
+		writeError(w, http.StatusNotFound, "no flight with that number")
+		return 0, false
+	}
+	return seq, true
+}
+
+// writeFlightChangeError turns a store refusal into the right status.
+//
+// Shared by both write paths so that editing and deleting cannot come to
+// disagree about what a refusal means.
+func (s *Server) writeFlightChangeError(w http.ResponseWriter, what string, seq int, err error) {
+	switch {
+	case errors.Is(err, store.ErrFlightNotFound):
+		writeError(w, http.StatusNotFound, "no flight with that number")
+	case errors.Is(err, store.ErrNotHandEntered):
+		// 403 rather than 404: the flight exists and the pilot can see it in
+		// the table. Pretending it does not would read as a bug. The message
+		// says why, because "forbidden" on your own logbook is baffling
+		// otherwise.
+		writeError(w, http.StatusForbidden,
+			"this flight was transcribed from a paper logbook and cannot be changed in the app -- "+
+				"only flights entered here can be edited or deleted")
+	case errors.Is(err, store.ErrDuplicateFlight):
+		writeError(w, http.StatusConflict,
+			"another flight in the logbook already has this date, aircraft and off-block time")
+	default:
+		s.log.Error(what+" a flight", "seq", seq, "error", err)
+		writeError(w, http.StatusInternalServerError, "could not save the change")
+	}
 }
 
 func (s *Server) handleAircraft(w http.ResponseWriter, r *http.Request) {

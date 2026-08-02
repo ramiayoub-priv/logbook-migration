@@ -134,6 +134,49 @@ The one duplicate guard: a flight matching an existing `(flight_date, aircraft_r
 is refused with **409**. That is the double-tapped submit button on a phone, and two identical rows
 in a legal record inflate a licence total.
 
+## Editing and deleting: only what the app wrote (2026-08-02, Task 10)
+
+`PUT /flights/{seq}` and `DELETE /flights/{seq}` exist because the transcription effort closed
+(`CLAUDE.md` §0.8) and the app became the only way the record grows. Both are governed by two rules,
+enforced in `internal/store` rather than in a handler so that no HTTP route can get round them.
+
+**Only `source_book = 0`.** A row from the paper books is refused with `ErrNotHandEntered` → **403**.
+This is not caution: the importer replaces every row with `source_book <> 0` on each run, so an edit
+to one would be silently discarded at the next re-import. The API still *serves* an imported flight
+on `GET /flights/{seq}`, and the edit page shows it read-only with the reason — a 404 on a row the
+pilot can see in the table would read as a broken link.
+
+**Nothing changes without an audit row.** The edit is a plain in-place `UPDATE` (the owner's call,
+and the right shape for a form), which on a legal record is only safe because the previous state
+survives:
+
+### `flight_audit`
+| column | meaning |
+|---|---|
+| `at` | RFC3339 UTC, from the store's injectable clock |
+| `user_id` | who made the change |
+| `action` | `update` or `delete` |
+| `seq` | which flight. **Not a foreign key** — the row is gone in the delete case, and an audit trail that vanishes with its subject is not one |
+| `before` | the complete row as it stood, as JSON |
+
+Append-only: nothing in the application reads it, and nothing anywhere updates or deletes from it.
+The insert is in the **same transaction** as the change, so a change cannot commit without its
+record, and a *refused* change writes nothing at all. `before` is written from an explicit field map
+rather than by marshalling `csvbook.Flight`, so its shape cannot change because a domain struct was
+refactored — someone recovering a deleted flight years from now has to be able to read it.
+
+Three smaller decisions, each with a test:
+- **`seq`, `source_book` and `source_row` are preserved.** `seq` is book order and the key every
+  cumulative computation walks; it is not something a pilot changes by correcting a flight.
+- **The duplicate guard excludes the row being edited**, or every no-op save would be a 409.
+- **The aircraft link is looked up again**, because an edit can change the registration and a stale
+  `aircraft_id` would point the flight at the aeroplane it used to be.
+
+⚠ **The API returns `takeoff_utc` and `landing_utc` because of this feature.** It never did before —
+nothing read a flight back until something had to edit one — and a form that submits a field it
+cannot display **erases that field**. The first edit of a flight with airborne times would have
+dropped them silently. `TestAFlightCarriesItsAirborneTimesBackToTheClient` fails if they leave again.
+
 ## CSV → DB mapping
 
 The 26 CSV columns map as follows. The seven `Cumulative_*` columns are **not imported** — they are

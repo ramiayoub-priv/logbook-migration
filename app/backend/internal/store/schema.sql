@@ -100,6 +100,30 @@ CREATE TABLE IF NOT EXISTS flights (
     UNIQUE (source_book, source_row)
 );
 
+-- Every change an app-entered flight has ever undergone, append-only.
+--
+-- The owner asked for a plain in-place edit and a real delete (2026-08-02), and
+-- on a legal record that is only safe if the previous state survives somewhere:
+-- a licence total that changes with no trace of what it was is exactly the
+-- drift this project spent 106 KB of claude-docs/drift.md on. `before` is the
+-- complete row as it stood, as JSON, so a delete is recoverable from this table
+-- alone -- there is nowhere else left to read it from.
+--
+-- Nothing in the application reads this table and nothing anywhere updates or
+-- deletes from it. It is written inside the same transaction as the change, so
+-- a change without its audit entry cannot commit.
+CREATE TABLE IF NOT EXISTS flight_audit (
+    id      INTEGER PRIMARY KEY,
+    at      TEXT    NOT NULL,
+    user_id INTEGER NOT NULL,
+    action  TEXT    NOT NULL CHECK (action IN ('update','delete')),
+    -- Not a foreign key: the row it describes is gone in the delete case, and
+    -- an audit trail that disappears with its subject is not an audit trail.
+    seq     INTEGER NOT NULL,
+    before  TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS flight_audit_by_seq ON flight_audit (seq);
+
 CREATE INDEX IF NOT EXISTS flights_by_date  ON flights (flight_date);
 CREATE INDEX IF NOT EXISTS flights_by_class ON flights (class);
 CREATE INDEX IF NOT EXISTS flights_by_reg   ON flights (aircraft_reg);

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { api, type DateRange } from '../api'
 import { useApi } from '../auth'
 import { clock, hhmm, hhmmOrBlank } from '../format'
+import { Link } from '../router'
 import { RangePicker } from './RangePicker'
 
 export function TablePage() {
@@ -67,6 +68,7 @@ export function TablePage() {
                       <th className="num">Instructor</th>
                       <th className="num">Ldg D/N</th>
                       <th>Remarks</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -104,6 +106,24 @@ export function TablePage() {
                           )}
                         </td>
                         <td>{f.remarks}</td>
+                        <td>
+                          {/*
+                            Only flights entered in the app can be corrected.
+                            The 1296 transcribed rows are closed data (rule
+                            0.8) and the importer owns them, so an Edit link on
+                            one would offer something the server refuses. No
+                            link is the honest answer; the edit page explains
+                            it in full for anyone who reaches it by URL.
+                          */}
+                          {f.source_book === 0 && (
+                            <Link to="edit" seq={f.seq} className="rowedit">
+                              Edit<span className="visually-hidden">
+                                {' '}
+                                the flight of {f.date} in {f.aircraft_reg}
+                              </span>
+                            </Link>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

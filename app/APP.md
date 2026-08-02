@@ -29,8 +29,15 @@ exists is already transcribed; there is no backlog. **New flights are entered in
 and the rule wins.
 
 **Where to start.** This file, then `docs/data-model.md` / `docs/security.md` / `docs/deploy.md` as
-the work requires. The single highest-value open item is **Task 10, edit/delete a flight** — argued
-in the 2026-08-02 decision-log entry, and it needs the owner's ruling before any code is written.
+the work requires. Task 10 (edit/delete a flight) closed on 2026-08-02, so **v1 is complete**: there
+is no queued feature. The open items are the ones under "Open questions awaiting the owner" below,
+of which the oldest and most important is the **`rami` sudo password rotation**.
+
+⚠ **Edit and delete are BUILT but not yet DEPLOYED as of this writing.** The box is running the
+morning's binary and frontend. Shipping them needs the usual pair — the owner's
+`sudo /home/rami/logbook-deploy/update.sh` for the binary, then the frontend rsync — and this time
+the binary must land **first or together**: the frontend's edit page calls `PUT`/`DELETE
+/flights/{seq}`, which the deployed binary does not have. See the runbook below.
 
 **Status: feature-complete for v1, green, and LIVE at `https://ayoub.fi/logbook` — and as of
 2026-08-02 the box is LEVEL with the repo: current binary (md5-matched), current frontend, the three
@@ -70,7 +77,8 @@ app/backend/
   internal/entry/      Validates a HAND-TYPED flight. Pure. The opposite posture to csvbook:
                        it refuses rather than surfaces -- see the decision log.        [core, 100%]
   internal/store/      schema.sql, the verified import, the read queries, auth.go, and
-                       handentry.go (AddFlight + the seq band + the reimport relink).      [83%]
+                       handentry.go (AddFlight + the seq band + the reimport relink) and
+                       handedit.go (UpdateFlight/DeleteFlight + the append-only audit).   [83%]
   internal/stats/      Summarize, Range/Filter, Paginate. Computed, never stored.      [core, 100%]
   internal/pdfmodel/   Every cell and every total of the three PDFs. Pure -- rule 0.6
                        names "PDF totals" as calculation core.                         [core, 100%]
@@ -88,7 +96,9 @@ app/frontend/
                      minutes become H:MM, and the only place four digits become a time.
   src/swupdate.ts    reloads the page once when a new service worker claims it -- a home-screen
                      install has no reload button.
-  src/pages/         Login, Table, Statistics, NewFlight, Export, Review, Sessions, RangePicker.
+  src/pages/         Login, Table, Statistics, Export, Review, Sessions, RangePicker, and
+                     FlightForm -- the ONE form, wrapped by NewFlight and EditFlight. Two copies
+                     would drift at the first fix applied to only one of them.
 
 app/deploy/          the box's staging scripts, IN THE REPO as of 2026-08-01 (rule 0.1 -- they
                      lived only in /home/rami/logbook-deploy/ until then, which meant a fresh
@@ -202,6 +212,12 @@ GET    /flights   ?from&to private  {flights:[...], count} in seq order (the tab
 POST   /flights            private  a hand-entered flight -> 201; 400 with per-field errors; 409 duplicate
                                     times are "HH:MM" (Helsinki local) or "HH:MMZ" (UTC)
                                     takeoff/landing are OPTIONAL, but all-or-nothing as a pair
+GET    /flights/{seq}      private  one flight, imported or hand-entered. 404 if there is none.
+PUT    /flights/{seq}      private  corrects a HAND-ENTERED flight. Full replacement, same
+                                    validation as POST. 403 on an imported row, 404 missing,
+                                    409 if it would duplicate another flight's key.
+DELETE /flights/{seq}      private  deletes a HAND-ENTERED flight, returns what was removed.
+                                    403 on an imported row, 404 missing (so a double tap is safe).
 GET    /aircraft           private  the derived seed list for the new-flight form
 GET    /stats     ?from&to private  {summary:{...}, range}
 GET    /discrepancies      private  the "needs review" list, 61 rows today
@@ -454,11 +470,61 @@ day · landings night.
 | 7 | PWA + deploy to `ayoub.fi/logbook` | **PWA done** 2026-08-01 — manifest, icons, and a hand-written service worker that caches the shell and **never** an API response, proven in a browser with the HTTP cache disabled; the shell is now fetched `no-store` and a new worker reloads the page (`src/swupdate.ts`). **Deployed and LIVE** 2026-08-01 at `https://ayoub.fi/logbook` — service user, binary, systemd unit, frontend, the additive Apache block and the account are all in place, and the owner's other seven sites still answer 200. The deploy scripts now live in **`app/deploy/`** instead of only on the box. **NOT finished**: the box runs an older binary and a **1293**-flight database while the repo is at **1296** (the three 28/08/2025 flights). Current binaries and scripts are staged on the box and md5-matched; two owner `sudo` commands remain. See the runbook in "Where the deploy actually stands". |
 | 8 | Backfill landings day/night for the **30** night rows | **WILL NOT DO** — closed 2026-08-02 by the owner's ruling that historical data is not to be touched (`CLAUDE.md` §0.8). The 30 rows keep their `landings_unverified` flag **permanently**: the API reports the count, the table asterisks the row and the statistics page names it in a paragraph. That is the honest state and it must not be quietly dropped to make a page look tidier. |
 | 9 | Rule on the open source-data problems | **closed** 2026-08-02 — two of three were ruled and fixed on 2026-08-01. The third (`logbook_2_final.csv` lines 89–90, `04.05.2018` ×2) stands **unresolved forever**: it affects row order only, moves no total, and settling it needs a physical page that will not be re-read. Recorded, not fixed. |
-| 10 | **Edit / delete a flight** | **not started — the top candidate for next session.** The app is now the only way the record grows, and a flight typed on a phone cannot be corrected without opening SQLite. See the 2026-08-02 decision-log entry and the brief at the top for the design questions this raises on a legal record. **Needs the owner's ruling before any code.** |
+| 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-02 — Editing a flight: a plain form over an append-only trail
+
+Asked for by the owner the same day the data closed, and for the reason the closure created: with
+transcription finished, a flight typed on a phone is the record, and until now the only way to fix a
+typo in one was to open SQLite on the server. Two rulings shaped it, both the owner's:
+**app-entered flights only**, and **a real delete with an audit copy** rather than a soft-deleted row.
+
+**Scope: `source_book = 0` and nothing else.** Refusing to edit an imported row is not conservatism,
+it is the only durable answer — the importer replaces every row with `source_book <> 0` on each run,
+so an edit to one would be discarded at the next re-import without anyone being told. It is enforced
+in `internal/store`, not in a handler, so no route present or future can get round it. An imported
+flight still *loads* on the edit page and is explained there; a page that 404'd a flight visible in
+the table would read as a broken link rather than as "this row is closed".
+
+**In place, over an append-only trail.** The owner asked for a standard edit and that is what the
+form is. What sits underneath is `flight_audit`: the complete previous row as JSON, with a timestamp
+and a user, written **in the same transaction** so a change cannot commit without its record. It
+costs the read paths nothing — nothing in the app reads it — and it is what makes an in-place `UPDATE`
+defensible on a record that backs licence privileges. A delete is recoverable from that copy alone,
+which is what made "remove the row" the better of the two delete options: nothing lingers in the
+logbook, and nothing is actually lost.
+
+**A full replacement, not a patch.** The form holds every field, so it sends every field. Merging
+"whatever happened to be sent" into a legal record is a class of bug invisible in a diff — the pilot
+reads a form saying one thing while the database holds another. It also means an edit runs through
+the *same* `entry.Validate` as a new flight: the rules about what may be written do not depend on
+which door it came through.
+
+**The bug this surfaced, which is the most valuable part.** The API had never returned
+`takeoff_utc`/`landing_utc` — nothing needed them until something read a flight back to edit it. A
+form that submits a field it cannot display **erases that field**, so the first edit of a flight with
+airborne times would have silently dropped them: rule §0.2's silent corruption, introduced by a
+feature meant to make corrections possible. They are on the wire now, with a test that fails if they
+leave. **The general lesson: adding a read path is what audits a write path. Until something reads a
+record back, "we store it" and "we can show it" are untested assumptions.**
+
+**Deleting asks twice and the second question names the flight** — date, registration, both clock
+times, the total, the landings, and how far the totals will drop. "Are you sure?" about an unnamed
+row is how the wrong flight gets deleted. It is a `role="alertdialog"` region rather than
+`window.confirm`, which cannot say which flight it is about, cannot be styled for a phone, and cannot
+be tested.
+
+**One form, not two.** `FlightForm` is shared by both pages. Two copies would have started identical
+and drifted at the first fix applied to only one of them — which is precisely how the duration fields
+kept their untypeable colon after the clock fields lost theirs, twelve hours earlier.
+
+The router grew its first parameterised route (`/logbook/edit/1000123`) — one regex, still no routing
+library (rule §0.3). A real URL rather than component state, because an edit should survive the
+reload that happens every time a phone swaps the app out.
 
 ### 2026-08-02 — The historical data is closed, and the app is the only effort left
 

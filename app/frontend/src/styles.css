@@ -321,6 +321,43 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 .center { text-align: center; padding: 28px 12px; color: var(--muted); }
 
+/* The per-row Edit link. Only app-entered rows have one -- the transcribed
+   books are closed data -- so the column is empty on most rows by design. */
+a.rowedit { font-weight: 600; }
+
+/* --- Editing and deleting a flight ---------------------------------------- */
+
+/* The delete card is visually separate from the form above it, and it is the
+   only red thing on the page. A destructive control that looks like the other
+   buttons is a destructive control that gets tapped by accident on a phone. */
+.card.danger { border-color: var(--danger); }
+.card.danger h2 { color: var(--danger); }
+button.danger {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+  font-weight: 600;
+}
+button.danger:disabled { opacity: 0.6; }
+
+/* The read-only view of a flight that came from the paper books. */
+dl.detail { margin: 12px 0 16px; }
+dl.detail > div { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+dl.detail dt { color: var(--muted); font-size: 0.85rem; min-width: 5.5rem; }
+dl.detail dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+/* Announced to a screen reader, invisible on screen. The Edit links in the
+   table all read "Edit" otherwise, which tells a screen-reader user nothing
+   about WHICH flight they are about to open. */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 /* --- Login ---------------------------------------------------------------- */
 
 .login {

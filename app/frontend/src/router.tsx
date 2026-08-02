@@ -19,6 +19,7 @@ export type Route =
   | 'export'
   | 'review'
   | 'sessions'
+  | 'edit'
 
 const ROUTES: Record<string, Route> = {
   '': 'table',
@@ -31,21 +32,49 @@ const ROUTES: Record<string, Route> = {
   '/sessions': 'sessions',
 }
 
+/**
+ * EDIT is the one route carrying a parameter: /logbook/edit/1000123.
+ *
+ * A real path rather than a query string, and a real URL rather than a piece
+ * of component state, because editing a flight should be linkable, bookmarkable
+ * and survive a reload -- which on a phone happens every time the app is
+ * swapped out for long enough. Apache rewrites unknown paths to index.html
+ * (docs/deploy.md), so the deep link works on a cold load.
+ *
+ * One regex is still a long way short of needing a routing library (rule 0.3).
+ */
+const EDIT = /^\/edit\/(\d+)$/
+
 /** pathOf strips the mount point off a browser path. */
 function pathOf(pathname: string): string {
   return pathname.startsWith(BASE) ? pathname.slice(BASE.length) : pathname
 }
 
 export function routeOf(pathname: string): Route {
-  return ROUTES[pathOf(pathname).replace(/\/$/, '')] ?? 'table'
+  const path = pathOf(pathname).replace(/\/$/, '')
+  if (EDIT.test(path)) return 'edit'
+  return ROUTES[path] ?? 'table'
 }
 
-export function hrefFor(route: Route): string {
+/**
+ * editSeqOf reads the flight number out of an edit URL, or null.
+ *
+ * Read at render time rather than held in state: useRoute already re-renders
+ * on every navigation, so a second source of truth for "which flight" could
+ * only ever be a way for the two to disagree.
+ */
+export function editSeqOf(pathname: string): number | null {
+  const m = EDIT.exec(pathOf(pathname).replace(/\/$/, ''))
+  return m ? Number(m[1]) : null
+}
+
+export function hrefFor(route: Route, seq?: number): string {
+  if (route === 'edit') return `${BASE}/edit/${seq ?? ''}`
   return route === 'table' ? `${BASE}/` : `${BASE}/${route}`
 }
 
-export function navigate(route: Route): void {
-  window.history.pushState({}, '', hrefFor(route))
+export function navigate(route: Route, seq?: number): void {
+  window.history.pushState({}, '', hrefFor(route, seq))
   window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
@@ -71,11 +100,14 @@ export function useRoute(): Route {
  */
 export function Link({
   to,
+  seq,
   children,
   className,
   current,
 }: {
   to: Route
+  /** The flight number, for the one route that takes one. */
+  seq?: number
   children: React.ReactNode
   className?: string
   /** Marks the link as the page being viewed, for styling and screen readers. */
@@ -87,13 +119,13 @@ export function Link({
         return
       }
       e.preventDefault()
-      navigate(to)
+      navigate(to, seq)
     },
-    [to],
+    [to, seq],
   )
   return (
     <a
-      href={hrefFor(to)}
+      href={hrefFor(to, seq)}
       onClick={onClick}
       className={className}
       aria-current={current ? 'page' : undefined}

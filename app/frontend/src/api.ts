@@ -104,6 +104,13 @@ export interface Flight {
   off_block_raw: string
   on_block_raw: string
   time_origin: string
+  /**
+   * The optional airborne pair, null on most rows. Present on the wire because
+   * the edit form has to be able to SHOW them: a form that submits a field it
+   * cannot display erases that field on the next save.
+   */
+  takeoff_utc: string | null
+  landing_utc: string | null
   block_minutes: number
   total_minutes: number
   night_minutes: number
@@ -204,8 +211,25 @@ export const api = {
   flights: (range: DateRange = {}) =>
     request<{ flights: Flight[]; count: number }>(`/flights${query(range)}`),
 
+  /** One flight by its number. The edit page is reachable by URL. */
+  flight: (seq: number) => request<{ flight: Flight }>(`/flights/${seq}`),
+
   createFlight: (draft: FlightDraft) =>
     request<{ flight: Flight }>('/flights', { method: 'POST', body: JSON.stringify(draft) }),
+
+  /**
+   * Corrects a flight entered in the app. A full replacement, not a patch:
+   * the form holds every field, and merging "whatever happened to be sent"
+   * into a legal record is a difference nobody can see in a diff.
+   *
+   * The server refuses (403) for any flight transcribed from the paper books.
+   */
+  updateFlight: (seq: number, draft: FlightDraft) =>
+    request<{ flight: Flight }>(`/flights/${seq}`, { method: 'PUT', body: JSON.stringify(draft) }),
+
+  /** Deletes a flight entered in the app, returning what was removed. */
+  deleteFlight: (seq: number) =>
+    request<{ flight: Flight }>(`/flights/${seq}`, { method: 'DELETE' }),
 
   stats: (range: DateRange = {}) =>
     request<{ summary: Summary; range: { from: string; to: string } }>(`/stats${query(range)}`),
