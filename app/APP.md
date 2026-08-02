@@ -63,32 +63,37 @@ exposure for two days.
 
 - First snapshot pushed: **`fc5cec9` — "Backup 2026-08-02: 1298 flights, 1223:03, 3446 landings"**,
   on branch `main` of the private `ramiayoub-priv/logbook-backup`.
-- `logbook-backup.timer` is **enabled and active**; next run **2026-08-03 03:22:11 UTC**, and daily
-  after that.
+- `logbook-backup.timer` is **enabled and active**, `OnCalendar=03:17:00 UTC` daily with
+  `RandomizedDelaySec=600` and `Persistent=true` — so the exact minute moves (03:19, 03:22, …) and a
+  box that was off at 03:17 still runs the backup when it comes back. **A shifting minute in
+  `list-timers` is the jitter working, not a fault.**
 - **1298, not 1296** — the production count includes the owner's two app-entered flights, which
   existed in exactly one place until this push. That is the whole point of the task.
 
-⏳ **THE ONE THING STILL UNPROVEN: the clone-back.** `install-backup.sh` step 8 clones the
-repository back and checks all four files are present and that `logbook.db` still hashes to what its
-own `MANIFEST.txt` claims. **It has never executed** — the script aborted at step 7 both times it got
-that far (see the decision log: `systemctl status` exits 3 on a finished oneshot). The bug is fixed
-and staged. Run it once and the proof is in hand:
+✅ **AND IT COMES BACK.** Step 8 — the clone-back, the only check that is evidence about the *backup*
+rather than about the push — **passed on 2026-08-02 17:20 UTC**. A fresh `git clone` of the remote
+produced all four files, and `logbook.db` still hashed to what its own `MANIFEST.txt` claims:
 
-```bash
-ssh -t rami@ayoub.fi 'sudo /home/rami/logbook-deploy/install-backup.sh'
+```
+logbook.db 421888 · logbook.csv 215012 · MANIFEST.txt 689 · RESTORE.md 2937 bytes
+sha256 matches the manifest: 13a244e6f9042e64…
+flights 1298 | users 1 | total time 1223:03 (73383 minutes) | landings 3446
 ```
 
-It is idempotent: step 6 passes now that remote and local both have one commit, step 7 takes a fresh
-snapshot (`--allow-empty`, so a quiet day still commits), step 8 is the proof, step 9 re-enables an
-already-enabled timer. **Until step 8 has printed its four filenames and a matching sha256, the
-correct description of the backup is "it pushes" — not "it restores".** That distinction is the
-entire lesson of Task 14 and it has not yet been discharged.
+`users 1` is load-bearing and deliberate: the account survives so the restored logbook can actually
+be opened, which means the Argon2id hash leaves the box. That trade is argued in `docs/security.md`,
+along with its consequence — **if that repository ever becomes public, the logbook password is
+compromised.** Sessions are stripped.
 
-⚠ **THERE ARE NOW REAL FLIGHTS IN PRODUCTION THAT EXIST NOWHERE ELSE.** The owner logged two on
-2026-08-02. They carry `source_book = 0`, so the re-import inside `update.sh` leaves them alone (its
-`DELETE` is scoped, and there is a test) — **and that was confirmed against the live site rather than
-taken on trust**: the Flights page read 1298 after the re-import. But they are not reconstructible
-from the CSVs, so "rebuild it from the CSVs in one command" no longer means "lose nothing".
+`install-backup.sh` is idempotent and safe to re-run any time: it takes a fresh snapshot, pushes,
+clones back, and re-enables an already-enabled timer.
+
+⚠ **PRODUCTION IS NO LONGER REBUILDABLE FROM THIS REPOSITORY, AND THAT IS PERMANENT.** The owner
+logged two flights in the app on 2026-08-02 and will keep logging more. They carry `source_book = 0`,
+so the re-import inside `update.sh` leaves them alone (its `DELETE` is scoped, and there is a test) —
+**confirmed against the live site rather than taken on trust**: the Flights page read 1298 after the
+re-import. But they are in no CSV, so "rebuild it from the CSVs in one command" stopped meaning "lose
+nothing". **The backup, not the repo, is what protects them.**
 
 ✅ **That exposure is now closed.** Those rows left the box for the first time on 2026-08-02 in
 backup commit `fc5cec9` (**1298 flights**), and a timer repeats it daily. Before that push the only
@@ -478,20 +483,20 @@ at an airfield with no signal and never caches a logbook response. Offline *writ
 
 **Nothing here blocks, and there is no half-finished work.** In rough order of value:
 
-1. **Run `install-backup.sh` once** to execute step 8, the clone-back — the only check that proves
-   the backup restores rather than merely pushes. Command and reasoning at the top of this file.
-   Cheap, and it discharges the last open claim about the backup.
-2. **Read `RESTORE.md` from a real clone**, once, while there is no emergency:
+1. **Read `RESTORE.md` from a real clone**, once, while there is no emergency:
    `git clone git@github.com:ramiayoub-priv/logbook-backup.git`. A backup nobody has restored from is
    still a backup nobody should trust.
-3. **Open the Aircraft tab on the actual phone.** Task 13's figures are proven against the real books
-   and the page is proven in jsdom, but **it has never been looked at in a real browser** — and six
-   tabs plus a seven-column table are exactly the shapes that have broken on this project before.
-   This is the fifth-most-likely place for the "green suite, thirty seconds of use" pattern to
-   recur. Same for Task 12's three new table columns.
-4. **Task 10's ruling is spent** — edit/delete shipped on 2026-08-02. The old open question here
-   (correct in place vs. append) was answered: app-entered flights only, real delete with an
-   append-only `flight_audit` copy, double confirmation. Nothing left to decide.
+2. **Open the Aircraft tab on the actual phone**, now that it is live. Task 13's figures are proven
+   against the real books and the page is proven in jsdom, but **it has never been looked at in a
+   real browser** — and six tabs plus a seven-column table are exactly the shapes that have broken
+   on this project before. Four times now a green suite has loved something that thirty seconds of
+   real use exposed. Same for Task 12's three new table columns.
+3. **Rotate the `rami` sudo password** — the oldest open item in `docs/security.md`. It went into a
+   chat session on 2026-08-01 and was typed repeatedly on 2026-08-02.
+
+**Task 10's ruling is spent** — edit/delete shipped on 2026-08-02. The old open question recorded
+here (correct in place vs. append a correction) was answered: app-entered flights only, real delete
+with an append-only `flight_audit` copy, double confirmation. Nothing left to decide.
 
 **Security and the box** (unchanged, all pre-dating today):
 - **Rotate the `rami` sudo password.** It was pasted into a chat session on 2026-08-01 and must be
@@ -616,7 +621,7 @@ day · landings night.
 | 11 | **Saving a flight must be unmissable** | **done** 2026-08-02 — the success **takes over the screen**: the form is replaced by a confirmation naming what the SERVER stored (date, registration, route, both clock pairs, total, landings), scrolled to and focused, offering *Log another flight* / *Keep editing this flight* and *See it in the table*. A refusal gets the same weight in red and **jumps to the first failing control by page order**, not by the order the server listed them. The draft survives every failure path, and there is still **exactly one live region**. |
 | 12 | **Takeoff / landing / air time in the table, and out of the disclosure** | **done** 2026-08-02 — the flights table gains **Takeoff, Landing and Air**; air time is `format.airMinutes`, computed at render from the two instants and **never stored**, blank (never `0:00`) on the 1277 rows that have none. The airborne pair is **out of the `<details>`** and sits in the Times card next to off/on block; the `details.airborne` CSS is gone. |
 | 13 | **Aircraft time page (block vs air, by aircraft and date range)** | **done** 2026-08-02 — `internal/stats/aircraft.go` (`AirMinutes`, `ByAircraft`, `TotalAircraftTime`; pure, **100%**), `GET /aircraft-time?from&to&reg`, and the **Aircraft** tab. Block and air are separate fields with separate coverage and are never mixed; both totals in **H:MM and whole minutes**; `reg` adds the flights behind one figure without narrowing the comparison. The real books make the case: **OH-CTL has 267:16 of block time and 2:51 of air time from 4 of its 286 flights** — one merged "hours" figure would be catastrophically wrong. |
-| 14 | **Daily off-box backup to a private git repo** | **INSTALLED AND RUNNING** 2026-08-02 — `logbookctl backup` (`internal/backup`) writes four files: `logbook.db` (sessions stripped), `logbook.csv` (every flight, every field), `MANIFEST.txt`, `RESTORE.md`. A systemd timer runs `backup.sh` as the **`logbook` user** → commit → push to `ramiayoub-priv/logbook-backup`. First snapshot pushed as **`fc5cec9` — 1298 flights, 1223:03, 3446 landings**; timer **enabled and active**, next **2026-08-03 03:22 UTC**. Auth is an **account-level key on the dedicated `ramiayoub-priv` account** (owner ruling — not a deploy key). Installing it took three attempts and exposed **three bugs in `install-backup.sh`'s own checks and none in the backup** — see the decision log. ⏳ **Step 8, the clone-back, has still never executed**; until it does, the honest claim is "it pushes", not "it restores". |
+| 14 | **Daily off-box backup to a private git repo** | **INSTALLED AND RUNNING** 2026-08-02 — `logbookctl backup` (`internal/backup`) writes four files: `logbook.db` (sessions stripped), `logbook.csv` (every flight, every field), `MANIFEST.txt`, `RESTORE.md`. A systemd timer runs `backup.sh` as the **`logbook` user** → commit → push to `ramiayoub-priv/logbook-backup`. First snapshot pushed as **`fc5cec9` — 1298 flights, 1223:03, 3446 landings**; timer **enabled and active**, next **2026-08-03 03:22 UTC**. Auth is an **account-level key on the dedicated `ramiayoub-priv` account** (owner ruling — not a deploy key). Installing it took four attempts and exposed **four bugs in `install-backup.sh`'s own checks and none in the backup** — see the decision log. ✅ **Step 8, the clone-back, passed**: four files out of a fresh clone, `logbook.db` matching its own manifest sha256, 1298 flights / 1223:03 / 3446 landings / 1 user. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
@@ -669,9 +674,21 @@ this and holds nothing else. Step 5 now *reports* which kind authenticated, as a
 warning. The script's header had instructed otherwise, and the ruling wins. **Do not "fix" this
 back.**
 
-**Still outstanding, and named at the top of this file: the clone-back has never run.** The backup
-pushes — that is proven, `fc5cec9`, 1298 flights. That it *restores* is not, because step 8 has been
-downstream of a crash every time. A push that reports success is evidence about the push.
+**Bug 4, found after the other three were fixed, and it is the one that best makes the point.** With
+steps 1–7 finally all correct, step 8 died on `could not create work tree dir: Permission denied` —
+`mktemp -d` runs as **root** and makes a `0700 root:root` directory, and the clone runs as
+**logbook**, the only account holding the key. One `chown`. But note *when* it surfaced: this check
+had been sitting downstream of a crash since the day it was written, so it had **never executed
+once**. Three earlier bugs had to be fixed before the fourth could even be reached.
+
+That is the real shape of the session. The backup worked from the first attempt and needed no
+changes. Four separate defects sat in the scaffolding around it, in a strict chain, each one hidden
+behind the last. **Verification code gets no exercise on the happy path, which is precisely when it
+is written and precisely why it is wrong.** Run it, in the failing configuration, before trusting it.
+
+✅ **Discharged the same day**: step 8 passed at 17:20 UTC — four files out of a fresh clone, and
+`logbook.db` still hashing to what its own manifest claims. The backup is now proven to come back,
+not merely to go out.
 
 ### 2026-08-02 — Staging the deploy, and the stale CSVs that were one root command from undoing a ruling
 

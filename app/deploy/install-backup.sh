@@ -9,20 +9,27 @@
 # scripted from here because both involve a secret (rule 0.3, no secrets in the
 # repo -- ever):
 #
-#   1. Create the deploy key ON THE SERVER, so the private half never travels:
+#   1. Create the key ON THE SERVER, so the private half never travels:
 #
 #        sudo -u logbook ssh-keygen -t ed25519 -N '' \
 #             -C 'logbook backup (ayoub.fi)' \
 #             -f /var/lib/logbook/.ssh/backup_ed25519
 #        sudo cat /var/lib/logbook/.ssh/backup_ed25519.pub
 #
-#   2. Add that PUBLIC key to https://github.com/ramiayoub-priv/logbook-backup
-#      under Settings -> Deploy keys, WITH "Allow write access" ticked.
+#   2. Add that PUBLIC key to the ramiayoub-priv ACCOUNT, under GitHub
+#      Settings -> SSH and GPG keys, and create
+#      https://github.com/ramiayoub-priv/logbook-backup as a PRIVATE repository
+#      with NO README and NO licence.
 #
-#      A deploy key rather than a personal access token, and rather than the
-#      owner's own SSH key: it grants exactly one repository, it can be revoked
-#      from the GitHub UI without affecting anything else, and if this box is
-#      ever compromised it cannot be used to reach any other repository.
+#      OWNER RULING 2026-08-02: an account-level key on a DEDICATED account,
+#      not a repository deploy key. This header used to say the opposite, on the
+#      least-privilege argument. The owner's answer is that ramiayoub-priv
+#      exists for this and holds nothing else, so the account boundary already
+#      is the scope. Step 5 reports which kind authenticated. Do NOT change this
+#      back; see app/docs/deploy.md.
+#
+#      An SSH key either way, never a personal access token: the private half is
+#      generated on the box and never leaves it.
 #
 #      THE REPOSITORY MUST BE PRIVATE. It contains the whole logbook and the
 #      account's Argon2id password hash -- see app/docs/security.md.

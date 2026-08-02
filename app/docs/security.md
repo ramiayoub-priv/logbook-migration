@@ -135,13 +135,26 @@ what makes an offline attack against a private repository an acceptable risk rat
 theoretical one. **If that repository is ever made public, or the GitHub account is compromised,
 treat the logbook password as compromised and rotate it.**
 
-**Credentials for the push.** A **GitHub deploy key**, generated on the server so the private half
-never travels, stored at `/var/lib/logbook/.ssh/backup_ed25519` (`0600`, owned by `logbook`) —
-outside the web root and outside this repository (rule §0.3). A deploy key rather than a personal
-access token or the owner's own SSH key: it grants exactly one repository, it is revocable from the
-GitHub UI without touching anything else, and a compromise of this box cannot reach any other
-repository. `StrictHostKeyChecking=yes` against a `known_hosts` pinned at install time, so a
-substituted GitHub host key fails the push instead of being trusted silently.
+**Credentials for the push.** An **ed25519 SSH key registered on the dedicated `ramiayoub-priv`
+GitHub account**, generated on the server so the private half never travels, stored at
+`/var/lib/logbook/.ssh/backup_ed25519` (`0600`, owned by `logbook`) — outside the web root and
+outside this repository (rule §0.3). An SSH key rather than a personal access token, because the
+private half is created on the box and never leaves it.
+
+⚠ **Account-level, not a repository deploy key — OWNER RULING 2026-08-02**, and it is a real
+trade-off rather than an oversight. A deploy key reaches exactly one repository; **this key reaches
+every repository `ramiayoub-priv` owns.** The owner's ruling is that the account is dedicated to this
+purpose and holds nothing else, so the account boundary already supplies the scope. **The control
+that makes that true is therefore a policy one: that account must keep owning nothing but the backup
+repository.** If it ever acquires another repository, this key's blast radius grows silently and the
+decision should be revisited. Revocation is still one click, from the account's key list.
+
+The kind of key in use is otherwise invisible, so `install-backup.sh` step 5 reports it: GitHub
+answers `Hi ramiayoub-priv!` for an account key and `Hi ramiayoub-priv/logbook-backup!` for a deploy
+key.
+
+`StrictHostKeyChecking=yes` against a `known_hosts` pinned at install time, so a substituted GitHub
+host key fails the push instead of being trusted silently.
 
 **Least privilege.** The timer runs `logbook-backup.service` as the **`logbook` user, not root** —
 it reads a database it already owns and writes into a directory it already owns — with the same

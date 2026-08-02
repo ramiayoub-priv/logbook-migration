@@ -242,19 +242,39 @@ ran, so "nothing changed" and "this has been failing silently for a month" stop 
 
 ### Setting it up (owner, once)
 
+✅ **DONE on 2026-08-02.** It is installed, the timer is enabled, and the clone-back has passed.
+What follows is the record of how, and what to repeat if the box is ever rebuilt.
+
 Two steps cannot be scripted because both involve a secret (rule §0.3):
 
 ```bash
-# 1. Generate the deploy key ON THE SERVER, so the private half never travels.
+# 1. Generate the key ON THE SERVER, so the private half never travels.
 sudo -u logbook install -d -m 0700 -o logbook -g logbook /var/lib/logbook/.ssh
 sudo -u logbook ssh-keygen -t ed25519 -N '' -C 'logbook backup (ayoub.fi)' \
      -f /var/lib/logbook/.ssh/backup_ed25519
 sudo cat /var/lib/logbook/.ssh/backup_ed25519.pub
 
 # 2. Create https://github.com/ramiayoub-priv/logbook-backup as a PRIVATE repository
-#    with NO README and NO licence, and add that public key under
-#    Settings -> Deploy keys with "Allow write access" TICKED.
+#    with NO README and NO licence, and register that public key on the
+#    ramiayoub-priv ACCOUNT (Settings -> SSH and GPG keys).
 ```
+
+⚠ **An account-level key, not a deploy key — OWNER RULING 2026-08-02.** This document previously
+instructed a repository deploy key, on the least-privilege argument that it reaches one repository
+and can be revoked without touching anything else. The owner ruled otherwise: `ramiayoub-priv` is a
+**dedicated account that exists for this and holds nothing else**, so the scoping a deploy key buys
+is already provided by the account boundary. **Do not "fix" this back to a deploy key.**
+
+How to tell which one is in use, since it is otherwise invisible — GitHub's greeting names it:
+
+```
+Hi ramiayoub-priv!                   -> account-level key   (what is in use)
+Hi ramiayoub-priv/logbook-backup!    -> repository deploy key
+```
+
+`install-backup.sh` step 5 prints this and reports which kind authenticated, as a fact rather than a
+warning. The consequence to keep in view is that the key's reach is **every repository that account
+owns** — which is why the account must keep owning nothing else.
 
 Then, from the repo:
 
