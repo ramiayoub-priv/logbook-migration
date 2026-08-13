@@ -16,15 +16,20 @@ Rules live in the repo root **`CLAUDE.md` §0** — read those first, they are n
 
 *Assume you remember nothing. This block is the whole brief.*
 
-**Paused 2026-08-02 after the Tasks 16/17/18 deploy; work resumes 2026-08-03.** Nothing is
-in flight, nothing is half-finished, and the box is level with the repo. **Start with the two items
-below, in this order:**
+**Work resumed 2026-08-03. The owner set three priorities that session and they are Tasks 19, 20
+and 21 on the board — do them in this order:**
 
-1. ⚠ **Confirm the owner rotated the `rami` sudo password.** They undertook to, twice. Until it is
-   done it is the project's largest exposure — details in pick-up item 1 and `docs/security.md`.
-2. **Build the fleet management page** — the `U` of aircraft CRUD, the only feature gap the owner has
-   named. Full state and the exact reason it matters are in **pick-up item 3**, which is written to be
-   read cold. It is frontend-only and does not touch the record.
+1. **Task 19 — the fleet management page.** The `U` of aircraft CRUD, plus create away from the
+   flight form. Frontend-only; the endpoints are live and deployed. Pick-up item 3 has the full
+   state, written to be read cold.
+2. **Task 20 — stale sessions.** The Devices list accumulates a row per login and never sheds one.
+   Mechanism and the owner's ruling are on the board and in the decision log for 2026-08-03.
+3. **Task 21 — the PIC name becomes a picked object**, so `self` has exactly one spelling. **No
+   student field** — the owner ruled that out explicitly.
+
+⚠ **Standing item, unchanged: confirm the owner rotated the `rami` sudo password.** They undertook
+to, twice. Until it is done it is the project's largest exposure — pick-up item 1 and
+`docs/security.md`. None of the three tasks above needs `sudo` to develop.
 
 **What this is.** A private, mobile-first pilot logbook web app for one user (the repo owner, a
 Finnish pilot), live at `https://ayoub.fi/logbook`. It holds 1296 flights transcribed from three
@@ -763,11 +768,55 @@ day · landings night.
 | 16 | **The restore drill, and `logbookctl check`** | **done, and DEPLOYED 2026-08-02 19:07 UTC** (`logbookctl` `59e089d3…` now on the box, installed by `update.sh` step 3) — the backup was cloned and restored for real with no emergency running. It passed everything: both sha256s match, `logbook.db` is byte-identical across three snapshots, the server boots on it reading **`flights=1298`** with all six private routes still 401, and `logbook.csv` reconciles to 1298 / 1223:03 / 3446 / 38 with no SQLite involved. **Its instructions did not pass**: step 3 told the reader to run `sqlite3`, absent from the box and not a dependency of this project, so the mandatory rule-0.2 verification was `command not found` on a fresh server. New **`logbookctl check -db <db> [-manifest <file>]`** (no CSVs, no sqlite3, hashes before opening, shares `Figures` with the manifest writer so the two cannot drift), regenerated `RESTORE.md`, and **`install-backend.sh` now installs `logbookctl`** — step 1 of the restore never did, so fixing only the sqlite3 line would have swapped one missing command for another. Backend **87.6%**, core still 100%. |
 | 17 | **Aircraft CRUD** | **backend + picker DEPLOYED, manage page NOT built** 2026-08-02 — owner ask: a first flight in an aeroplane never flown was unenterable, because the aircraft list was purely derived and the form's registration was a `<select>` fed by it. Now: `aircraft.user_added` (additive migration in `store.migrate`, proven safe on a copy of real production), `store/aircraft.go` (`AircraftList`/`AircraftByReg`/`AddAircraft`/`UpdateAircraft`, `last_flown` and flight counts **derived, never stored**), **`POST /aircraft`** and **`PUT /aircraft/{reg}`** — and **NO DELETE**, by ruling, asserted against the route table. The importer's unqualified `DELETE FROM aircraft` is scoped to `user_added = 0`. Frontend: `AircraftPicker.tsx`, a filterable combobox that also adds an aeroplane inline; **no retired/active concept**, nothing hidden, ordered never-flown-first then most-recently-flown. **111 frontend tests, backend 87.3%.** ✅ **Live since 2026-08-02 19:07 UTC** — `POST`/`PUT` both answer **403** unauthenticated (CSRF refused before auth, stricter than 401) and `DELETE` answers **405**, so the no-delete ruling is enforced in production. ⚠ **Still never opened in a real browser, and the U of CRUD has no UI at all**: `api.updateAircraft` (`src/api.ts:301`) has **zero callers, not even a test**, so a typo'd registration cannot be corrected from the app and cannot be deleted either. Create/read work end-to-end. See pick-up item 3 for the full table — that is where the next session starts. |
 | 18 | **Retire the importer from production** | **done and DEPLOYED** 2026-08-02 — owner ruling: the production database is the source of truth. **The rewritten `update.sh` ran at 19:07 UTC**: step 4's read-only `verify` matched all nine checksums against the frozen CSVs and nothing was written to the record. That was the first deploy in this project's history that did not run a destructive operation on a live legal record. `update.sh` no longer imports; step 4 is a **read-only `verify`**, turning the frozen CSVs into a drift/tamper check on the 1296 historical rows rather than a rebuild. `CLAUDE.md` §0.2 rewritten. `logbookctl import` survives for dev scratch databases and tests only. Removes the stale-CSV class of failure entirely, and rests on the backup having been *proven* restorable the same day. |
+| 19 | **The fleet management page** — the `U` of aircraft CRUD, plus create away from the form | **NEXT** — owner ask 2026-08-03. Frontend-only: `POST`/`PUT /aircraft` are live and deployed, and `api.updateAircraft` still has zero callers. A page that lists the fleet, adds an aeroplane, and edits a row. **No delete** (ruling, asserted by a route-table test). |
+| 20 | **Stale sessions never die** — the Devices list is a graveyard | **NEXT** — owner bug report 2026-08-03. The cookie is a *browser-session* cookie, so it dies when the phone's browser restarts; the server row lives 90 idle days after that, unreachable by anyone. Every re-login orphans one. **Owner ruling 2026-08-03: keep re-logging-in, shorten the idle window** (90d → 14d). |
+| 21 | **The PIC name becomes a picked object** | **NEXT** — owner ask 2026-08-03: `self`, `sself`, `SELF`, `seeelf` must not all be possible. A `people` roster like the aircraft one — derived from the distinct historical `pic_name` values, plus hand-added rows — behind a filterable picker on the form. **Owner ruling 2026-08-03: NO student field** ("no student field as it should be"); students stay in Remarks. Historical `pic_name` values are **read and never rewritten** (§0.8). |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-03 — Three priorities from the owner, and two rulings that made them smaller
+
+The owner named three things and said that after them "we should be solid": finish adding aircraft
+(easily from the new-flight page, **and** from a management page of its own), fix a bug where the
+Devices list shows sessions that are plainly dead, and stop the PIC name being free text — *"I could
+have a typo when I write `self`, it could be `sself` or `SELF` or `seeelf`, and I need it to be
+consistent (like the aircraft regs)"*. They are Tasks 19, 20 and 21.
+
+**The session bug is not what it looks like, and naming the mechanism changed the fix.** The
+symptom is a Devices list full of entries for what is really one phone. The cause is that two
+lifetimes disagree: `setCookie` (`handlers.go:891`) deliberately sets **no `Max-Age`**, so the
+cookie is a *browser-session* cookie that dies when the phone's browser or PWA restarts — that is
+the re-login the owner sees and calls correct — while the row keeps `SessionLifetime = 90 * 24h` of
+**idle** life (`store/auth.go:27`). The device can never present that token again, so the row is
+**orphaned: unreachable, but listed and alive for another three months.** Every login makes one
+more. The backup manifest showing `sessions dropped 13` for a single-user app is the same fact seen
+from the other side. Nothing was broken in `PurgeExpiredSessions` or in the hourly sweep that calls
+it (`main.go:184`) — they work exactly as written; they were simply never going to fire on a row
+whose 90 days had not elapsed.
+
+Offered the choice between making the cookie persistent (stay logged in, list becomes truthful) and
+shortening the server's window, the owner **ruled for the shorter window: keep logging in after a
+restart, drop 90 days to 14.** So the fix is to make the server's idea of an idle session roughly
+match the browser's, not to extend the credential. Worth recording that the 90 days was itself an
+earlier owner requirement — this supersedes it.
+
+**The PIC roster is smaller than asked, by ruling.** The first plan was a `people` roster feeding
+both a PIC picker and a new Student field. The owner cut the second half — *"my bad, no student
+field as it should be"* — so Task 21 is the PIC name only, and students stay in Remarks where they
+are today. No new column on `flights`.
+
+**A census of the frozen data says the owner's worry is already real.** The 1296 historical rows
+carry **19 distinct `pic_name` values**: `self` ×1145, then `Martevuo` ×54, `Autere` ×30, `Stude`
+×18, `Jansson` ×16 and a tail. Two of them are worth stating plainly, and **neither is being
+touched**: **`Sinervä` ×6 and `Sinerva` ×1 are almost certainly one person**, and **`Stude` ×18
+looks like a word, not a surname.** Both are exactly the class of thing rule 0.8 puts out of reach —
+surfaced here, ruled on by nobody, changed by nothing. The roster will therefore be **derived from
+these values as they are written**, variants and all, the same way the aircraft list was derived
+before it gained hand-added rows. Task 21 stops the *next* spelling of `self` from being invented;
+it does not tidy the paper.
 
 ### 2026-08-02 — The first deploy that did not write to the record
 
