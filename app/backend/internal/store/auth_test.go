@@ -283,8 +283,15 @@ func TestSessionExpiryIsRollingAndEnforced(t *testing.T) {
 		t.Errorf("a fresh session expires at %v, want %v", s.ExpiresAt, want)
 	}
 
-	// Used on day 89: still valid, and the window rolls forward from there.
-	clock = base.AddDate(0, 0, 89)
+	// Expressed against the constant rather than a number of days, so that
+	// changing the window (90 days -> 14 on 2026-08-03) changes what this test
+	// exercises rather than breaking it. What is being asserted is the ROLLING,
+	// which is a property; the length of the window is a ruling, and it is
+	// pinned by TestSessionLifetimeIsTheOwnersRuling next door.
+	const almost = store.SessionLifetime - 24*time.Hour
+
+	// Used just inside the window: still valid, and it rolls forward from there.
+	clock = base.Add(almost)
 	got, _, err := db.LookupSession(raw)
 	if err != nil {
 		t.Fatalf("an 89-day-old session that is still inside its window was rejected: %v", err)
@@ -296,17 +303,18 @@ func TestSessionExpiryIsRollingAndEnforced(t *testing.T) {
 		t.Errorf("last_used_at = %v, want %v", got.LastUsedAt, clock)
 	}
 
-	// 89 more days of use keeps it alive indefinitely -- that is the point of a
-	// rolling window, and it is what delivers "I never want to log in again".
-	clock = clock.AddDate(0, 0, 89)
+	// Another near-window gap keeps it alive indefinitely -- that is the point
+	// of a rolling window, and it is what keeps the owner from logging in on
+	// every visit.
+	clock = clock.Add(almost)
 	if _, _, err := db.LookupSession(raw); err != nil {
-		t.Fatalf("a session used every 89 days should never expire: %v", err)
+		t.Fatalf("a session used inside its window every time should never expire: %v", err)
 	}
 
-	// Then leave it alone for 91 days. Dead.
-	clock = clock.AddDate(0, 0, 91)
+	// Then leave it alone for longer than the window. Dead.
+	clock = clock.Add(store.SessionLifetime + time.Hour)
 	if _, _, err := db.LookupSession(raw); !errors.Is(err, store.ErrNoSession) {
-		t.Errorf("a 91-day-idle session was accepted: %v", err)
+		t.Errorf("an idle session past its window was accepted: %v", err)
 	}
 }
 
@@ -557,5 +565,177 @@ func TestRedactForBackupDropsSessionsAndKeepsUsers(t *testing.T) {
 	// The account is still there, and still usable -- this is the whole point.
 	if _, err := db.Authenticate("rami", pw); err != nil {
 		t.Errorf("the account did not survive redaction: %v", err)
+	}
+}
+
+// --- The window, and the rows a longer one left behind (Task 20) -------------
+//
+// These need to write a session row that current code would never produce --
+// one carrying the 90-day expires_at that shipped until 2026-08-03 -- and that
+// is the whole point of them. The owner's real database has thirteen such rows,
+// and a fix that only reached sessions created after the deploy would leave
+// every one of them in the Devices list for another three months, which is the
+// bug that was reported.
+
+// storedTimeFormat is how store writes an instant. Spelled out here because
+// these tests write rows directly.
+const storedTimeFormat = "2006-01-02T15:04:05Z"
+
+// TestSessionLifetimeIsTheOwnersRuling pins the number, because it is a ruling
+// rather than a tuning knob.
+//
+// 2026-08-03: the cookie carries no Max-Age, so it dies when the phone's
+// browser restarts -- the owner sees that re-login and calls it correct. The
+// row then had 90 idle days left to live, unreachable by any device, and every
+// login made another. Offered a persistent cookie instead, the owner chose to
+// keep logging in and shorten the window. Raising this back towards the
+// browser's own lifetime is what re-opens the bug.
+func TestSessionLifetimeIsTheOwnersRuling(t *testing.T) {
+	if want := 14 * 24 * time.Hour; store.SessionLifetime != want {
+		t.Errorf("store.SessionLifetime = %v, want %v (owner ruling 2026-08-03)", store.SessionLifetime, want)
+	}
+}
+
+// TestShorteningTheWindowReachesSessionsAlreadyStored is the fix for the rows
+// that already exist.
+//
+// The window is evaluated from last_used_at against the CONSTANT, never from
+// the expires_at written into the row when it was created. So changing the
+// constant changes every session's fate at once, including the ones a previous
+// version of this code stamped with a date three months out.
+func TestShorteningTheWindowReachesSessionsAlreadyStored(t *testing.T) {
+	db := openTemp(t)
+	now := time.Date(2026, 8, 3, 12, 0, 0, 0, time.UTC)
+	restore := db.SetClockForTest(func() time.Time { return now })
+	defer restore()
+
+	u, err := db.CreateUser("rami", pw)
+	if err != nil {
+		t.Fatalf("CreateUser: %v", err)
+	}
+
+	// A row exactly as the 90-day code left it: last used 20 days ago, stamped
+	// to expire 70 days from now. The phone that made it dropped the cookie at
+	// its next restart and can never present this token again.
+	raw, hash, err := auth.NewSessionToken()
+	if err != nil {
+		t.Fatalf("NewSessionToken: %v", err)
+	}
+	lastUsed := now.AddDate(0, 0, -20)
+	legacyExpiry := lastUsed.Add(90 * 24 * time.Hour)
+	if _, err := db.SQLForTest().Exec(
+		`INSERT INTO sessions (user_id, token_hash, created_at, last_used_at, expires_at, user_agent, ip)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		u.ID, hash, lastUsed.Format(storedTimeFormat), lastUsed.Format(storedTimeFormat),
+		legacyExpiry.Format(storedTimeFormat), "an old iPhone", "192.0.2.1"); err != nil {
+		t.Fatalf("inserting a legacy session: %v", err)
+	}
+
+	// Twenty days idle is past the fourteen-day window, whatever the row says.
+	if _, _, err := db.LookupSession(raw); !errors.Is(err, store.ErrNoSession) {
+		t.Errorf("a 20-day-idle session was accepted because its row claimed 70 days left: %v", err)
+	}
+
+	// And it is gone, rather than merely refused: LookupSession drops an
+	// expired row on sight so the table is bounded even if the sweep never
+	// runs. This is what empties the owner's Devices list on the first request
+	// after the deploy.
+	left, err := db.Sessions(u.ID)
+	if err != nil {
+		t.Fatalf("Sessions: %v", err)
+	}
+	if len(left) != 0 {
+		t.Errorf("the dead session is still listed: %+v", left)
+	}
+}
+
+// TestPurgeReadsTheWindowNotTheStoredExpiry is the same fix on the sweep that
+// runs hourly, for rows nobody will ever present again -- which, since the
+// browser dropped their cookies, is all of them.
+func TestPurgeReadsTheWindowNotTheStoredExpiry(t *testing.T) {
+	db := openTemp(t)
+	now := time.Date(2026, 8, 3, 12, 0, 0, 0, time.UTC)
+	restore := db.SetClockForTest(func() time.Time { return now })
+	defer restore()
+
+	u, err := db.CreateUser("rami", pw)
+	if err != nil {
+		t.Fatalf("CreateUser: %v", err)
+	}
+
+	insert := func(idleDays int) {
+		t.Helper()
+		_, hash, err := auth.NewSessionToken()
+		if err != nil {
+			t.Fatalf("NewSessionToken: %v", err)
+		}
+		used := now.AddDate(0, 0, -idleDays)
+		if _, err := db.SQLForTest().Exec(
+			`INSERT INTO sessions (user_id, token_hash, created_at, last_used_at, expires_at, user_agent, ip)
+			 VALUES (?, ?, ?, ?, ?, '', '')`,
+			u.ID, hash, used.Format(storedTimeFormat), used.Format(storedTimeFormat),
+			used.Add(90*24*time.Hour).Format(storedTimeFormat)); err != nil {
+			t.Fatalf("inserting: %v", err)
+		}
+	}
+	insert(20) // dead under the new window
+	insert(30) // dead
+	insert(13) // still inside it, by a day
+
+	n, err := db.PurgeExpiredSessions()
+	if err != nil {
+		t.Fatalf("PurgeExpiredSessions: %v", err)
+	}
+	if n != 2 {
+		t.Errorf("purged %d sessions, want 2 (the 20- and 30-day-idle ones)", n)
+	}
+	left, err := db.Sessions(u.ID)
+	if err != nil {
+		t.Fatalf("Sessions: %v", err)
+	}
+	if len(left) != 1 {
+		t.Fatalf("%d sessions left, want 1", len(left))
+	}
+}
+
+// TestSessionsReportTheWindowFromLastUse keeps the Devices page honest.
+//
+// A legacy row's stored expires_at is three months out and wrong. Reporting it
+// would tell the owner a session is good until November when the server will
+// refuse it in a fortnight -- and this page exists precisely so they can see
+// what is live.
+func TestSessionsReportTheWindowFromLastUse(t *testing.T) {
+	db := openTemp(t)
+	now := time.Date(2026, 8, 3, 12, 0, 0, 0, time.UTC)
+	restore := db.SetClockForTest(func() time.Time { return now })
+	defer restore()
+
+	u, err := db.CreateUser("rami", pw)
+	if err != nil {
+		t.Fatalf("CreateUser: %v", err)
+	}
+	_, hash, err := auth.NewSessionToken()
+	if err != nil {
+		t.Fatalf("NewSessionToken: %v", err)
+	}
+	used := now.AddDate(0, 0, -2)
+	if _, err := db.SQLForTest().Exec(
+		`INSERT INTO sessions (user_id, token_hash, created_at, last_used_at, expires_at, user_agent, ip)
+		 VALUES (?, ?, ?, ?, ?, '', '')`,
+		u.ID, hash, used.Format(storedTimeFormat), used.Format(storedTimeFormat),
+		used.Add(90*24*time.Hour).Format(storedTimeFormat)); err != nil {
+		t.Fatalf("inserting: %v", err)
+	}
+
+	list, err := db.Sessions(u.ID)
+	if err != nil {
+		t.Fatalf("Sessions: %v", err)
+	}
+	if len(list) != 1 {
+		t.Fatalf("%d sessions, want 1", len(list))
+	}
+	if want := used.Add(store.SessionLifetime); !list[0].ExpiresAt.Equal(want) {
+		t.Errorf("ExpiresAt = %v, want %v (last use + the window, not the stored column)",
+			list[0].ExpiresAt, want)
 	}
 }

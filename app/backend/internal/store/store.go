@@ -56,7 +56,7 @@ type DB struct {
 	// import run so a figure can be traced to the state it replaced.
 	backup string
 	// clock is the source of "now" for session expiry. It is a field rather
-	// than a call to time.Now so that the 90-day rolling window can be tested
+	// than a call to time.Now so that the rolling session window can be tested
 	// in milliseconds instead of being taken on trust -- see SetClockForTest
 	// and the expiry control in app/docs/security.md.
 	clock func() time.Time

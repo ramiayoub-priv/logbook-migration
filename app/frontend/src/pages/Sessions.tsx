@@ -6,9 +6,14 @@ import { useApi, useAuth } from '../auth'
  * The signed-in devices, and the way to sign out of any of them.
  *
  * Sessions are rows in the database rather than signed tokens precisely so
- * they can be withdrawn: the owner wants 90-day sessions, which makes a stolen
- * cookie a 90-day liability unless there is a page like this one
- * (docs/security.md).
+ * they can be withdrawn: a session that outlives its use is a liability unless
+ * there is a page like this one (docs/security.md).
+ *
+ * WHAT THIS PAGE SHOWS IS COMPUTED, NOT STORED. Until 2026-08-03 the window was
+ * 90 days while the cookie died with the browser, so this list filled up with
+ * devices that had long since stopped being able to get in. The server now
+ * reports each session's expiry as its last use plus the current window, so
+ * nothing here can promise access the server will refuse.
  */
 export function SessionsPage() {
   const { signOut } = useAuth()
@@ -44,8 +49,9 @@ export function SessionsPage() {
       <div className="card">
         <h2>Signed-in devices</h2>
         <p className="muted small">
-          A session lasts 90 days from its last use and can be withdrawn here at any time.
-          Changing your password on the server signs every device out.
+          A session lasts 14 days from its last use and can be withdrawn here at any time.
+          Signing in again on a device that has been away is normal — the cookie itself ends
+          when the browser closes. Changing your password on the server signs every device out.
         </p>
         <button onClick={() => void signOut()}>Sign out of this device</button>
       </div>

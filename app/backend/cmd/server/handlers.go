@@ -894,9 +894,16 @@ func (s *Server) setCookie(w http.ResponseWriter, raw string) {
 		Value: raw,
 		Path:  cookiePath,
 		// No Expires or MaxAge: a session cookie in the browser, with the real
-		// 90-day lifetime enforced server-side where it can be revoked. A
-		// long-lived cookie the server has forgotten about is a credential
-		// nobody can withdraw.
+		// lifetime enforced server-side where it can be revoked. A long-lived
+		// cookie the server has forgotten about is a credential nobody can
+		// withdraw.
+		//
+		// THIS LINE SETS store.SessionLifetime'S VALUE, indirectly. Because the
+		// cookie dies with the browser, a server window much longer than a
+		// browser's life just accumulates sessions nothing can present -- which
+		// is the bug fixed on 2026-08-03 by shortening the window to 14 days.
+		// Giving this cookie a Max-Age is the other way to keep the two in step,
+		// and the owner considered and declined it: they want the re-login.
 		HttpOnly: true,
 		Secure:   s.cfg.SecureCookie,
 		SameSite: http.SameSiteLaxMode,

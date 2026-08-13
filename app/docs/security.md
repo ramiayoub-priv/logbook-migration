@@ -51,19 +51,30 @@ Apache already absorb.
 
 ### Sessions
 - **Server-side sessions in SQLite**, not JWTs. The deciding factor is revocation: a JWT cannot be
-  withdrawn before expiry, and a 90-day JWT is a 90-day liability. A row in a table can be deleted.
+  withdrawn before expiry, and a long-lived JWT is a long-lived liability. A row in a table can be
+  deleted.
 - The cookie carries a 256-bit random identifier; the **database stores only its hash**, so a DB read
   does not yield usable session tokens. `auth.NewSessionToken` returns the raw value and its hash
   *together*, so the code that writes the session row is handed the hash and has no reason to reach
   for the raw one — the property is structural, not remembered.
 - Cookie flags: `HttpOnly` (no JS access), `Secure` (TLS only), `SameSite=Lax`, `Path=/logbook`.
   The path matters: at `/` the cookie would be sent to the owner's other sites on this box.
-  No `Expires`/`Max-Age` — it is a browser session cookie, and the real 90-day life is enforced
-  server-side where it can be revoked.
-- **90-day rolling expiry** — this is what delivers "I don't want to log in every time". Each use
-  extends the window; an unused session dies. Evaluated in Go against an injectable clock rather
-  than in SQL against `CURRENT_TIMESTAMP`: one authority for time (rule §0.4), and the window gets
-  tested in milliseconds instead of taken on trust.
+  No `Expires`/`Max-Age` — it is a **browser session cookie**, so it dies when the browser or the
+  home-screen app restarts, and the real life is enforced server-side where it can be revoked.
+  ⚠ **That cookie lifetime is why the server's window is 14 days and not 90** — see below.
+- **14-day rolling expiry** — each use extends the window; an unused session dies. Evaluated in Go
+  against an injectable clock rather than in SQL against `CURRENT_TIMESTAMP`: one authority for time
+  (rule §0.4), and the window gets tested in milliseconds instead of taken on trust.
+  - **It was 90 days until 2026-08-03, and that was a bug the owner reported.** The cookie above is
+    a browser-session cookie, so a phone drops it on restart and logs in again; the row it left
+    behind kept 90 idle days of life that **no device could ever use**, and the Devices page listed
+    every one. Thirteen had piled up for a single user. Offered a persistent cookie instead, the
+    owner ruled for the shorter window and kept the re-login.
+  - **The window is computed from `last_used_at` and the constant, never read back from the stored
+    `expires_at`.** So `SessionLifetime` is the single authority: shortening it retires the sessions
+    that already exist rather than only the ones created afterwards. `PurgeExpiredSessions` asks the
+    same question, so the hourly sweep and the request path cannot disagree, and the Devices page
+    reports the computed date so it can never promise a session the server will refuse.
 - **A disabled account's live sessions stop working immediately**, not at the next login.
 - A visible session list with individual revoke, plus revoke-all-on-password-change. Revocation is
   scoped to the owning user in the query itself, so a session id guessed off the wire cannot log

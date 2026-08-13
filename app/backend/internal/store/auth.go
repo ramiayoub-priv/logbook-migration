@@ -7,8 +7,8 @@
 // is authenticated lives in exactly one of the two.
 //
 // Sessions are rows rather than JWTs for one reason: revocation. A signed token
-// cannot be withdrawn before it expires, and the user wants 90-day sessions --
-// which would mean a 90-day liability on a stolen cookie. A row can be deleted.
+// cannot be withdrawn before it expires, which would mean a fortnight's
+// liability on a stolen cookie and no way to end it. A row can be deleted.
 package store
 
 import (
@@ -24,7 +24,21 @@ import (
 // last used, not after it was created. That is what delivers the user's
 // requirement of not having to log in on every visit, while still making an
 // abandoned or stolen cookie expire on its own.
-const SessionLifetime = 90 * 24 * time.Hour
+//
+// IT IS 14 DAYS AND NOT 90, BY OWNER RULING (2026-08-03), AND THE REASON IS
+// THE COOKIE. setCookie deliberately sends no Max-Age, so the cookie is a
+// browser-session cookie that dies when the phone's browser or PWA restarts --
+// the owner sees that re-login and considers it correct. With a 90-day row
+// behind a cookie that lives a few days, every login left behind a session no
+// device could ever present again: unreachable, but alive and listed on the
+// Devices page for another three months. Thirteen of them had accumulated for
+// one user.
+//
+// So the two lifetimes are now roughly matched, from the shorter end. Offered
+// the alternative -- a persistent cookie, so the row and the device agree by
+// staying logged in -- the owner chose to keep logging in. Raising this back
+// towards 90 days without also giving the cookie a Max-Age re-opens the bug.
+const SessionLifetime = 14 * 24 * time.Hour
 
 // ErrAuthFailed is returned for every authentication failure, whatever the
 // cause: no such user, wrong password, disabled account.
@@ -151,8 +165,8 @@ func mustDecoy() string {
 // SetPassword changes a password and revokes every session the user has.
 //
 // The revocation is the point: a password change is what someone does when they
-// think a credential is compromised, and leaving 90-day cookies alive would
-// make the change cosmetic. Both happen in one transaction.
+// think a credential is compromised, and leaving live sessions alive would make
+// the change cosmetic. Both happen in one transaction.
 func (db *DB) SetPassword(username, password string) error {
 	hash, err := auth.HashPassword(password)
 	if err != nil {
@@ -272,11 +286,11 @@ func (db *DB) CreateSession(userID int64, userAgent, ip string) (string, Session
 // LookupSession resolves a cookie value to its session and user, rolling the
 // expiry window forward as a side effect.
 //
-// The roll-forward is what makes the 90 days a window of inactivity rather than
-// a hard deadline. It is also why this is not a pure read: every authenticated
-// request writes one row. At one user and a handful of requests that is
-// irrelevant, and the alternative -- a session that dies mid-use 90 days after
-// login -- is the behaviour the owner explicitly did not want.
+// The roll-forward is what makes SessionLifetime a window of inactivity rather
+// than a hard deadline. It is also why this is not a pure read: every
+// authenticated request writes one row. At one user and a handful of requests
+// that is irrelevant, and the alternative -- a session that dies mid-use a fixed
+// time after login -- is the behaviour the owner explicitly did not want.
 //
 // Expiry is evaluated in Go against db.clock rather than in SQL against
 // CURRENT_TIMESTAMP, so the window is testable and so there is one authority
@@ -326,7 +340,13 @@ func (db *DB) LookupSession(raw string) (Session, User, error) {
 	u.ID = s.UserID
 
 	nowT := db.at()
-	if !nowT.Before(s.ExpiresAt) {
+	// THE WINDOW IS COMPUTED, NOT READ BACK. The deadline is last_used_at plus
+	// the constant above, never the expires_at stamped into the row when it was
+	// written -- so SessionLifetime is the single authority and shortening it
+	// takes effect on every session that already exists, rather than only on
+	// the ones created after the change. That is what empties a Devices list
+	// full of rows a previous version stamped with a date three months out.
+	if !nowT.Before(s.LastUsedAt.Add(SessionLifetime)) {
 		// Expired. Delete it on sight rather than leaving it to the purge: the
 		// row is useless and removing it here bounds the table even if the
 		// periodic sweep never runs.
@@ -404,9 +424,16 @@ func (db *DB) Sessions(userID int64) ([]Session, error) {
 		if s.LastUsedAt, err = parseStamp(lastUsed); err != nil {
 			return nil, err
 		}
-		if s.ExpiresAt, err = parseStamp(expires); err != nil {
+		// Parsed to prove the row is readable, then DISCARDED in favour of the
+		// computed window. A row written under the old 90-day rule carries a
+		// date the server will no longer honour, and this page is the one place
+		// the owner looks to see what is still live -- telling them a session
+		// is good until November when it dies in a fortnight is the same class
+		// of lie as the stale rows themselves.
+		if _, err = parseStamp(expires); err != nil {
 			return nil, err
 		}
+		s.ExpiresAt = s.LastUsedAt.Add(SessionLifetime)
 		out = append(out, s)
 	}
 	if err := rows.Err(); err != nil {
@@ -417,8 +444,15 @@ func (db *DB) Sessions(userID int64) ([]Session, error) {
 
 // PurgeExpiredSessions deletes sessions past their window and reports how many
 // went. Run periodically by the server so the table stays bounded.
+//
+// It asks the same question LookupSession does, in the same terms: idle for
+// longer than SessionLifetime. Sweeping on the stored expires_at instead would
+// mean the hourly sweep and the request path could disagree about which
+// sessions are alive -- and it would never reach the rows written under a
+// longer window, which are precisely the ones this sweep exists to remove.
 func (db *DB) PurgeExpiredSessions() (int, error) {
-	res, err := db.sql.Exec(`DELETE FROM sessions WHERE expires_at <= ?`, db.stamp())
+	cutoff := db.at().Add(-SessionLifetime).Format(timeFormat)
+	res, err := db.sql.Exec(`DELETE FROM sessions WHERE last_used_at <= ?`, cutoff)
 	if err != nil {
 		return 0, fmt.Errorf("store: purging sessions: %w", err)
 	}

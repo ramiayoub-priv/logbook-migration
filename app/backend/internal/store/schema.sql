@@ -195,7 +195,10 @@ CREATE TABLE IF NOT EXISTS sessions (
     token_hash   TEXT NOT NULL UNIQUE,
     created_at   TEXT NOT NULL,
     last_used_at TEXT NOT NULL,
-    -- 90-day rolling expiry, extended on each use.
+    -- Written on create and on each use, and NOT what decides anything: the
+    -- window is store.SessionLifetime measured from last_used_at, so that
+    -- changing it reaches the rows that already exist. This column is the
+    -- value at rest, for anyone reading the file directly.
     expires_at   TEXT NOT NULL,
     user_agent   TEXT NOT NULL DEFAULT '',
     ip           TEXT NOT NULL DEFAULT ''
