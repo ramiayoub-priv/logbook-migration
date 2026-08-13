@@ -363,13 +363,21 @@ func (s *Server) picNameIsOnTheRoster(name string) (bool, error) {
 }
 
 // refusePICName writes the field-level refusal both write paths share.
+//
+// The shape is entry.Errors -- an ARRAY of {field, message} -- and not a map,
+// because that is what every other refusal from these two endpoints answers
+// with and what the form reads. The first version of this used a map, the
+// backend tests passed, and running it showed the pilot a banner saying "see
+// the fields below" with nothing marked below. Reusing the type rather than
+// hand-rolling the JSON is what stops that happening again.
 func (s *Server) refusePICName(w http.ResponseWriter, what, name string) {
 	writeJSON(w, http.StatusBadRequest, map[string]any{
 		"error": "this flight cannot be " + what + " as written",
-		"fields": map[string]string{
-			"pic_name": fmt.Sprintf("%q is not in the pilot list -- pick a name from it, "+
+		"fields": entry.Errors{{
+			Field: "pic_name",
+			Message: fmt.Sprintf("%q is not in the pilot list -- pick a name from it, "+
 				"or add this one", strings.TrimSpace(name)),
-		},
+		}},
 	})
 }
 

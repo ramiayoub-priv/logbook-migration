@@ -305,8 +305,10 @@ nothing else — the CSRF check doing its job. This cost real time on 2026-08-01
 ⚠ **`go test` caches.** After the CSVs change, a green `make check` proves nothing until you have
 run `go test -count=1 ./...` — this exact trap hid five real failures on 2026-08-01.
 
-⚠ **Run the thing before calling a task done.** A green suite has now three times missed what
-thirty seconds of running found: the `createuser -db` bug in Task 4; in Task 5/6 the broken PDF
+⚠ **Run the thing before calling a task done.** A green suite has now SIX times missed what thirty
+seconds of running found — most recently on 2026-08-03, when a `pic_name` refusal came back as a
+field *map* where the form reads a field *array*, so the refusal rendered as a banner with nothing
+marked below it and every test agreed it was fine. The earlier five: the `createuser -db` bug in Task 4; in Task 5/6 the broken PDF
 column headers, the clipped totals labels, the date fields overflowing a phone, and the aircraft
 relink lost on re-import; and on 2026-08-01 **the new-flight form asking for `09:15Z` in a field
 whose keyboard has no colon key** — untypeable on a phone, invisible to 43 passing tests, a browser
@@ -829,6 +831,42 @@ surfaced here, ruled on by nobody, changed by nothing. The roster will therefore
 these values as they are written**, variants and all, the same way the aircraft list was derived
 before it gained hand-added rows. Task 21 stops the *next* spelling of `self` from being invented;
 it does not tidy the paper.
+
+### 2026-08-03 — Running it found the sixth thing a green suite loved
+
+The tally in "How to run things" said five. It is six.
+
+Every test passed — 127 frontend, backend at 86.8% with the core at 100% — and then the three tasks
+were driven against a **scratch server holding the real 1296 flights**. The roster came back correct
+(18 names, `self` ×1143, ordered most-recent-first), the fleet rename worked, `DELETE /aircraft`
+answered 405. And the `pic_name` refusal came back like this:
+
+```
+{"error":"...","fields":{"pic_name":"\"SELF\" is not in the pilot list ..."}}
+```
+
+**A map. Every other refusal from `POST`/`PUT /flights` answers with an array** of `{field, message}`
+— that is Go's `entry.Errors` — and the form reads `err.fields.length` and iterates it. On a map,
+`length` is `undefined`, so the whole per-field mechanism silently fell through: the pilot would have
+seen a banner reading *"see the fields below"* with **nothing marked below**, and the form's
+jump-to-the-first-bad-control would have had nothing to jump to. Backend tests passed because they
+asserted the status code and that the body mentioned `pic_name`. Both were true. **The refusal was
+unrenderable and every test agreed it was fine.**
+
+Fixed in two places, because it is two bugs:
+
+1. `refusePICName` now builds an **`entry.Errors` value** instead of hand-rolling the JSON, so the
+   shape cannot drift from its siblings again, with a test that decodes into the array shape.
+2. `api.ts` now **normalises both shapes** into `FieldError[]`. The map was not a mistake — the
+   *aircraft* endpoints have answered that way since 2026-08-02 and there was no reason for them to
+   change — but every page above the fetch layer was written expecting an array. `Fleet.tsx`, written
+   this session, calls `.map` on it: a `TypeError` thrown **inside a catch block**, which would have
+   swallowed the refusal and left the form apparently doing nothing. That one had never run, because
+   nothing had ever refused it in a browser.
+
+**The lesson is not "test harder", it is the one already in the runbook.** The shape of a refusal is
+a contract between two programs, and a test that checks a status code and a substring is not reading
+the contract. Thirty seconds of `curl` against a real server read it immediately.
 
 ### 2026-08-03 — Three tasks built, and the two places the work was bigger than the ask
 

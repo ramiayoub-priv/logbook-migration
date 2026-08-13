@@ -138,3 +138,49 @@ describe('export links', () => {
       .toBe('/logbook/api/export/easa.pdf')
   })
 })
+
+// The two shapes the server answers refusals in, normalised to one.
+//
+// POST /flights answers with an ARRAY of {field, message} (entry.Errors);
+// POST/PUT /aircraft answer with a MAP of field -> message. Both are the
+// server's, both are reasonable, and every page that reads them was written
+// expecting an array — Fleet.tsx calls `.map` on it, which on a map is a
+// TypeError thrown inside a catch block. Normalising here means one shape
+// exists above this layer, whichever the endpoint sent.
+describe('field errors, whichever shape the server sends', () => {
+  it('reads the array shape that the flight endpoints use', async () => {
+    mockFetch({
+      ok: false, status: 400,
+      jsonBody: {
+        error: 'this flight cannot be logged as written',
+        fields: [{ field: 'pic_name', message: 'not in the pilot list' }],
+      },
+    })
+    const err = await api.flights().catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect((err as ApiError).fields).toEqual([
+      { field: 'pic_name', message: 'not in the pilot list' },
+    ])
+  })
+
+  it('reads the map shape that the aircraft endpoints use', async () => {
+    mockFetch({
+      ok: false, status: 400,
+      jsonBody: {
+        error: 'this aircraft cannot be added as written',
+        fields: { registration: 'a registration is required', type: 'an aircraft type is required' },
+      },
+    })
+    const err = await api.flights().catch((e: unknown) => e)
+    expect((err as ApiError).fields).toEqual([
+      { field: 'registration', message: 'a registration is required' },
+      { field: 'type', message: 'an aircraft type is required' },
+    ])
+  })
+
+  it('is an empty list, never undefined, when the refusal names no field', async () => {
+    mockFetch({ ok: false, status: 409, jsonBody: { error: 'that registration is already there' } })
+    const err = await api.flights().catch((e: unknown) => e)
+    expect((err as ApiError).fields).toEqual([])
+  })
+})

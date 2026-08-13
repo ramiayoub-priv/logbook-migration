@@ -36,6 +36,30 @@ export interface FieldError {
 }
 
 /**
+ * Normalises the two shapes the server answers refusals in.
+ *
+ * `POST /flights` answers with an ARRAY of {field, message} (Go's
+ * entry.Errors); `POST`/`PUT /aircraft` answer with a MAP of field -> message.
+ * Both are reasonable and both are the server's; what is not reasonable is
+ * every page having to know which endpoint it just called. Above this function
+ * exactly one shape exists.
+ *
+ * It matters more than tidiness: Fleet.tsx iterates these with `.map`, which on
+ * a map object is a TypeError thrown inside a catch block — the refusal would
+ * be swallowed and the pilot would watch the form do nothing.
+ */
+function fieldErrorsOf(fields: unknown): FieldError[] {
+  if (Array.isArray(fields)) return fields as FieldError[]
+  if (fields && typeof fields === 'object') {
+    return Object.entries(fields as Record<string, unknown>).map(([field, message]) => ({
+      field,
+      message: String(message),
+    }))
+  }
+  return []
+}
+
+/**
  * request performs one API call.
  *
  * A mutating request sends Content-Type: application/json, which is itself a
@@ -72,7 +96,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw new ApiError(
       res.status,
       (body?.error as string) || `The server refused the request (${res.status}).`,
-      (body?.fields as FieldError[]) ?? [],
+      fieldErrorsOf(body?.fields),
       Number.isFinite(retry) && retry > 0 ? retry : null,
     )
   }

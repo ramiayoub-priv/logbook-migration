@@ -264,3 +264,35 @@ func TestUpdateFlightRefusesAPICNameTheRosterDoesNotKnow(t *testing.T) {
 		t.Errorf("the stored name changed: %s", w.Body.String())
 	}
 }
+
+// TestThePICNameRefusalHasTheSameShapeAsEveryOtherFlightRefusal.
+//
+// Caught by running the thing, not by a test: the first version answered with
+// a field MAP where every other refusal from these two endpoints answers with
+// a field ARRAY. The frontend reads `fields.length` and iterates, so a map
+// meant the pilot got a banner saying "see the fields below" and no field
+// marked below. A refusal that cannot be rendered is barely a refusal.
+func TestThePICNameRefusalHasTheSameShapeAsEveryOtherFlightRefusal(t *testing.T) {
+	h := newHarness(t)
+	auth := h.login()
+
+	var got struct {
+		Error  string `json:"error"`
+		Fields []struct {
+			Field   string `json:"field"`
+			Message string `json:"message"`
+		} `json:"fields"`
+	}
+	decodeStatus(t, h.do("POST", "/logbook/api/flights", flightWith("SELF"), auth),
+		http.StatusBadRequest, &got)
+
+	if len(got.Fields) != 1 {
+		t.Fatalf("fields = %+v, want exactly one entry as an ARRAY", got.Fields)
+	}
+	if got.Fields[0].Field != "pic_name" {
+		t.Errorf("fields[0].field = %q, want pic_name", got.Fields[0].Field)
+	}
+	if !strings.Contains(got.Fields[0].Message, "SELF") {
+		t.Errorf("the message does not quote what was typed: %q", got.Fields[0].Message)
+	}
+}
