@@ -67,6 +67,15 @@ beforeEach(() => {
         notes: '', user_added: false, last_flown: '2026-07-01', flights: 12 },
     ],
   })
+  // The roster the server sends: never flown with first, then most recent.
+  // `self` carries 1143 of the 1296 transcribed flights.
+  vi.spyOn(api, 'pilots').mockResolvedValue({
+    pilots: [
+      { name: 'Jansson', user_added: true, last_flown: '', flights: 0 },
+      { name: 'self', user_added: false, last_flown: '2026-07-30', flights: 1143 },
+      { name: 'Martevuo', user_added: false, last_flown: '2019-05-05', flights: 54 },
+    ],
+  })
   vi.spyOn(api, 'discrepancies').mockResolvedValue({ discrepancies: [], count: 0 })
   vi.spyOn(api, 'sessions').mockResolvedValue({ sessions: [] })
   window.history.pushState({}, '', '/logbook/')
@@ -1253,5 +1262,116 @@ describe('the fleet page', () => {
       expect(b.textContent ?? '').not.toMatch(/delete|remove/i)
     }
     expect(api).not.toHaveProperty('deleteAircraft')
+  })
+})
+
+/**
+ * The PIC picker — Task 21.
+ *
+ * The owner's ask, verbatim (2026-08-03): "I could have a typo when I write
+ * `self`, it could be `sself` or `SELF` or `seeelf` and I need it to be
+ * consistent (like the aircraft regs)." `self` is on 1143 of the 1296
+ * transcribed flights, so a second spelling would split the busiest value in
+ * the column with nothing to flag it.
+ */
+describe('the pilot picker', () => {
+  it('offers the names the record already uses, in the order the server sent', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.click(screen.getByLabelText('Name of pilot in command'))
+
+    const list = await screen.findByRole('listbox', { name: 'Pilots' })
+    const names = within(list).getAllByRole('option').map((o) => o.textContent)
+    expect(names[0]).toContain('Jansson')
+    expect(names[0]).toContain('not flown with yet')
+    expect(names[1]).toContain('self')
+    expect(names[1]).toContain('1143 flights')
+  })
+
+  it('filters as the name is typed', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.type(screen.getByLabelText('Name of pilot in command'), 'mar')
+
+    const list = await screen.findByRole('listbox', { name: 'Pilots' })
+    const names = within(list).getAllByRole('option').map((o) => o.textContent)
+    expect(names.some((n) => n?.includes('Martevuo'))).toBe(true)
+    expect(names.some((n) => n?.includes('self'))).toBe(false)
+  })
+
+  it('puts the chosen name in the field', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.click(screen.getByLabelText('Name of pilot in command'))
+    await user.click(await screen.findByRole('option', { name: /self/ }))
+
+    expect(screen.getByLabelText('Name of pilot in command')).toHaveValue('self')
+  })
+
+  // The other half of the ask: a name genuinely new has to be enterable, at an
+  // airfield, without leaving the form — exactly like a new aeroplane.
+  it('adds a name that is genuinely new, without leaving the form', async () => {
+    const post = vi.spyOn(api, 'createPilot').mockResolvedValue({
+      pilot: { name: 'Lehtinen', user_added: true, last_flown: '', flights: 0 },
+    })
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.type(screen.getByLabelText('Name of pilot in command'), 'Lehtinen')
+    await user.click(await screen.findByRole('option', { name: /add lehtinen/i }))
+
+    await waitFor(() => expect(post).toHaveBeenCalledWith('Lehtinen'))
+    expect(screen.getByLabelText('Name of pilot in command')).toHaveValue('Lehtinen')
+  })
+
+  // The typo the owner named, and the answer to it: the picker will not even
+  // OFFER to add a spelling that only differs by case, so `SELF` cannot become
+  // a second person beside the `self` on 1143 flights. It filters to the real
+  // one instead, which is the thing to tap.
+  it('will not offer to add a name that is only a case variant of a known one', async () => {
+    const post = vi.spyOn(api, 'createPilot')
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.type(screen.getByLabelText('Name of pilot in command'), 'SELF')
+
+    const list = await screen.findByRole('listbox', { name: 'Pilots' })
+    const names = within(list).getAllByRole('option').map((o) => o.textContent)
+    expect(names.some((n) => /add/i.test(n ?? ''))).toBe(false)
+    expect(names.some((n) => n?.includes('self'))).toBe(true)
+    expect(post).not.toHaveBeenCalled()
+  })
+
+  // And if the server refuses anyway -- the roster in this browser is a
+  // response fetched some time ago, and another device may have added the name
+  // since -- its own words are shown rather than "could not save".
+  it('shows the server’s reason when adding a name is refused', async () => {
+    vi.spyOn(api, 'createPilot').mockRejectedValue(
+      new ApiError(409, 'that name is already in the pilot list'))
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+    await user.type(screen.getByLabelText('Name of pilot in command'), 'Lehtinen')
+    await user.click(await screen.findByRole('option', { name: /add lehtinen/i }))
+
+    expect(await screen.findByRole('alert'))
+      .toHaveTextContent('that name is already in the pilot list')
+  })
+
+  // A flight already in the books may name somebody the roster no longer
+  // offers, and the edit form must not silently blank it. Same rule the
+  // aircraft picker follows.
+  it('keeps a name the roster does not offer when editing a flight', async () => {
+    vi.spyOn(api, 'flight').mockResolvedValue({
+      flight: flight({ seq: 1000001, source_book: 0, pic_name: 'Kaariainen' }),
+    })
+    window.history.pushState({}, '', '/logbook/edit/1000001')
+    renderApp()
+
+    expect(await screen.findByLabelText('Name of pilot in command'))
+      .toHaveValue('Kaariainen')
   })
 })

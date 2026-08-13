@@ -395,6 +395,15 @@ PUT    /flights/{seq}      private  corrects a HAND-ENTERED flight. Full replace
 DELETE /flights/{seq}      private  deletes a HAND-ENTERED flight, returns what was removed.
                                     403 on an imported row, 404 missing (so a double tap is safe).
 GET    /aircraft           private  the derived seed list for the new-flight form
+POST   /aircraft           private  adds an aeroplane never flown -> 201; 409 duplicate registration
+PUT    /aircraft/{reg}     private  corrects one, including a rename. NO DELETE, by ruling (405).
+GET    /pilots             private  the PIC roster: every distinct pic_name on a flight, counted,
+                                    plus names added here and not yet flown with. Ordered
+                                    never-flown-with first, then most recent.
+POST   /pilots             private  adds a name -> 201; 409 if the roster knows it in ANY case,
+                                    which is the feature. No PUT and no DELETE: a roster entry is
+                                    a spelling, and a wrong name is corrected on the flight.
+                                    POST/PUT /flights refuse a pic_name not on the roster EXACTLY.
 GET    /stats     ?from&to private  {summary:{...}, range}
 GET    /aircraft-time      private  ?from&to&reg -- what each aeroplane cost.
                                     {range, reg, aircraft:[...], total:{...}, flights:[...]}
@@ -770,7 +779,7 @@ day · landings night.
 | 18 | **Retire the importer from production** | **done and DEPLOYED** 2026-08-02 — owner ruling: the production database is the source of truth. **The rewritten `update.sh` ran at 19:07 UTC**: step 4's read-only `verify` matched all nine checksums against the frozen CSVs and nothing was written to the record. That was the first deploy in this project's history that did not run a destructive operation on a live legal record. `update.sh` no longer imports; step 4 is a **read-only `verify`**, turning the frozen CSVs into a drift/tamper check on the 1296 historical rows rather than a rebuild. `CLAUDE.md` §0.2 rewritten. `logbookctl import` survives for dev scratch databases and tests only. Removes the stale-CSV class of failure entirely, and rests on the backup having been *proven* restorable the same day. |
 | 19 | **The fleet management page** — the `U` of aircraft CRUD, plus create away from the form | **built 2026-08-03, not yet deployed** — `pages/Fleet.tsx` at **`/logbook/fleet`**, reached from the Aircraft tab ("Manage the fleet") rather than a seventh tab: six already share a 390px phone. Lists every aeroplane in the server's order, adds one with all five fields (the form's inline panel asks only type and class, on purpose), and **corrects one — `api.updateAircraft` now has a caller**, keyed by the old registration so a rename works. **No delete**, guarded now on both sides of the wire: a route-table test on the backend and a frontend test that fails if any control ever says delete. **117 frontend tests** (was 111), six of them new and all watched red first. Frontend-only; no `sudo`, and it cannot touch the record. |
 | 20 | **Stale sessions never die** — the Devices list is a graveyard | **fixed 2026-08-03, not yet deployed** — `SessionLifetime` 90d → **14d** per the owner's ruling, and the window is now **computed from `last_used_at` against the constant instead of read back from the stored `expires_at`**. That second half is what reaches the rows that already exist: the owner's thirteen were each stamped with a date up to three months out, and a fix that only applied to new sessions would have left every one of them on the page. `LookupSession`, `PurgeExpiredSessions` and the Devices listing all ask the same question, so the sweep, the request path and the page cannot disagree. **No schema change.** Four new tests, three watched red on the old code and the fourth red the moment the constant moved; backend **87.2%**, core 100%. |
-| 21 | **The PIC name becomes a picked object** | **NEXT** — owner ask 2026-08-03: `self`, `sself`, `SELF`, `seeelf` must not all be possible. A `people` roster like the aircraft one — derived from the distinct historical `pic_name` values, plus hand-added rows — behind a filterable picker on the form. **Owner ruling 2026-08-03: NO student field** ("no student field as it should be"); students stay in Remarks. Historical `pic_name` values are **read and never rewritten** (§0.8). |
+| 21 | **The PIC name becomes a picked object** | **built 2026-08-03, not yet deployed** — a `pilots` roster: the distinct `pic_name` values already on flights (counted, dated) UNION names added in the app and not yet flown with, behind a filterable picker on the form. `GET`/`POST /pilots`, **no PUT and no DELETE** (a roster entry is only a spelling — a wrong name is corrected on the flight). **`SELF` cannot join `self`**: refused by a `UNIQUE … COLLATE NOCASE` index *and* by a check against the names already on flights, and the picker will not even offer to add a case variant. **The guarantee is at the write, not just in the form** — `POST`/`PUT /flights` refuse a `pic_name` that is not on the roster exactly, which can never block an edit because the roster is derived from the flights. Blank stays legal (one paper row has it). **Owner ruling: NO student field** ("no student field as it should be"). Historical values are read and never rewritten (§0.8) — `Sinervä`/`Sinerva` and `Stude` are all still offered exactly as written. Backend **86.8%**, core 100%; **124 frontend tests**. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
@@ -809,14 +818,60 @@ field as it should be"* — so Task 21 is the PIC name only, and students stay i
 are today. No new column on `flights`.
 
 **A census of the frozen data says the owner's worry is already real.** The 1296 historical rows
-carry **19 distinct `pic_name` values**: `self` ×1145, then `Martevuo` ×54, `Autere` ×30, `Stude`
-×18, `Jansson` ×16 and a tail. Two of them are worth stating plainly, and **neither is being
+carry **18 distinct `pic_name` values** plus one blank cell: `self` ×**1143**, then `Martevuo` ×54,
+`Autere` ×30, `Stude` ×18, `Jansson` ×16 and a tail. *(Counted off the CSV files first, which gave
+`self` ×1145 — wrong by exactly the two cumulative seed rows that open Books 2 and 3, both of which
+carry `self` and neither of which is imported. The store test caught it. **Count the record, not the
+files.**)* Two of them are worth stating plainly, and **neither is being
 touched**: **`Sinervä` ×6 and `Sinerva` ×1 are almost certainly one person**, and **`Stude` ×18
 looks like a word, not a surname.** Both are exactly the class of thing rule 0.8 puts out of reach —
 surfaced here, ruled on by nobody, changed by nothing. The roster will therefore be **derived from
 these values as they are written**, variants and all, the same way the aircraft list was derived
 before it gained hand-added rows. Task 21 stops the *next* spelling of `self` from being invented;
 it does not tidy the paper.
+
+### 2026-08-03 — Three tasks built, and the two places the work was bigger than the ask
+
+**Task 19, the fleet page**, was the one already scoped: `PUT /aircraft` had been live and deployed
+for a day with **zero callers**, so an aeroplane added at an airfield with a typo could never be
+corrected and, by ruling, never deleted. It is a page now, at `/logbook/fleet`, reached from the
+Aircraft tab rather than a seventh tab — six already share a 390px phone and "Statistics" was cut to
+"Stats" to fit the sixth. The no-delete ruling is now guarded on **both** sides of the wire: the
+backend's route-table test, and a frontend test that fails if any control anywhere says delete.
+
+**Task 20 was a smaller change than the bug looked, once the mechanism was named** — and then a
+bigger one than the ruling implied. Shortening `SessionLifetime` to 14 days fixes sessions created
+from now on. It does **nothing** for the thirteen already in production, because each row carries an
+`expires_at` stamped when it was written, up to three months out. So the window is now **computed
+from `last_used_at` against the constant** and the stored column decides nothing: one authority, and
+shortening it retires the rows that already exist. `PurgeExpiredSessions` asks the same question, and
+the Devices page reports the computed date — otherwise it would promise access the server refuses.
+**A fix that only applies to data created after the deploy is not a fix for a bug about old data.**
+
+**Task 21 needed a decision the ask did not contain: where the guarantee lives.** A picker makes the
+right thing easy; it does not make the wrong thing impossible. Typing `SELF` and submitting without
+choosing would still have written `SELF`, which is exactly the outcome the owner asked to prevent. So
+`POST`/`PUT /flights` now **refuse a `pic_name` that is not on the roster exactly**, naming the field.
+Three properties make that safe rather than obstructive: the roster is *derived from the flights*, so
+every name in the record is on it and **no existing flight can become uneditable**; a blank name stays
+legal, because one transcribed row has a blank PIC cell; and the refusal **surfaces** rather than
+silently re-spelling what was typed into the roster's version (rule 0.2).
+
+The roster deliberately has **no update and no delete** — smaller than the aircraft surface. Renaming
+an entry could not rename the flights that carry the name, so the two would just disagree while the
+derived half went on reporting the old spelling. A wrong name is corrected where it lives, on the
+flight. That leaves one rough edge, stated rather than hidden: **a hand-added name that was never
+flown with cannot be removed**, and will sit at the top of the list as never-used. If that becomes
+annoying it is a five-line delete scoped to `user_added` rows with no flights — but it is the owner's
+call, not a session's.
+
+**And the census in the entry above was wrong by two, which a test caught.** `self` is on **1143**
+flights, not 1145. The first count was taken off the CSV files, which contain 1298 rows for 1296
+flights: Books 2 and 3 each open with the previous book's final row as a cumulative seed, both of
+those rows say `self`, and neither is imported. `TestTheRealBooksNameEighteenPeople` runs against the
+store and reported 1143 against an expected 1145. **Count the record, not the files** — the same
+distinction the whole 1296-vs-1298 architecture rests on, and it caught a session that knew that and
+still reached for the CSVs because they were easier to grep.
 
 ### 2026-08-02 — The first deploy that did not write to the record
 

@@ -173,6 +173,22 @@ export interface Aircraft {
   flights: number
 }
 
+/**
+ * A name the "pilot in command" field may be filled from.
+ *
+ * Mostly derived from the flights themselves: every distinct pic_name in the
+ * record, plus any added in the app and not yet flown with. See
+ * internal/store/pilots.go for why the roster has no update and no delete.
+ */
+export interface Pilot {
+  name: string
+  /** true: added here and not yet on any flight. false: it came from the record. */
+  user_added: boolean
+  /** YYYY-MM-DD, or '' if no flight names this pilot yet. */
+  last_flown: string
+  flights: number
+}
+
 /** An aeroplane as submitted. The same shape creates and replaces one. */
 export interface AircraftDraft {
   registration: string
@@ -303,6 +319,18 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(draft),
     }),
+
+  pilots: () => request<{ pilots: Pilot[] }>('/pilots'),
+
+  /**
+   * Adds a name nobody has flown with yet.
+   *
+   * 409 if the roster already knows it in any case — which is the feature, not
+   * an edge case: it is what stops `SELF` becoming a second person beside the
+   * `self` on 1143 flights.
+   */
+  createPilot: (name: string) =>
+    request<{ pilot: Pilot }>('/pilots', { method: 'POST', body: JSON.stringify({ name }) }),
 
   /**
    * What each aeroplane cost over a range.

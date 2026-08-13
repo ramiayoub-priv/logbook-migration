@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { api, ApiError, type Aircraft, type Flight, type FlightDraft } from '../api'
+import { api, ApiError, type Aircraft, type Pilot, type Flight, type FlightDraft } from '../api'
 import { useApi } from '../auth'
 import {
   clock,
@@ -13,6 +13,7 @@ import {
 } from '../format'
 import { Link } from '../router'
 import { AircraftPicker } from './AircraftPicker'
+import { PilotPicker } from './PilotPicker'
 
 // The flight form, shared by the new-flight page and the edit page.
 //
@@ -169,6 +170,8 @@ export function FlightForm({
 }) {
   const loadAircraft = useCallback(() => api.aircraft(), [])
   const { data: fleet } = useApi(loadAircraft, [])
+  const loadPilots = useCallback(() => api.pilots(), [])
+  const { data: roster } = useApi(loadPilots, [])
 
   const [draft, setDraft] = useState<FlightDraft>(initial)
   // Defaults to UTC: the owner's rule is that everything is UTC from now on
@@ -213,6 +216,22 @@ export function FlightForm({
   // moment the panel closed, because `fleet` is the response of a request that
   // was made before it existed.
   const [added, setAdded] = useState<Aircraft[]>([])
+
+  // The same for names. Without it a name added from the picker would vanish
+  // the moment the list re-rendered, because `roster` is the response of a
+  // request made before it existed.
+  const [addedPilots, setAddedPilots] = useState<Pilot[]>([])
+
+  /**
+   * The pilot picker's list. Server order, never re-sorted here (see the
+   * aircraft note above); names created in this session go on the front, which
+   * is the same rule -- they have not been flown with at all.
+   */
+  const pilots = useMemo(() => {
+    const list = roster?.pilots ?? []
+    const known = new Set(list.map((p) => p.name.toLowerCase()))
+    return [...addedPilots.filter((p) => !known.has(p.name.toLowerCase())), ...list]
+  }, [roster, addedPilots])
 
   /**
    * The picker's list.
@@ -699,10 +718,13 @@ export function FlightForm({
           </Field>
         </div>
 
-        <Field id="pic_name" label="Name of pilot in command" error={fieldErrors['pic_name']}>
-          <input id="pic_name" value={draft.pic_name}
-            onChange={(e) => set('pic_name', e.target.value)} />
-        </Field>
+        <PilotPicker
+          value={draft.pic_name}
+          pilots={pilots}
+          error={fieldErrors['pic_name']}
+          onChoose={(name) => set('pic_name', name)}
+          onAdded={(p) => setAddedPilots((list) => [p, ...list])}
+        />
 
         <Field id="remarks" label="Remarks" error={fieldErrors['remarks']}>
           <textarea id="remarks" rows={2} value={draft.remarks}

@@ -58,6 +58,43 @@ and never constrains what a flight may record.
 next, so the *flight* carries the authoritative class (below). This is exactly the behaviour the user
 asked for: preselect sea, allow override when the configuration changed.
 
+### `pilots` (2026-08-03, Task 21)
+The seed list behind the **name of pilot in command**, and the same idea as `aircraft` one field
+over. The field was free text and **`self` is on 1143 of the 1296 transcribed flights**, so the
+owner asked for it to be picked rather than typed: *"I could have a typo when I write `self`, it
+could be `sself` or `SELF` or `seeelf` and I need it to be consistent (like the aircraft regs)."*
+
+**The roster is mostly derived and this table is the small half of it.** What the form offers is
+every distinct non-empty `flights.pic_name` — counted, with the date it was last flown with — UNION
+the rows here, which hold only the names **not on any flight yet**. So it needs no maintenance, it
+cannot fall behind the record, and a name stops being "user-added" the moment it is flown with.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | INTEGER PK | |
+| `name` | TEXT UNIQUE **COLLATE NOCASE** | As written. Trimmed, never re-cased — `self` is lower case and `Martevuo` is not. |
+| `notes` | TEXT | Unused today; present so a roster entry has somewhere to grow. |
+
+- **`COLLATE NOCASE` is the feature**, not a detail: it is what stops `SELF` becoming a second entry
+  beside `self`. `AddPilot` makes the same check against the names already on flights, which no
+  constraint can cover. ⚠ Both fold **ASCII only**, so `SINERVÄ` beside `Sinervä` would slip through.
+  A real limit on a roster of eighteen names typed by one person; written down rather than assumed
+  away.
+- **The write path enforces it, not just the form.** `POST`/`PUT /flights` refuse a `pic_name` that
+  is not on the roster **exactly**, naming the field. The picker will not even offer to add a case
+  variant, but a form is not a guarantee — the field still accepts what is typed, deliberately, so an
+  edited flight cannot have a name blanked by a dropdown's opinion. **This can never make an existing
+  flight uneditable**: the roster is derived from the flights, so every name in the record is on it by
+  construction. **A blank name stays legal** — one transcribed row has a blank PIC cell.
+- **No update and no delete**, a smaller surface than `aircraft` got and deliberately so. Renaming a
+  roster entry could not rename the flights carrying that name — they are the record — so the two
+  would simply disagree and the derived half would go on reporting the old spelling. A wrong name is
+  corrected **on the flight**, through the ordinary edit path, after which the wrong spelling has no
+  flights and sorts to the top of the list as never-used.
+- **It does not tidy the paper (rule 0.8).** The books contain `Sinervä` ×6 and `Sinerva` ×1, almost
+  certainly one person, and `Stude` ×18, which reads as a word rather than a surname. All are offered
+  exactly as written. Merging them is an owner ruling and nobody else's.
+
 ### `flights`
 
 | Column | Type | Notes |

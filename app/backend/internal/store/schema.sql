@@ -50,6 +50,29 @@ CREATE TABLE IF NOT EXISTS aircraft (
     -- idempotent so that opening a live database is a no-op.
 );
 
+-- Names that may be written into a flight's PIC field but are not on any flight
+-- yet. The roster the form offers is this table UNION the distinct pic_name
+-- values already in the record -- so, like the aircraft list, it is mostly
+-- derived and this table only holds what has not been flown with yet.
+--
+-- WHY IT EXISTS (owner ask, 2026-08-03): "I could have a typo when I write
+-- `self`, it could be `sself` or `SELF` or `seeelf` and I need it to be
+-- consistent (like the aircraft regs)." A free-text field is one keystroke away
+-- from splitting 1143 flights across two spellings of the same word.
+--
+-- COLLATE NOCASE is what stops `SELF` joining `self`. It is ASCII-only, so it
+-- would not catch a case variant of `Sinervä`'s ä; AddPilot's own check has the
+-- same limit and says so. The constraint is here as well as in Go because a
+-- UNIQUE index cannot be raced and a SELECT-then-INSERT can.
+--
+-- IT IS A SEED LIST, NOT THE RECORD, exactly like `aircraft`. Every flight
+-- carries its own pic_name as written on paper; nothing here can change one.
+CREATE TABLE IF NOT EXISTS pilots (
+    id    INTEGER PRIMARY KEY,
+    name  TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    notes TEXT NOT NULL DEFAULT ''
+);
+
 CREATE TABLE IF NOT EXISTS flights (
     id          INTEGER PRIMARY KEY,
 

@@ -1,5 +1,6 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, ApiError, type Aircraft } from '../api'
+import { useCombobox } from './combobox'
 import { Field } from './FlightForm'
 
 /**
@@ -42,29 +43,13 @@ export function AircraftPicker({
   // filtering, at which point the two deliberately diverge: the text is a
   // query, the value is the choice.
   const [query, setQuery] = useState(value)
-  const [open, setOpen] = useState(false)
   const [adding, setAdding] = useState<string | null>(null)
-
-  const wrapRef = useRef<HTMLDivElement>(null)
-  const listId = useId()
+  // The open/close mechanics are shared with the pilot picker; the fiddly part
+  // is closing on an outside click rather than on blur, and it is explained in
+  // combobox.ts.
+  const { open, setOpen, wrapRef, listId } = useCombobox()
 
   useEffect(() => setQuery(value), [value])
-
-  // Closing on an outside click rather than on blur: blur fires before the
-  // click on an option lands, which would close the list out from under the
-  // finger that was choosing.
-  useEffect(() => {
-    if (!open) return
-    function onDown(e: MouseEvent | TouchEvent) {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('touchstart', onDown)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('touchstart', onDown)
-    }
-  }, [open])
 
   const q = query.trim().toUpperCase()
   const matches = useMemo(() => {

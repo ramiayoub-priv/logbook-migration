@@ -333,6 +333,46 @@ func (s *Server) handleFlights(w http.ResponseWriter, r *http.Request) {
 // sense, internal/store decides where it goes in the book. Neither of them
 // knows about HTTP, so the rules that protect the record are tested without a
 // request in the way.
+// picNameIsOnTheRoster is the guarantee behind the PIC picker (Task 21).
+//
+// The picker refuses to OFFER a case variant, but a form is not a guarantee:
+// the field still takes what is typed, deliberately, because a flight being
+// edited may name somebody the roster no longer lists and blanking that would
+// lose a name off a legal record. So the check lives at the write, where the
+// record is actually changed.
+//
+// It cannot make an existing flight uneditable: the roster is DERIVED from the
+// flights, so every name already in the record is on it by construction --
+// including the one on the flight being edited. And a blank name stays legal,
+// because one transcribed row has a blank PIC cell and a flight that exists on
+// paper must remain enterable.
+//
+// This surfaces rather than fixes (rule 0.2): a name that is nearly right is
+// refused by name, never quietly re-spelled into the roster's version.
+func (s *Server) picNameIsOnTheRoster(name string) (bool, error) {
+	if strings.TrimSpace(name) == "" {
+		return true, nil
+	}
+	if _, err := s.db.PilotByName(name); err != nil {
+		if errors.Is(err, store.ErrPilotNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+// refusePICName writes the field-level refusal both write paths share.
+func (s *Server) refusePICName(w http.ResponseWriter, what, name string) {
+	writeJSON(w, http.StatusBadRequest, map[string]any{
+		"error": "this flight cannot be " + what + " as written",
+		"fields": map[string]string{
+			"pic_name": fmt.Sprintf("%q is not in the pilot list -- pick a name from it, "+
+				"or add this one", strings.TrimSpace(name)),
+		},
+	})
+}
+
 func (s *Server) handleCreateFlight(w http.ResponseWriter, r *http.Request) {
 	var draft entry.Draft
 	if err := decodeJSON(r, &draft); err != nil {
@@ -356,6 +396,15 @@ func (s *Server) handleCreateFlight(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if ok, err := s.picNameIsOnTheRoster(flight.PICName); err != nil {
+		s.log.Error("checking the pilot roster", "error", err)
+		writeError(w, http.StatusInternalServerError, "could not check the pilot list")
+		return
+	} else if !ok {
+		s.refusePICName(w, "logged", flight.PICName)
 		return
 	}
 
@@ -444,6 +493,15 @@ func (s *Server) handleUpdateFlight(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if ok, err := s.picNameIsOnTheRoster(flight.PICName); err != nil {
+		s.log.Error("checking the pilot roster", "error", err)
+		writeError(w, http.StatusInternalServerError, "could not check the pilot list")
+		return
+	} else if !ok {
+		s.refusePICName(w, "saved", flight.PICName)
 		return
 	}
 
@@ -578,6 +636,83 @@ func (s *Server) handleAircraft(w http.ResponseWriter, r *http.Request) {
 		out = append(out, toAircraftJSON(a))
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"aircraft": out})
+}
+
+// --- The pilot roster (Task 21) ---------------------------------------------
+
+// pilotJSON is one name the PIC field may be filled from.
+type pilotJSON struct {
+	Name      string `json:"name"`
+	UserAdded bool   `json:"user_added"`
+	LastFlown string `json:"last_flown"`
+	Flights   int    `json:"flights"`
+}
+
+func toPilotJSON(p store.PilotRow) pilotJSON {
+	return pilotJSON{
+		Name: p.Name, UserAdded: p.UserAdded, LastFlown: p.LastFlown, Flights: p.Flights,
+	}
+}
+
+// handlePilots lists the names the form may offer.
+//
+// Mostly derived from the flights themselves, so it needs no maintenance and
+// cannot fall behind the record. The order is the store's -- never flown with
+// first, then most recent -- and the frontend does not re-sort it.
+func (s *Server) handlePilots(w http.ResponseWriter, r *http.Request) {
+	list, err := s.db.PilotList()
+	if err != nil {
+		s.log.Error("listing pilots", "error", err)
+		writeError(w, http.StatusInternalServerError, "could not read the pilot list")
+		return
+	}
+	out := make([]pilotJSON, 0, len(list))
+	for _, p := range list {
+		out = append(out, toPilotJSON(p))
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"pilots": out})
+}
+
+// handleCreatePilot adds a name nobody has flown with yet.
+//
+// This is the whole of the owner's ask: with the field a picker over this list,
+// `SELF` and `seeelf` stop being one keystroke away from joining `self` as
+// separate people. The refusal for a name already known -- in any case, whether
+// it came from the books or from here -- is what makes it work.
+func (s *Server) handleCreatePilot(w http.ResponseWriter, r *http.Request) {
+	var d struct {
+		Name string `json:"name"`
+	}
+	if err := decodeJSON(r, &d); err != nil {
+		writeError(w, http.StatusBadRequest, "malformed request")
+		return
+	}
+	if strings.TrimSpace(d.Name) == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]any{
+			"error": "this name cannot be added as written",
+			"fields": map[string]string{
+				"name": "a name is required",
+			},
+		})
+		return
+	}
+
+	stored, err := s.db.AddPilot(d.Name)
+	switch {
+	case errors.Is(err, store.ErrDuplicatePilot):
+		// Named rather than "conflict": the point of the refusal is that the
+		// name is ALREADY available to pick, which is what the pilot wants to
+		// hear, and it is often a name they have not thought about in years.
+		writeError(w, http.StatusConflict, "that name is already in the pilot list")
+		return
+	case err != nil:
+		s.log.Error("adding a pilot", "error", err)
+		writeError(w, http.StatusInternalServerError, "could not save the name")
+		return
+	}
+
+	s.log.Info("pilot added", "user", callerOf(r).User.Username, "name", stored.Name)
+	writeJSON(w, http.StatusCreated, map[string]any{"pilot": toPilotJSON(stored)})
 }
 
 // aircraftDraft is a submitted aeroplane. Same shape for create and update:

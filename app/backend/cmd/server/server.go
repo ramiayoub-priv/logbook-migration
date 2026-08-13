@@ -125,6 +125,12 @@ func NewServer(db *store.DB, cfg Config) *Server {
 	// being filterable rather than by hiding rows. A test asserts the absence,
 	// because a later session adding one "for symmetry" is how a ruling is lost.
 	s.private("PUT", "/aircraft/{reg}", s.handleUpdateAircraft)
+	s.private("GET", "/pilots", s.handlePilots)
+	// Create only. No PUT and no DELETE: a roster entry is a spelling, and
+	// renaming one could not rename the flights that carry it -- they are the
+	// record. A wrong name is corrected on the flight itself. Asserted by a test
+	// for the same reason the aircraft ruling is. See internal/store/pilots.go.
+	s.private("POST", "/pilots", s.handleCreatePilot)
 	s.private("GET", "/stats", s.handleStats)
 	s.private("GET", "/aircraft-time", s.handleAircraftTime)
 	s.private("GET", "/discrepancies", s.handleDiscrepancies)

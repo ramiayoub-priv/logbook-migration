@@ -444,9 +444,11 @@ dl.detail dd { margin: 0; font-variant-numeric: tabular-nums; }
    aeroplane flown once in 2009 is not retired, so NOTHING here is ever hidden
    and filtering is what keeps a growing list usable. */
 
-.aircraftpicker { position: relative; }
+.aircraftpicker,
+.pilotpicker { position: relative; }
 
-.aircraftpicker .options {
+.aircraftpicker .options,
+.pilotpicker .options {
   position: absolute;
   /* Under the input, not under the whole field: the field carries a label
      above and an error message below, and the list must not jump when an
@@ -470,9 +472,11 @@ dl.detail dd { margin: 0; font-variant-numeric: tabular-nums; }
   -webkit-overflow-scrolling: touch;
 }
 
-.aircraftpicker .options li { margin: 0; }
+.aircraftpicker .options,
+.pilotpicker .options li { margin: 0; }
 
-.aircraftpicker .options button {
+.aircraftpicker .options,
+.pilotpicker .options button {
   display: grid;
   grid-template-columns: auto auto 1fr;
   align-items: baseline;
@@ -486,28 +490,36 @@ dl.detail dd { margin: 0; font-variant-numeric: tabular-nums; }
   border-radius: 8px;
   cursor: pointer;
 }
-.aircraftpicker .options button:hover,
-.aircraftpicker .options button:focus-visible {
+.aircraftpicker .options,
+.pilotpicker .options button:hover,
+.aircraftpicker .options,
+.pilotpicker .options button:focus-visible {
   background: var(--bg);
 }
 
-.aircraftpicker .options .reg { font-weight: 600; }
-.aircraftpicker .options .type { color: var(--muted); font-size: 0.85rem; }
+.aircraftpicker .options,
+.pilotpicker .options .reg { font-weight: 600; }
+.aircraftpicker .options,
+.pilotpicker .options .type { color: var(--muted); font-size: 0.85rem; }
 /* The right-hand column tells each aeroplane's own story -- how much it has
    been flown and when -- so the list is scannable without anything being
    hidden. It is the first thing to go when the screen is narrow. */
-.aircraftpicker .options .when {
+.aircraftpicker .options,
+.pilotpicker .options .when {
   justify-self: end;
   color: var(--muted);
   font-size: 0.78rem;
   white-space: nowrap;
 }
 @media (max-width: 22rem) {
-  .aircraftpicker .options .when { display: none; }
+  .aircraftpicker .options,
+.pilotpicker .options .when { display: none; }
 }
 
-.aircraftpicker .options .addnew { color: var(--accent); font-weight: 600; }
-.aircraftpicker .options .empty { padding: 10px; color: var(--muted); }
+.aircraftpicker .options,
+.pilotpicker .options .addnew { color: var(--accent); font-weight: 600; }
+.aircraftpicker .options,
+.pilotpicker .options .empty { padding: 10px; color: var(--muted); }
 
 /* The inline "add an aeroplane" panel. It is inside the flight form on
    purpose: adding it on another screen first would mean two trips on exactly
@@ -562,3 +574,11 @@ dl.detail dd { margin: 0; font-variant-numeric: tabular-nums; }
 .field.checkbox label { margin: 0; }
 
 .fleetlink { margin: -4px 0 12px; }
+
+/* The pilot picker (Task 21). Two columns rather than the aircraft picker's
+   three: a name, and what the record says about it. */
+.pilotpicker .options button { grid-template-columns: auto 1fr; }
+.pilotpicker .options .name { font-weight: 600; }
+/* The refusal from the server sits between the field and the list, where the
+   thumb already is. */
+.pilotpicker .error.small { margin: -6px 0 8px; font-size: 0.82rem; }
