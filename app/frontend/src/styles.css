@@ -524,3 +524,41 @@ dl.detail dd { margin: 0; font-variant-numeric: tabular-nums; }
 .newaircraft .error { color: var(--danger); margin: 0 0 10px; font-size: 0.88rem; }
 .newaircraft .actions { display: flex; gap: 8px; }
 .newaircraft .actions button { flex: 1; }
+
+/* The fleet page (Task 19). A list rather than a table: the useful facts about
+   an aeroplane are a heading and a sentence, and a seven-column table on a
+   390px phone is the shape this project has already had to undo once. */
+.fleet { list-style: none; margin: 0; padding: 0; }
+.fleet > li {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+}
+.fleet .entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+}
+.fleet .entry .reg { font-size: 1.05rem; }
+.fleet .entry .type { color: var(--muted); }
+/* The Edit button must stay a full tap target next to a two-line block. */
+.fleet .entry button { flex: none; }
+
+.aircraftform h3 { margin: 0 0 10px; font-size: 1rem; }
+.aircraftform .actions { display: flex; gap: 8px; margin-top: 12px; }
+.aircraftform .actions button { flex: 1; }
+/* A checkbox is the one control here that reads left-to-right rather than
+   label-above-input, so it opts out of the .field column. */
+.field.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.field.checkbox input { width: auto; min-height: 0; }
+.field.checkbox label { margin: 0; }
+
+.fleetlink { margin: -4px 0 12px; }

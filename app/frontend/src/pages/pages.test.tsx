@@ -1116,3 +1116,142 @@ describe('session handling', () => {
     expect(await screen.findByLabelText('Username')).toBeInTheDocument()
   })
 })
+
+/**
+ * The fleet page — Task 19.
+ *
+ * `POST` and `PUT /aircraft` have been live and deployed since 2026-08-02 and
+ * `api.updateAircraft` had ZERO callers: a typo'd registration could be created
+ * from the flight form and then never corrected, and by ruling it cannot be
+ * deleted either. The no-delete ruling is only humane if editing exists.
+ */
+/**
+ * The nth aeroplane's row. A helper because indexing a query result is
+ * `HTMLElement | undefined` under this project's strict tsconfig, and a
+ * missing row should fail with which row was missing rather than a cast.
+ */
+function fleetRow(fleet: HTMLElement, n: number): HTMLElement {
+  const rows = within(fleet).getAllByRole('listitem')
+  const row = rows[n]
+  if (!row) throw new Error(`no fleet row ${n}: there are ${rows.length}`)
+  return row
+}
+
+describe('the fleet page', () => {
+  // It is deliberately not a seventh tab: six already share a 390px phone.
+  it('is reachable from the Aircraft tab, and lists every aeroplane', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'Aircraft' }))
+    await user.click(await screen.findByRole('link', { name: /manage the fleet/i }))
+
+    const fleet = await screen.findByRole('list', { name: 'Fleet' })
+    const rows = within(fleet).getAllByRole('listitem')
+    expect(rows).toHaveLength(3)
+    // The server's order, not ours: never-flown first, then most recently flown.
+    expect(rows[0]).toHaveTextContent('OH-PDP')
+    expect(rows[0]).toHaveTextContent('not flown yet')
+    expect(rows[1]).toHaveTextContent('OH-CTL')
+    expect(rows[1]).toHaveTextContent('286 flights')
+  })
+
+  it('is reachable directly by URL, so it can be bookmarked', async () => {
+    window.history.pushState({}, '', '/logbook/fleet')
+    renderApp()
+    expect(await screen.findByRole('list', { name: 'Fleet' })).toBeInTheDocument()
+  })
+
+  // The U. This is the whole reason the page exists.
+  it('corrects a registration, and sends the whole aeroplane', async () => {
+    const put = vi.spyOn(api, 'updateAircraft').mockResolvedValue({
+      aircraft: { registration: 'OH-PDQ', type: 'P28A', default_class: 'SEP_LAND',
+        ifr_capable: false, notes: '', user_added: true, last_flown: '', flights: 0 },
+    })
+    const user = userEvent.setup()
+    window.history.pushState({}, '', '/logbook/fleet')
+    renderApp()
+
+    const fleet = await screen.findByRole('list', { name: 'Fleet' })
+    const row = fleetRow(fleet, 0)
+    await user.click(within(row).getByRole('button', { name: /edit/i }))
+
+    const reg = screen.getByLabelText('Registration')
+    await user.clear(reg)
+    await user.type(reg, 'OH-PDQ')
+    await user.click(screen.getByRole('button', { name: /save/i }))
+
+    // Keyed by the OLD registration -- that is what the route names -- and
+    // carrying every field, because the endpoint is a replacement, not a patch.
+    await waitFor(() =>
+      expect(put).toHaveBeenCalledWith('OH-PDP', {
+        registration: 'OH-PDQ', type: 'P28A', default_class: 'SEP_LAND',
+        ifr_capable: false, notes: '',
+      }),
+    )
+    expect(await screen.findByText(/OH-PDQ/)).toBeInTheDocument()
+  })
+
+  // The owner asked for creating an aircraft here as well as from the form:
+  // the form's inline panel asks only for type and class, on purpose.
+  it('adds an aeroplane without going near the flight form', async () => {
+    const post = vi.spyOn(api, 'createAircraft').mockResolvedValue({
+      aircraft: { registration: 'OH-XYZ', type: 'DA40', default_class: 'SEP_LAND',
+        ifr_capable: true, notes: 'club', user_added: true, last_flown: '', flights: 0 },
+    })
+    const user = userEvent.setup()
+    window.history.pushState({}, '', '/logbook/fleet')
+    renderApp()
+
+    await user.click(await screen.findByRole('button', { name: /add an aircraft/i }))
+    await user.type(screen.getByLabelText('Registration'), 'oh-xyz')
+    await user.type(screen.getByLabelText('Type'), 'da40')
+    await user.click(screen.getByLabelText('IFR capable'))
+    await user.type(screen.getByLabelText('Notes'), 'club')
+    await user.click(screen.getByRole('button', { name: /save/i }))
+
+    // Upper-cased before it is sent, exactly like the picker does it: the
+    // registration is an identifier and 'oh-xyz' must not become a second row.
+    await waitFor(() =>
+      expect(post).toHaveBeenCalledWith({
+        registration: 'OH-XYZ', type: 'DA40', default_class: 'SEP_LAND',
+        ifr_capable: true, notes: 'club',
+      }),
+    )
+    const fleet = await screen.findByRole('list', { name: 'Fleet' })
+    expect(within(fleet).getAllByRole('listitem')).toHaveLength(4)
+  })
+
+  it('shows the server’s reason when a correction collides', async () => {
+    vi.spyOn(api, 'updateAircraft').mockRejectedValue(
+      new ApiError(409, 'that registration is already in the aircraft list'))
+    const user = userEvent.setup()
+    window.history.pushState({}, '', '/logbook/fleet')
+    renderApp()
+
+    const fleet = await screen.findByRole('list', { name: 'Fleet' })
+    await user.click(within(fleetRow(fleet, 0)).getByRole('button', { name: /edit/i }))
+    const reg = screen.getByLabelText('Registration')
+    await user.clear(reg)
+    await user.type(reg, 'OH-CTL')
+    await user.click(screen.getByRole('button', { name: /save/i }))
+
+    expect(await screen.findByRole('alert'))
+      .toHaveTextContent('that registration is already in the aircraft list')
+  })
+
+  // The no-delete ruling (2026-08-02) is asserted on the backend by a
+  // route-table test. This is the same guard on the other side of the wire:
+  // "symmetry" is exactly how it would get added back.
+  it('offers nothing anywhere that deletes an aeroplane', async () => {
+    const user = userEvent.setup()
+    window.history.pushState({}, '', '/logbook/fleet')
+    renderApp()
+
+    const fleet = await screen.findByRole('list', { name: 'Fleet' })
+    await user.click(within(fleetRow(fleet, 0)).getByRole('button', { name: /edit/i }))
+    for (const b of screen.getAllByRole('button')) {
+      expect(b.textContent ?? '').not.toMatch(/delete|remove/i)
+    }
+    expect(api).not.toHaveProperty('deleteAircraft')
+  })
+})

@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { api, type AircraftTime, type DateRange, type Flight } from '../api'
 import { useApi } from '../auth'
 import { airMinutes, clock, hhmm } from '../format'
+import { Link } from '../router'
 import { RangePicker } from './RangePicker'
 
 /**
@@ -45,6 +46,13 @@ export function AircraftTimePage() {
   return (
     <>
       <RangePicker range={range} onChange={setRange} />
+
+      {/* The way to the fleet page, which is not a tab of its own: six tabs
+          already share a 390px phone. This page is about what an aeroplane
+          cost; that one is about which aeroplanes exist. */}
+      <p className="muted small fleetlink">
+        <Link to="fleet">Manage the fleet</Link> — add an aircraft, or correct one.
+      </p>
 
       {error && (
         <p className="error" role="alert">

@@ -4,6 +4,7 @@ import { LoginPage } from './pages/Login'
 import { TablePage } from './pages/Table'
 import { StatisticsPage } from './pages/Statistics'
 import { AircraftTimePage } from './pages/AircraftTime'
+import { FleetPage } from './pages/Fleet'
 import { NewFlightPage } from './pages/NewFlight'
 import { EditFlightPage } from './pages/EditFlight'
 import { ExportPage } from './pages/Export'
@@ -66,6 +67,11 @@ function Page({ route }: { route: Route }) {
       return <StatisticsPage />
     case 'aircraft':
       return <AircraftTimePage />
+    // Not a tab of its own: six already share a 390px phone, and this one is
+    // opened once per new aeroplane. It hangs off the Aircraft tab and has its
+    // own URL. See pages/Fleet.tsx.
+    case 'fleet':
+      return <FleetPage />
     case 'new':
       return <NewFlightPage />
     case 'export':

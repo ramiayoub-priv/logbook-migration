@@ -16,6 +16,7 @@ export type Route =
   | 'table'
   | 'statistics'
   | 'aircraft'
+  | 'fleet'
   | 'new'
   | 'export'
   | 'review'
@@ -28,6 +29,7 @@ const ROUTES: Record<string, Route> = {
   '/table': 'table',
   '/statistics': 'statistics',
   '/aircraft': 'aircraft',
+  '/fleet': 'fleet',
   '/new': 'new',
   '/export': 'export',
   '/review': 'review',
