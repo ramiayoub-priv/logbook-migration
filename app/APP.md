@@ -16,20 +16,46 @@ Rules live in the repo root **`CLAUDE.md` §0** — read those first, they are n
 
 *Assume you remember nothing. This block is the whole brief.*
 
-**Work resumed 2026-08-03. The owner set three priorities that session and they are Tasks 19, 20
-and 21 on the board — do them in this order:**
+**⚠ TASKS 19, 20 AND 21 ARE BUILT, TESTED, PUSHED — AND NOT DEPLOYED. The box is behind the repo
+for the first time since 2026-08-02.** `origin/master` is at `7f54c26`; production is still running
+the 2026-08-02 build (binary `f4b539aa…`, bundle `index-xgdC8L2o.js`). Everything below is about
+getting those three onto the box.
 
-1. **Task 19 — the fleet management page.** The `U` of aircraft CRUD, plus create away from the
-   flight form. Frontend-only; the endpoints are live and deployed. Pick-up item 3 has the full
-   state, written to be read cold.
-2. **Task 20 — stale sessions.** The Devices list accumulates a row per login and never sheds one.
-   Mechanism and the owner's ruling are on the board and in the decision log for 2026-08-03.
-3. **Task 21 — the PIC name becomes a picked object**, so `self` has exactly one spelling. **No
-   student field** — the owner ruled that out explicitly.
+**What is waiting to ship**, all three from the owner's asks on 2026-08-03 — full detail on the task
+board and in that day's decision-log entries:
 
-⚠ **Standing item, unchanged: confirm the owner rotated the `rami` sudo password.** They undertook
-to, twice. Until it is done it is the project's largest exposure — pick-up item 1 and
-`docs/security.md`. None of the three tasks above needs `sudo` to develop.
+- **19 — the fleet page** at `/logbook/fleet`, reached from the Aircraft tab. Adds and corrects an
+  aeroplane; `api.updateAircraft` finally has a caller. No delete, guarded on both sides now.
+- **20 — sessions stop piling up.** `SessionLifetime` 90d → **14d**, and the window is computed from
+  `last_used_at` rather than read from the stored `expires_at`, which is what retires the thirteen
+  rows already in production instead of only new ones.
+- **21 — the PIC name is picked, not spelled.** A `pilots` roster derived from the record, a picker
+  on the form, and `POST`/`PUT /flights` refusing a `pic_name` that is not on the roster exactly.
+
+**Start here, in this order:**
+
+1. ⚠ **Confirm the owner rotated the `rami` sudo password** — still the project's largest exposure,
+   still outstanding from 2026-08-02, and **now on the critical path**: the backend deploy needs
+   `sudo` and Task 20 is a backend change.
+2. **Deploy.** Follow `docs/deploy.md`. Two things specific to this deploy:
+   - **The schema gains a `pilots` table.** It is a plain `CREATE TABLE IF NOT EXISTS` in
+     `schema.sql`, which runs at every service start, so it is **additive and idempotent** — no
+     `migrate()` entry, nothing rewritten, nothing dropped (rule 0.2). Take the pre-deploy backup
+     anyway and check `flights=1298` in the startup line afterwards.
+   - **Deploy the backend BEFORE the frontend.** The new bundle calls `GET /pilots`; the old binary
+     answers 404 and the form's picker comes up empty. The reverse order is the mistake that left
+     the Aircraft tab in the API and not in the app on 2026-08-02.
+3. **Then open it on the phone — none of this has ever been seen in a browser.** See the warning
+   below; it is the largest remaining risk and it is not a small one.
+
+⚠ **NOTHING FROM 2026-08-03 HAS BEEN LOOKED AT IN A REAL BROWSER.** The Chrome extension was not
+connected in that session, so the fleet page, the pilot picker and the aircraft picker have **127
+green tests and no finger has ever touched them**. On this project a green suite has now **six**
+times loved something that thirty seconds of real use exposed — the sixth was found the same day, by
+`curl`, after the tests were green (see the decision log). **Two comboboxes and a list-with-inline-
+forms on a 390px screen are exactly that shape of risk.** Specifically worth checking: does the
+options list open under the thumb, does the keyboard cover it, can you reach the "Add … as a new
+name" row, and does the fleet page's edit form fit.
 
 **What this is.** A private, mobile-first pilot logbook web app for one user (the repo owner, a
 Finnish pilot), live at `https://ayoub.fi/logbook`. It holds 1296 flights transcribed from three
@@ -581,10 +607,16 @@ other sites. Baseline before the change: all seven **200**, `/logbook/` **404**.
 **The PWA half is done**: manifest, icons and `public/sw.js`, which caches the shell so the app opens
 at an airfield with no signal and never caches a logbook response. Offline *writes* stay out of v1.
 
-### Where to pick up — 2026-08-02, final session (post-deploy)
+### Where to pick up — 2026-08-03 (built, not deployed)
 
-**THE DEPLOY IS DONE. Nothing is committed-but-undeployed.** The box and the repo are level at
-`c634556` + this commit. The two items below are the only ones that matter.
+⚠ **THIS SECTION'S HEADLINE IS NOW STALE BELOW THIS LINE.** As of 2026-08-03 the deploy is **not**
+done: Tasks 19, 20 and 21 are committed and pushed at `7f54c26` and the box is still on the
+2026-08-02 build. The brief at the top of this file is the current state; what follows is the
+2026-08-02 pick-up list, kept because items 1 and 2 are still open and item 3 is the history behind
+Task 19.
+
+**(2026-08-02, still true except where noted.)** The two items below were the ones that mattered
+then; item 3 is now **done** (Task 19).
 
 1. ⚠ **ROTATE THE `rami` SUDO PASSWORD — this is now the top item, and it is overdue.** It was pasted
    into a chat session on 2026-08-01, typed repeatedly on 2026-08-02, and **handed over in-session
