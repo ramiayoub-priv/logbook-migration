@@ -274,8 +274,10 @@ app/frontend/
   src/router.tsx     ~40 lines instead of a routing library (rule 0.3).
   src/format.ts      H:MM, UTC dates, and the HHMM four-digit entry helpers. The ONLY place
                      minutes become H:MM, and the only place four digits become a time.
-  src/swupdate.ts    reloads the page once when a new service worker claims it -- a home-screen
-                     install has no reload button.
+  public/sw.js       a KILL SWITCH since 2026-08-14: deletes every cache, unregisters itself,
+                     reloads the page. Nothing registers it -- it is deployed solely to retire
+                     the workers already installed on devices. Do not delete it from the server.
+                     (src/swupdate.ts is gone with it; nothing claims a page any more.)
   src/pages/         Login, Table, Statistics, Export, Review, Sessions, RangePicker, and
                      FlightForm -- the ONE form, wrapped by NewFlight and EditFlight. Two copies
                      would drift at the first fix applied to only one of them.
@@ -811,6 +813,7 @@ day · landings night.
 | 16 | **The restore drill, and `logbookctl check`** | **done, and DEPLOYED 2026-08-02 19:07 UTC** (`logbookctl` `59e089d3…` now on the box, installed by `update.sh` step 3) — the backup was cloned and restored for real with no emergency running. It passed everything: both sha256s match, `logbook.db` is byte-identical across three snapshots, the server boots on it reading **`flights=1298`** with all six private routes still 401, and `logbook.csv` reconciles to 1298 / 1223:03 / 3446 / 38 with no SQLite involved. **Its instructions did not pass**: step 3 told the reader to run `sqlite3`, absent from the box and not a dependency of this project, so the mandatory rule-0.2 verification was `command not found` on a fresh server. New **`logbookctl check -db <db> [-manifest <file>]`** (no CSVs, no sqlite3, hashes before opening, shares `Figures` with the manifest writer so the two cannot drift), regenerated `RESTORE.md`, and **`install-backend.sh` now installs `logbookctl`** — step 1 of the restore never did, so fixing only the sqlite3 line would have swapped one missing command for another. Backend **87.6%**, core still 100%. |
 | 17 | **Aircraft CRUD** | **backend + picker DEPLOYED, manage page NOT built** 2026-08-02 — owner ask: a first flight in an aeroplane never flown was unenterable, because the aircraft list was purely derived and the form's registration was a `<select>` fed by it. Now: `aircraft.user_added` (additive migration in `store.migrate`, proven safe on a copy of real production), `store/aircraft.go` (`AircraftList`/`AircraftByReg`/`AddAircraft`/`UpdateAircraft`, `last_flown` and flight counts **derived, never stored**), **`POST /aircraft`** and **`PUT /aircraft/{reg}`** — and **NO DELETE**, by ruling, asserted against the route table. The importer's unqualified `DELETE FROM aircraft` is scoped to `user_added = 0`. Frontend: `AircraftPicker.tsx`, a filterable combobox that also adds an aeroplane inline; **no retired/active concept**, nothing hidden, ordered never-flown-first then most-recently-flown. **111 frontend tests, backend 87.3%.** ✅ **Live since 2026-08-02 19:07 UTC** — `POST`/`PUT` both answer **403** unauthenticated (CSRF refused before auth, stricter than 401) and `DELETE` answers **405**, so the no-delete ruling is enforced in production. ⚠ **Still never opened in a real browser, and the U of CRUD has no UI at all**: `api.updateAircraft` (`src/api.ts:301`) has **zero callers, not even a test**, so a typo'd registration cannot be corrected from the app and cannot be deleted either. Create/read work end-to-end. See pick-up item 3 for the full table — that is where the next session starts. |
 | 18 | **Retire the importer from production** | **done and DEPLOYED** 2026-08-02 — owner ruling: the production database is the source of truth. **The rewritten `update.sh` ran at 19:07 UTC**: step 4's read-only `verify` matched all nine checksums against the frozen CSVs and nothing was written to the record. That was the first deploy in this project's history that did not run a destructive operation on a live legal record. `update.sh` no longer imports; step 4 is a **read-only `verify`**, turning the frozen CSVs into a drift/tamper check on the 1296 historical rows rather than a rebuild. `CLAUDE.md` §0.2 rewritten. `logbookctl import` survives for dev scratch databases and tests only. Removes the stale-CSV class of failure entirely, and rests on the backup having been *proven* restorable the same day. |
+| 22 | **Nothing is cached, anywhere** | **built and half-deployed 2026-08-14** — owner: *"make sure NOTHING is cached at all… the browser needs to forget (except the cookie for the session)."* `public/sw.js` becomes a **kill switch** (deletes every cache, unregisters itself, reloads the page); `src/main.tsx` registers no worker and `src/noworker.test.ts` fails if that returns; `swupdate.ts` deleted. Apache serves the whole directory `no-store` with no `ETag`, replacing three per-file rules. **Frontend is LIVE** (`index-qD3NNzOE.js`); ⚠ **the Apache half needs `sudo` and is NOT applied yet** — `install-apache.sh` is staged on the box. Trade, stated: the app no longer opens without a network, and ~200 KB is fetched per cold start. The session cookie is untouched. |
 | 19 | **The fleet management page** — the `U` of aircraft CRUD, plus create away from the form | **built 2026-08-03, not yet deployed** — `pages/Fleet.tsx` at **`/logbook/fleet`**, reached from the Aircraft tab ("Manage the fleet") rather than a seventh tab: six already share a 390px phone. Lists every aeroplane in the server's order, adds one with all five fields (the form's inline panel asks only type and class, on purpose), and **corrects one — `api.updateAircraft` now has a caller**, keyed by the old registration so a rename works. **No delete**, guarded now on both sides of the wire: a route-table test on the backend and a frontend test that fails if any control ever says delete. **117 frontend tests** (was 111), six of them new and all watched red first. Frontend-only; no `sudo`, and it cannot touch the record. |
 | 20 | **Stale sessions never die** — the Devices list is a graveyard | **fixed 2026-08-03, not yet deployed** — `SessionLifetime` 90d → **14d** per the owner's ruling, and the window is now **computed from `last_used_at` against the constant instead of read back from the stored `expires_at`**. That second half is what reaches the rows that already exist: the owner's thirteen were each stamped with a date up to three months out, and a fix that only applied to new sessions would have left every one of them on the page. `LookupSession`, `PurgeExpiredSessions` and the Devices listing all ask the same question, so the sweep, the request path and the page cannot disagree. **No schema change.** Four new tests, three watched red on the old code and the fourth red the moment the constant moved; backend **87.2%**, core 100%. |
 | 21 | **The PIC name becomes a picked object** | **built 2026-08-03, not yet deployed** — a `pilots` roster: the distinct `pic_name` values already on flights (counted, dated) UNION names added in the app and not yet flown with, behind a filterable picker on the form. `GET`/`POST /pilots`, **no PUT and no DELETE** (a roster entry is only a spelling — a wrong name is corrected on the flight). **`SELF` cannot join `self`**: refused by a `UNIQUE … COLLATE NOCASE` index *and* by a check against the names already on flights, and the picker will not even offer to add a case variant. **The guarantee is at the write, not just in the form** — `POST`/`PUT /flights` refuse a `pic_name` that is not on the roster exactly, which can never block an edit because the roster is derived from the flights. Blank stays legal (one paper row has it). **Owner ruling: NO student field** ("no student field as it should be"). Historical values are read and never rewritten (§0.8) — `Sinervä`/`Sinerva` and `Stude` are all still offered exactly as written. Backend **86.8%**, core 100%; **124 frontend tests**. |
@@ -863,6 +866,47 @@ surfaced here, ruled on by nobody, changed by nothing. The roster will therefore
 these values as they are written**, variants and all, the same way the aircraft list was derived
 before it gained hand-added rows. Task 21 stops the *next* spelling of `self` from being invented;
 it does not tidy the paper.
+
+### 2026-08-14 — "Make sure NOTHING is cached", and the stale build that was not cached at all
+
+The owner's phone was showing the old app after a deploy, and they asked for the nuclear option:
+*"Can you make sure NOTHING is cached at all? Like the browser needs to forget (except the cookie for
+the session)."*
+
+**The first thing to say is that the phone was innocent.** The backend had gone out — they had run
+`update.sh` themselves — but **the frontend had never been uploaded**: `curl` showed
+`index-xgdC8L2o.js` from 2 August still live, because the session had staged the bundle and was
+waiting on the backend step before rsyncing it. The phone was faithfully serving what the server was
+handing it. **This is the trap in `docs/deploy.md` read backwards** — that note warns "if the feature
+is missing on the phone, check the device, not the deploy", and the honest version is: **check which
+one it is before touching either.** Thirty seconds of `curl -sI` answered it; a session that had
+started writing cache-busting code would have shipped a fix for a bug that did not exist, and the
+frontend would *still* have been missing.
+
+**Then the instruction was carried out anyway, because it was right on its own terms.** Two
+incidents in a fortnight had been "is my phone stale?", and each one cost more than the cache ever
+saved. What the shell cache actually bought was small: offline **writes** were never in scope (§2),
+so an offline shell could only open an app that then failed every request it made. So:
+
+- **`public/sw.js` is now a kill switch** — deletes every cache by name (not a filter on the names
+  this project used), unregisters itself, then navigates the open page onto the network.
+- **⛔ It must keep being deployed.** Deleting `sw.js` from the server does **not** remove a worker
+  already on a device; the browser keeps running the copy it has, serving the shell it cached,
+  forever. A new worker at the same URL is the *only* reliable way to retire one. There is no way to
+  know when the last device has been cleaned, so the file stays indefinitely.
+- **Nothing registers it.** `main.tsx` no longer calls `register()`, which is also what stops a
+  register → unregister → navigate → register loop on the owner's phone. `noworker.test.ts` fails if
+  the line comes back.
+- **Apache serves the whole directory `no-store`, with no `ETag`** — one rule replacing three. The
+  old arrangement was *correct per file* and still produced two incidents, because every exception is
+  a place a future deploy can be stale in a way nobody thinks to look. A single rule cannot have that
+  shape of bug. `ETag` goes because a 304 is the server saying "use your copy".
+
+**Both costs are written down rather than buried**: the app no longer opens without a network, and
+~200 KB is fetched on every cold start. If the second ever matters, the honest middle is `no-cache`
+on `/logbook/assets` alone — content-hashed filenames cannot be stale — and that is a knowing trade
+for a later session, not a quiet cleanup. **The session cookie is not affected by any of it**: it is
+`HttpOnly` and lives in the cookie store, which is not a cache.
 
 ### 2026-08-03 — Running it found the sixth thing a green suite loved
 
@@ -1582,6 +1626,10 @@ The **total and the air time were already derived**; what changed is that they n
 four-digit fields, so the figure appears the moment the fourth digit of the on-block time lands.
 
 ### 2026-08-01 — The phone would not pick up a new build, and that needed three layers
+> **⚠ SUPERSEDED 2026-08-14.** All three layers below are gone, replaced by one rule: nothing under
+> `/logbook` is cached at all, and the app registers no service worker. The reasoning here is still
+> worth reading — it is why the owner stopped trusting the cache — but the mechanism it describes no
+> longer exists. See the 2026-08-14 entry and `docs/deploy.md`.
 
 Reported by the owner in the same breath as the form ("do some pragma no cache so my phone will
 reload the page"), and it is a deploy-correctness problem rather than a convenience one: the frontend

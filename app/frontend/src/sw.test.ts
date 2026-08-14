@@ -3,117 +3,111 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 /**
- * These run against `public/sw.js` as shipped, not against a copy of its
- * logic. The file is evaluated in a fake worker global and its `policy`
- * function is pulled back off that global, so a change to the real worker is
- * what these assertions see.
+ * `public/sw.js` is now a KILL SWITCH, and these run against the file as
+ * shipped rather than a copy of its logic.
+ *
+ * It used to cache the app shell so the logbook would open at an airfield with
+ * no signal. The owner ended that on 2026-08-14: *"Can you make sure NOTHING is
+ * cached at all? Like the browser needs to forget (except the cookie for the
+ * session)."* The shell cache had twice put a stale build in front of them, and
+ * offline writes were never in scope — so an offline shell could only ever open
+ * an app that then failed every request.
+ *
+ * WHAT IS LEFT MUST STILL BE SHIPPED. Deleting sw.js from the server does not
+ * remove a worker already installed on a device; the browser goes on using the
+ * one it has. The only thing that reliably retires it is a NEW worker at the
+ * same URL that deletes every cache and unregisters itself. That is this file,
+ * and it must stay deployed for as long as any device might still be carrying
+ * the old one.
  */
-type Policy = (req: { method: string; mode?: string }, url: URL) => string
+type Handler = (event: { waitUntil: (p: Promise<unknown>) => void }) => void
 
-let policy: Policy
 let source: string
+let listeners: Record<string, Handler>
+let deleted: string[]
+let unregistered: boolean
+let navigated: string[]
 
-beforeAll(() => {
-  source = readFileSync(resolve(__dirname, '../public/sw.js'), 'utf8')
+async function runWorker() {
+  listeners = {}
+  deleted = []
+  unregistered = false
+  navigated = []
 
-  const listeners: Record<string, unknown> = {}
   const fakeSelf: Record<string, unknown> = {
     location: { origin: 'https://ayoub.fi' },
-    addEventListener: (name: string, fn: unknown) => {
+    addEventListener: (name: string, fn: Handler) => {
       listeners[name] = fn
     },
     skipWaiting: () => {},
-    clients: { claim: () => {} },
+    registration: {
+      unregister: async () => {
+        unregistered = true
+        return true
+      },
+    },
+    clients: {
+      claim: async () => {},
+      matchAll: async () => [
+        { url: 'https://ayoub.fi/logbook/', navigate: async (u: string) => void navigated.push(u) },
+      ],
+    },
+  }
+  const fakeCaches = {
+    keys: async () => ['logbook-shell-v1', 'logbook-shell-v2'],
+    delete: async (k: string) => {
+      deleted.push(k)
+      return true
+    },
   }
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
-  new Function('self', 'caches', 'fetch', 'Response', source)(
-    fakeSelf,
-    { open: async () => ({}), keys: async () => [], match: async () => undefined, delete: async () => true },
-    async () => ({}),
-    { error: () => ({}) },
-  )
-  policy = fakeSelf['policy'] as Policy
+  new Function('self', 'caches', source)(fakeSelf, fakeCaches)
+
+  // Drive activate the way the browser would, and wait for what it registered.
+  const pending: Promise<unknown>[] = []
+  listeners['activate']?.({ waitUntil: (p) => void pending.push(p) })
+  await Promise.all(pending)
+}
+
+beforeAll(() => {
+  source = readFileSync(resolve(__dirname, '../public/sw.js'), 'utf8')
 })
 
-const url = (path: string) => new URL(`https://ayoub.fi${path}`)
-const GET = { method: 'GET' }
-
-describe('the service worker never caches the logbook', () => {
-  // The one that matters. Every API response is personal data and the server
-  // marks it no-store; a service worker ignores that header unless written not
-  // to. Caching one would leave the logbook readable on the device after the
-  // session was revoked.
-  it('passes every API request straight through', () => {
-    for (const path of [
-      '/logbook/api/flights',
-      '/logbook/api/stats?from=2024-01-01',
-      '/logbook/api/me',
-      '/logbook/api/discrepancies',
-      '/logbook/api/sessions',
-      '/logbook/api/export/easa.pdf',
-      '/logbook/api/health',
-    ]) {
-      expect(policy(GET, url(path)), path).toBe('passthrough')
-    }
+describe('the service worker is a kill switch', () => {
+  // The whole point. Nothing may be served from a cache this worker controls,
+  // so it must not answer fetches at all -- an intercepted request is a request
+  // that could be answered from storage.
+  it('installs no fetch handler, so every request goes to the network', async () => {
+    await runWorker()
+    expect(listeners['fetch']).toBeUndefined()
   })
 
-  // A navigation to an API path must not be answered from the shell cache
-  // either -- the API check is deliberately first for this reason.
-  it('does not treat an API navigation as a shell request', () => {
-    expect(policy({ method: 'GET', mode: 'navigate' }, url('/logbook/api/flights')))
-      .toBe('passthrough')
+  it('deletes every cache, not just the ones it recognises', async () => {
+    await runWorker()
+    expect(deleted).toEqual(['logbook-shell-v1', 'logbook-shell-v2'])
   })
 
-  it('never intercepts a mutation', () => {
-    for (const method of ['POST', 'DELETE', 'PUT', 'PATCH']) {
-      expect(policy({ method }, url('/logbook/api/flights')), method).toBe('passthrough')
-      expect(policy({ method }, url('/logbook/')), method).toBe('passthrough')
-    }
+  it('unregisters itself, so the next load has no worker at all', async () => {
+    await runWorker()
+    expect(unregistered).toBe(true)
   })
 
-  // Belt and braces: the file must not contain a cache write that is reachable
-  // for an API URL. This catches a future edit that adds one outside `policy`.
-  it('has exactly one place that decides what is cached', () => {
-    expect(source).toContain("url.pathname.startsWith(BASE + 'api/')")
-    expect(source.match(/caches\.open\(/g)?.length).toBeLessThanOrEqual(3)
-  })
-})
-
-describe('the service worker caches the shell', () => {
-  it('serves navigations network-first with a shell fallback', () => {
-    expect(policy({ method: 'GET', mode: 'navigate' }, url('/logbook/'))).toBe('shell')
-    expect(policy({ method: 'GET', mode: 'navigate' }, url('/logbook/statistics'))).toBe('shell')
+  it('reloads the open page onto the network once it has cleaned up', async () => {
+    await runWorker()
+    expect(navigated).toEqual(['https://ayoub.fi/logbook/'])
   })
 
-  // index.html is the one file under /logbook/ that is NOT content-hashed, so
-  // cache-first on it means a deploy is invisible until the cache is cleared.
-  // It goes through the network-first shell path like any other navigation.
-  it('never treats the un-hashed shell document as an immutable asset', () => {
-    expect(policy(GET, url('/logbook/index.html'))).toBe('shell')
+  // A worker that waited its turn would leave the old one serving the old
+  // shell until every tab was closed -- on a home-screen app, possibly never.
+  it('takes over immediately rather than waiting for the old worker to die', async () => {
+    await runWorker()
+    expect(source).toContain('skipWaiting')
   })
 
-  // The shell fetch must bypass the browser's own HTTP cache. Network-first is
-  // only as fresh as what the network layer hands back, and a phone that has
-  // index.html in its HTTP cache would keep opening the previous build with
-  // the worker none the wiser. Asserted against the source because it is a
-  // fetch option, not a routing decision -- there is nothing to call.
-  it('asks the network for the shell rather than the HTTP cache', () => {
-    expect(source).toMatch(/cache:\s*'no-store'/)
-  })
-
-  // Build assets are content-hashed, so the filename changes when the bytes
-  // do and a cache hit can never be stale.
-  it('caches the hashed build assets', () => {
-    expect(policy(GET, url('/logbook/assets/index-abc123.js'))).toBe('asset')
-    expect(policy(GET, url('/logbook/assets/index-abc123.css'))).toBe('asset')
-    expect(policy(GET, url('/logbook/icons/icon-192.png'))).toBe('asset')
-  })
-
-  // The box serves the owner's other sites. Nothing outside /logbook is ours
-  // to touch.
-  it('leaves the rest of the host alone', () => {
-    expect(policy(GET, url('/blog/'))).toBe('bypass')
-    expect(policy(GET, url('/'))).toBe('bypass')
-    expect(policy(GET, new URL('https://example.com/x.js'))).toBe('bypass')
+  // The guarantee that outlives this file: it must never grow a cache again.
+  it('opens no cache and stores nothing', () => {
+    expect(source).not.toContain('caches.open')
+    expect(source).not.toContain('cache.put')
+    expect(source).not.toContain('respondWith')
   })
 })

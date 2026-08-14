@@ -10,7 +10,7 @@ VHOST=/etc/apache2/sites-enabled/ayoub.fi-le-ssl.conf
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)
 say() { printf '\n== %s\n' "$*"; }
 
-say "1. mod_headers (needed for the sw.js no-cache rule)"
+say "1. mod_headers (needed for the no-store rules)"
 if [ -e /etc/apache2/mods-enabled/headers.load ]; then
     echo "   already enabled"
 else
@@ -88,6 +88,13 @@ done
 echo "   /logbook/api/flights (no session) HTTP $(curl -sS -o /dev/null -w '%{http_code}' https://ayoub.fi/logbook/api/flights)  (expect 401)"
 echo "   sw.js      Cache-Control: $(curl -sSI https://ayoub.fi/logbook/sw.js | grep -i '^cache-control' || echo 'MISSING')"
 echo "   index.html Cache-Control: $(curl -sSI https://ayoub.fi/logbook/ | grep -i '^cache-control' || echo 'MISSING')"
+# The hashed bundle too, which is the file the 2026-08-14 change actually
+# altered: it used to be served immutable for a year. Read the name out of the
+# live index.html rather than hard-coding it -- it changes on every build, and a
+# check against a stale filename would pass by 404ing.
+ASSET=$(curl -sS https://ayoub.fi/logbook/ | grep -o 'assets/index-[A-Za-z0-9_-]*\.js' | head -1)
+echo "   $ASSET Cache-Control: $(curl -sSI "https://ayoub.fi/logbook/$ASSET" | grep -i '^cache-control' || echo 'MISSING')"
+echo "   $ASSET ETag:          $(curl -sSI "https://ayoub.fi/logbook/$ASSET" | grep -i '^etag' || echo 'none (correct)')"
 
 say "7. verify THE OTHER SITES are unharmed"
 for p in / /blog/ /countdown/ /englishhouse/ /games/ /pdp/ /simpleclock/; do

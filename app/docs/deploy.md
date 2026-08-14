@@ -68,46 +68,55 @@ rsync -a --delete app/frontend/dist/ rami@ayoub.fi:/var/www/logbook/
 without it produces a page that 404s every asset behind the Apache `Alias`.
 
 The build also emits the PWA files — `manifest.webmanifest`, `sw.js` and `icons/` — which must land
-at the web root of `/var/www/logbook/` for the home-screen install to work. Two Apache notes:
+at the web root of `/var/www/logbook/` for the home-screen install to work.
 
-- **`sw.js` must not be served from a long-lived cache.** A stale service worker outlives a deploy
-  and keeps serving the previous bundle. Serve it `Cache-Control: no-cache` so the browser
-  revalidates it every time; the hashed files under `assets/` are immutable and can be cached hard.
-- **`index.html` must not be cached either, and for the same reason.** It is the only file under
-  `/logbook/` whose name stays the same while its bytes change on every deploy — it is what points
-  at the hashed bundles. A phone holding a stale copy runs the previous frontend against the current
-  API, which is exactly the mismatch that "ship the binary and the frontend together" exists to
-  prevent. Reported from the field on 2026-08-01: the owner's phone would not pick up a new build.
-- The worker's scope is `/logbook/`, so it can only ever intercept our own paths — never the
-  owner's other sites on this box.
+### ⛔ Nothing under `/logbook` is cached (2026-08-14)
 
-```apache
-<Files "sw.js">
-    Header set Cache-Control "no-cache"
-</Files>
-<Files "index.html">
-    Header set Cache-Control "no-cache, no-store, must-revalidate"
-    Header set Pragma "no-cache"
-    Header set Expires "0"
-</Files>
-<Directory /var/www/logbook/assets>
-    Header set Cache-Control "public, max-age=31536000, immutable"
-</Directory>
-```
+**Owner instruction, verbatim:** *"Can you make sure NOTHING is cached at all? Like the browser needs
+to forget (except the cookie for the session)."* Said after a stale-looking phone, where the real
+cause was a frontend that had never been uploaded — the second time this class of question had cost
+an afternoon. There are now **two rules and no exceptions**:
 
-**Three layers, deliberately, because each one covers a device the others do not:**
+1. **Apache serves everything under `/var/www/logbook` as `no-store`**, with `Pragma`, `Expires: 0`
+   and **no `ETag`** (a 304 is the server saying "use your copy", which is the sentence being
+   abolished). One `<Directory>` rule replaces what used to be three: `no-cache` on `sw.js`,
+   `no-store` on `index.html`, and `immutable` for a year on `/assets`.
+2. **The app registers no service worker.** `src/main.tsx` no longer calls `register()`, and
+   `src/noworker.test.ts` fails if that line ever returns.
 
-| Layer | Where | What it fixes |
-|---|---|---|
-| `Cache-Control` / `Pragma` / `Expires` on `index.html` | Apache, and as `<meta http-equiv>` in the document itself | The browser's HTTP cache. The meta tags travel with the file, so a device served by anything other than this vhost is still covered. |
-| `fetch(request, {cache: 'no-store'})` on the shell | `public/sw.js` | The service worker's own "network first" was only ever as fresh as the HTTP cache underneath it. |
-| `reloadWhenUpdated` | `src/swupdate.ts`, wired in `src/main.tsx` | A home-screen install has no address bar and no reload button. When a new worker claims the page, the page reloads itself onto it — once, guarded against a loop. |
+**⛔ `public/sw.js` MUST KEEP BEING DEPLOYED, and it is now a kill switch.** Deleting it from the
+server does **not** remove a worker already installed on a device — the browser goes on running the
+copy it has, serving the shell it cached, indefinitely. The only thing that retires an installed
+worker is a **new worker at the same URL** that deletes every cache and unregisters itself, then
+navigates the open page onto the network. That is what the file does now, and it must stay until
+there is no device left that could still be carrying the old one. There is no way to know when that
+is, so it stays. Asserted by `src/sw.test.ts`, which runs against the shipped file.
+
+**What was given up, so it can be reconsidered honestly:** the app no longer opens without a network.
+The old worker cached the shell for exactly that — an airfield with no signal — but offline *writes*
+were never in scope (`app/APP.md` §2), so what it really bought was a shell that opened and then
+failed every request it made. Against two stale-build incidents, that was not a good trade.
+
+**What it costs:** ~200 KB fetched on every cold start instead of read from disk. If that ever
+becomes annoying the honest middle is `no-cache` (revalidate, cheap 304s) on `/logbook/assets` only —
+those filenames are content-hashed and therefore *cannot* be stale. That is a knowing trade for a
+later session, not a cleanup to be made quietly.
+
+**The session cookie is untouched.** It is `HttpOnly` and lives in the cookie store, which is not an
+HTTP cache. None of this signs anyone out.
 
 Verify a deploy actually reached the device:
 ```bash
-curl -sI https://ayoub.fi/logbook/ | grep -i cache-control     # expect no-store
-curl -sI https://ayoub.fi/logbook/sw.js | grep -i cache-control # expect no-cache
+curl -sI https://ayoub.fi/logbook/      | grep -i cache-control   # expect no-store
+curl -sI https://ayoub.fi/logbook/sw.js | grep -i cache-control   # expect no-store
+ASSET=$(curl -s https://ayoub.fi/logbook/ | grep -o 'assets/index-[A-Za-z0-9_-]*\.js' | head -1)
+curl -sI "https://ayoub.fi/logbook/$ASSET" | grep -iE 'cache-control|etag'   # no-store, no ETag
 ```
+
+**Forcing a phone that is still holding the old worker** (needed once, on each device that had the
+app before 2026-08-14): open `https://ayoub.fi/logbook/`, wait a second for the kill switch to
+activate — it reloads the page itself — then close and reopen the home-screen app. After that there
+is no worker and no cache to be stale.
 
 ## Apache
 
