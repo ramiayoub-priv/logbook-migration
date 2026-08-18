@@ -500,6 +500,28 @@ describe('the aircraft picker', () => {
     expect(shown.some((t) => t?.includes('OH-CTL'))).toBe(false)
   })
 
+  /**
+   * Owner ruling, 2026-08-18: "It's enough to just show the registration."
+   *
+   * The option used to carry the type and a `287 flights - 2026-08-14` tail as
+   * well. On a phone that is three things competing for one line, and the row
+   * a pilot is scanning for is named by its registration alone.
+   *
+   * Exact equality, not `toContain`: the point of the ruling is what is NOT
+   * there.
+   */
+  it('shows the registration and nothing else', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await user.click(await screen.findByRole('link', { name: 'New' }))
+
+    await user.click(await screen.findByLabelText('Aircraft'))
+    const shown = within(await screen.findByRole('listbox', { name: 'Aircraft' }))
+      .getAllByRole('option')
+      .map((o) => o.textContent?.trim())
+    expect(shown).toEqual(['OH-PDP', 'OH-CTL', 'OH-CAM'])
+  })
+
   // Typing the type is as natural as typing the registration.
   it('filters on the aircraft type too', async () => {
     const user = userEvent.setup()

@@ -114,13 +114,14 @@ export function AircraftPicker({
             <li key={a.registration}>
               <button type="button" role="option" aria-selected={a.registration === value}
                 onClick={() => choose(a)}>
+                {/* The registration, alone. The option used to carry the
+                    type and a flight count too; the owner ruled on 2026-08-18
+                    that the registration is enough, and on a phone three
+                    things competing for one line is what a pilot has to read
+                    past to find the row. The type still FILTERS -- typing
+                    C172 works exactly as before -- it just no longer takes
+                    up space. */}
                 <span className="reg">{a.registration}</span>
-                <span className="type">{a.type}</span>
-                {/* What each aeroplane says about itself, so the list is
-                    scannable without hiding anything. */}
-                <span className="when">
-                  {a.flights === 0 ? 'not flown yet' : `${a.flights} flights · ${a.last_flown}`}
-                </span>
               </button>
             </li>
           ))}

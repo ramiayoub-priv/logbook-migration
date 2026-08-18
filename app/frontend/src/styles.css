@@ -472,13 +472,23 @@ dl.detail dd { margin: 0; font-variant-numeric: tabular-nums; }
   -webkit-overflow-scrolling: touch;
 }
 
-.aircraftpicker .options,
+/* EVERY RULE BELOW NAMES BOTH PICKERS, AND BOTH HALVES MUST END IN THE SAME
+   THING. When the pilot picker was folded in here the comma landed one word
+   too early on several rules -- `.aircraftpicker .options, .pilotpicker
+   .options button` -- which styled the aircraft DROPDOWN as though it were an
+   option: the list became a three-column grid, its options lost their layout
+   and ran together as `OH-CTLC172287 flights`, and below 22rem the whole list
+   was set to `display: none`. `styles.test.ts` now fails on that shape. */
+
+.aircraftpicker .options li,
 .pilotpicker .options li { margin: 0; }
 
-.aircraftpicker .options,
+.aircraftpicker .options button,
 .pilotpicker .options button {
   display: grid;
-  grid-template-columns: auto auto 1fr;
+  /* Two columns, and the aircraft picker fills only the first: what it says
+     about each aeroplane is the registration and nothing else (2026-08-18). */
+  grid-template-columns: auto 1fr;
   align-items: baseline;
   gap: 8px;
   width: 100%;
@@ -490,35 +500,18 @@ dl.detail dd { margin: 0; font-variant-numeric: tabular-nums; }
   border-radius: 8px;
   cursor: pointer;
 }
-.aircraftpicker .options,
+.aircraftpicker .options button:hover,
 .pilotpicker .options button:hover,
-.aircraftpicker .options,
+.aircraftpicker .options button:focus-visible,
 .pilotpicker .options button:focus-visible {
   background: var(--bg);
 }
 
-.aircraftpicker .options,
-.pilotpicker .options .reg { font-weight: 600; }
-.aircraftpicker .options,
-.pilotpicker .options .type { color: var(--muted); font-size: 0.85rem; }
-/* The right-hand column tells each aeroplane's own story -- how much it has
-   been flown and when -- so the list is scannable without anything being
-   hidden. It is the first thing to go when the screen is narrow. */
-.aircraftpicker .options,
-.pilotpicker .options .when {
-  justify-self: end;
-  color: var(--muted);
-  font-size: 0.78rem;
-  white-space: nowrap;
-}
-@media (max-width: 22rem) {
-  .aircraftpicker .options,
-.pilotpicker .options .when { display: none; }
-}
+.aircraftpicker .options .reg { font-weight: 600; }
 
-.aircraftpicker .options,
+.aircraftpicker .options .addnew,
 .pilotpicker .options .addnew { color: var(--accent); font-weight: 600; }
-.aircraftpicker .options,
+.aircraftpicker .options .empty,
 .pilotpicker .options .empty { padding: 10px; color: var(--muted); }
 
 /* The inline "add an aeroplane" panel. It is inside the flight form on
@@ -575,10 +568,19 @@ dl.detail dd { margin: 0; font-variant-numeric: tabular-nums; }
 
 .fleetlink { margin: -4px 0 12px; }
 
-/* The pilot picker (Task 21). Two columns rather than the aircraft picker's
-   three: a name, and what the record says about it. */
-.pilotpicker .options button { grid-template-columns: auto 1fr; }
+/* The pilot picker (Task 21). It is the only picker with a second column: a
+   name, and what the record says about it. That column is the first thing to
+   go when the screen is narrow. */
 .pilotpicker .options .name { font-weight: 600; }
+.pilotpicker .options .when {
+  justify-self: end;
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+@media (max-width: 22rem) {
+  .pilotpicker .options .when { display: none; }
+}
 /* The refusal from the server sits between the field and the list, where the
    thumb already is. */
 .pilotpicker .error.small { margin: -6px 0 8px; font-size: 0.82rem; }

@@ -31,6 +31,12 @@ board and in that day's decision-log entries:
   rows already in production instead of only new ones.
 - **21 — the PIC name is picked, not spelled.** A `pilots` roster derived from the record, a picker
   on the form, and `POST`/`PUT /flights` refusing a `pic_name` that is not on the roster exactly.
+- **23 — the aircraft picker's options ran together** (2026-08-18, frontend only). Task 21 split a
+  shared CSS selector at the wrong word, so the dropdown became a grid and its options lost their
+  layout: `OH-CTLC172287 flights · 2026-08-14`, in two columns. Found by the owner **on a phone,
+  from a screenshot** — the seventh time real use has beaten a green suite here, and the risk this
+  very block had named. Fixed, guarded by a new `styles.test.ts`, and the owner ruled the option
+  down to **the registration alone**.
 
 **Start here, in this order:**
 
@@ -48,14 +54,15 @@ board and in that day's decision-log entries:
 3. **Then open it on the phone — none of this has ever been seen in a browser.** See the warning
    below; it is the largest remaining risk and it is not a small one.
 
-⚠ **NOTHING FROM 2026-08-03 HAS BEEN LOOKED AT IN A REAL BROWSER.** The Chrome extension was not
-connected in that session, so the fleet page, the pilot picker and the aircraft picker have **127
-green tests and no finger has ever touched them**. On this project a green suite has now **six**
-times loved something that thirty seconds of real use exposed — the sixth was found the same day, by
-`curl`, after the tests were green (see the decision log). **Two comboboxes and a list-with-inline-
-forms on a 390px screen are exactly that shape of risk.** Specifically worth checking: does the
-options list open under the thumb, does the keyboard cover it, can you reach the "Add … as a new
-name" row, and does the fleet page's edit form fit.
+⚠ **THIS WARNING HAS NOW BEEN PROVED RIGHT ONCE, AND STILL STANDS.** Almost nothing from 2026-08-03
+has been looked at in a real browser. The one part that was — the owner opened the aircraft picker
+on his phone on 2026-08-18 — **was broken**, and 127 green tests had nothing to say about it (Task
+23). That makes **seven** times a green suite has loved what thirty seconds of real use exposed.
+The fleet page and the pilot picker are still untouched by any finger, and `styles.test.ts` guards
+one selector shape, not layout in general. **Two comboboxes and a list-with-inline-forms on a 390px
+screen remain exactly that shape of risk.** Specifically worth checking: does the options list open
+under the thumb, does the keyboard cover it, can you reach the "Add … as a new name" row, and does
+the fleet page's edit form fit.
 
 **What this is.** A private, mobile-first pilot logbook web app for one user (the repo owner, a
 Finnish pilot), live at `https://ayoub.fi/logbook`. It holds 1296 flights transcribed from three
@@ -817,11 +824,64 @@ day · landings night.
 | 19 | **The fleet management page** — the `U` of aircraft CRUD, plus create away from the form | **built 2026-08-03, not yet deployed** — `pages/Fleet.tsx` at **`/logbook/fleet`**, reached from the Aircraft tab ("Manage the fleet") rather than a seventh tab: six already share a 390px phone. Lists every aeroplane in the server's order, adds one with all five fields (the form's inline panel asks only type and class, on purpose), and **corrects one — `api.updateAircraft` now has a caller**, keyed by the old registration so a rename works. **No delete**, guarded now on both sides of the wire: a route-table test on the backend and a frontend test that fails if any control ever says delete. **117 frontend tests** (was 111), six of them new and all watched red first. Frontend-only; no `sudo`, and it cannot touch the record. |
 | 20 | **Stale sessions never die** — the Devices list is a graveyard | **fixed 2026-08-03, not yet deployed** — `SessionLifetime` 90d → **14d** per the owner's ruling, and the window is now **computed from `last_used_at` against the constant instead of read back from the stored `expires_at`**. That second half is what reaches the rows that already exist: the owner's thirteen were each stamped with a date up to three months out, and a fix that only applied to new sessions would have left every one of them on the page. `LookupSession`, `PurgeExpiredSessions` and the Devices listing all ask the same question, so the sweep, the request path and the page cannot disagree. **No schema change.** Four new tests, three watched red on the old code and the fourth red the moment the constant moved; backend **87.2%**, core 100%. |
 | 21 | **The PIC name becomes a picked object** | **built 2026-08-03, not yet deployed** — a `pilots` roster: the distinct `pic_name` values already on flights (counted, dated) UNION names added in the app and not yet flown with, behind a filterable picker on the form. `GET`/`POST /pilots`, **no PUT and no DELETE** (a roster entry is only a spelling — a wrong name is corrected on the flight). **`SELF` cannot join `self`**: refused by a `UNIQUE … COLLATE NOCASE` index *and* by a check against the names already on flights, and the picker will not even offer to add a case variant. **The guarantee is at the write, not just in the form** — `POST`/`PUT /flights` refuse a `pic_name` that is not on the roster exactly, which can never block an edit because the roster is derived from the flights. Blank stays legal (one paper row has it). **Owner ruling: NO student field** ("no student field as it should be"). Historical values are read and never rewritten (§0.8) — `Sinervä`/`Sinerva` and `Stude` are all still offered exactly as written. Backend **86.8%**, core 100%; **124 frontend tests**. |
+| 23 | **The aircraft picker's options ran together** | **fixed 2026-08-18, not yet deployed** — the owner's phone screenshot showed the dropdown reading **`OH-CTLC172287 flights · 2026-08-14`** and laid out in **two columns**. Both came from one malformed selector list in `styles.css`: folding the pilot picker in (Task 21) split `.aircraftpicker .options button` at the wrong word, leaving `.aircraftpicker .options,` `.pilotpicker .options button { display: grid; … }`. So the aircraft **list** became the three-column grid and its **options** got no layout, no gap, nothing — on six rules, one of which set `display: none` on the whole list below 22rem. Fixed by pairing every selector properly. In the same change, **owner ruling: "It's enough to just show the registration"** — the type and the `N flights · date` tail are gone from the option; the type still **filters**. New **`src/styles.test.ts`** asserts the selector shape (three tests, all watched red), plus an exact-equality test on the option's text. **128 frontend tests.** Frontend-only. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-08-18 — The seventh thing a green suite loved, and it was a comma
+
+**The owner opened the app on a phone and sent a screenshot.** The aircraft dropdown read
+`OH-CTLC172287 flights · 2026-08-14` — registration, type and flight count welded into one word —
+and the list was laid out in **two columns** instead of one. 127 tests were green. This is the
+**seventh** time on this project that real use has found what the suite loved, and the
+NEXT-SESSION block had named this exact control as the risk.
+
+**One character in the wrong place, six rules deep.** Task 21 folded the pilot picker into the
+aircraft picker's CSS by adding a second selector to each rule. On six of them the comma landed one
+word too early:
+
+```css
+.aircraftpicker .options,          /* the LIST */
+.pilotpicker .options button { display: grid; grid-template-columns: auto auto 1fr; … }
+```
+
+So the **dropdown itself** became a three-column grid — that is the two-column list in the
+screenshot — and the **options** inside it got no `display`, no `gap`, no columns, which is why
+three spans ran together with nothing between them. The same slip put `justify-self`, the hover
+background and, in the 22rem media query, **`display: none` on the entire aircraft list**. Nobody
+had a 352px screen, so that one was never going to be found by looking.
+
+**Why no test caught it, and what now does.** Nothing in a jsdom suite renders CSS, so a selector
+can address the wrong element forever and every assertion still passes. **`src/styles.test.ts`**
+now parses `styles.css` and asserts the shape rather than the rendering — the same tactic
+`noworker.test.ts` uses on `main.tsx`:
+
+1. when a rule names **both** pickers, the two selectors must end in the **same suffix**;
+2. no rule may give the bare `.aircraftpicker .options` a `display: grid` or `display: none`;
+3. each picker's `.options button` must actually be the grid.
+
+All three were watched red. This is a **narrow guard on the one mistake this stylesheet has
+actually made**, not a general CSS linter — it is worth having precisely because it is invisible to
+every other kind of test here.
+
+**Owner ruling in the same breath: "It's enough to just show the registration."** The option now
+carries the registration and nothing else. The type and the `N flights · date` tail are gone from
+the row — three things competing for one line on a 390px screen is what a pilot reads *past* to
+find the aeroplane. **The type still filters**: typing `C172` or `P28` narrows the list exactly as
+before, it just no longer takes up space. The picker's test asserts the option text by **exact
+equality**, because the point of the ruling is what is *not* there.
+
+Consequence, stated rather than hidden: with the type invisible, a type-filtered list gives no
+visible reason why a row matched. The registration is what identifies the aeroplane, and the owner
+knows which of his aeroplanes is a C172.
+
+**Not verified in a browser.** The dev path needs `./dist/server createuser`, which needs a real
+terminal, and the Chrome extension could not reach a local static server either. So this rests on
+the tests and on the CSS now being provably paired — **it should be looked at on the phone at the
+next deploy**, along with everything else from 2026-08-03 that never has been.
 
 ### 2026-08-03 — Three priorities from the owner, and two rulings that made them smaller
 
