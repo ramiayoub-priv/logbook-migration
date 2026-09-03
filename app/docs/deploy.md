@@ -194,6 +194,48 @@ The previous binary is kept as `/opt/logbook/logbook-server.prev`. Rollback is a
 `systemctl restart logbook` — no rebuild. The database is backed up before any migration, so a schema
 change is reversible too.
 
+**The frontend has its own rollback, and it is not the binary's.** `rsync -a --delete` leaves nothing
+behind, so take a tar of the live directory *before* the rsync — it needs no sudo and costs ~70 KB:
+
+```bash
+STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+ssh rami@ayoub.fi "tar czf /home/rami/logbook-frontend.$STAMP.tar.gz -C /var/www/logbook ."
+# rollback:
+ssh rami@ayoub.fi "tar xzf /home/rami/logbook-frontend.<STAMP>.tar.gz -C /var/www/logbook"
+```
+
+Most recent: **`/home/rami/logbook-frontend.20260903T203332Z.tar.gz`** — the pre-Task-23 frontend
+(`index-qD3NNzOE.js`).
+
+⚠ **Check `--delete` against the live listing first.** `dist/` must produce every entry the web root
+holds — `assets/`, `icons/`, `index.html`, `manifest.webmanifest` and **`sw.js`**. Deleting `sw.js`
+would strip the kill switch that retires service workers still installed on devices, and no test
+catches that because the file is correct in the repo.
+
+## Answering "what is actually running?" — do this before every deploy
+
+The repo has been wrong about this before (three weeks, 2026-08-14 → 2026-09-03; see the decision
+log). **Ask the box, not `APP.md`.**
+
+```bash
+# which commit the live binary was built from -- Go stamps it in
+ssh rami@ayoub.fi 'strings -a /opt/logbook/logbook-server | grep -m1 -E "vcs\.(revision|modified)"'
+# which bundle the page actually asks for
+curl -s https://ayoub.fi/logbook/ | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js'
+# what is genuinely behind
+git log --oneline <revision>..HEAD -- app/backend app/frontend
+```
+
+⚠ **md5 cannot answer this.** Two builds of the same source differ only in the `vcs.revision` stamp
+and build ID — **same size, different hash** — so a hash mismatch proves nothing at all. Read the
+stamp. It also tells you whether the live build was **clean** (`vcs.modified=false`) or built from a
+dirty tree, which is the difference between a shippable artefact and an accident.
+
+⚠ **A 401 is not a missing route.** Under default deny nearly everything answers 401 without a
+session, which looks exactly like a 404-to-be. Probe an obviously fake path
+(`/logbook/api/definitely-not-a-route-xyz`) — that returns **404**, so a **401 proves the route
+exists**. This is how the whole route table can be inventoried without logging in.
+
 ## ⚠ `-origin` must match what the browser actually sends
 
 The CSRF check compares the `Origin` header byte for byte, so the value has to be the exact
