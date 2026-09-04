@@ -16,10 +16,30 @@ Rules live in the repo root **`CLAUDE.md` §0** — read those first, they are n
 
 *Assume you remember nothing. This block is the whole brief.*
 
-**THE BOX IS LEVEL WITH THE REPO.** `origin/master` and production both carry everything through
-**`ab32cee`**. Backend binary built from **`6aed062`** (clean, `vcs.modified=false`); frontend bundle
-**`index-D3Tqt5-U.js`** + **`index-8vIbKNLy.css`**, deployed 2026-09-03 20:33 UTC and md5-matched
-after being fetched back over HTTPS. Nothing is waiting to ship.
+**THE BOX IS LEVEL WITH THE REPO, AND NOTHING IS WAITING TO SHIP.** Re-verified from off-box on
+**2026-09-04**:
+
+| | live | built from | checked |
+|---|---|---|---|
+| backend | `/opt/logbook/logbook-server` | **`6aed062`**, `vcs.modified=false` | route table + `vcs.revision` |
+| frontend | **`index-D3Tqt5-U.js`** + `index-8vIbKNLy.css` | `ab32cee` | fetched back over HTTPS, **md5-matched** |
+
+`origin/master` is at **`b153507`**. It is ahead of the deployed bundle by two commits, and
+**both are documentation only** — no file under `app/backend/` or `app/frontend/src/` has changed
+since the deploy. Confirm that before concluding anything is outstanding:
+
+```bash
+git log --oneline ab32cee..HEAD --stat | grep -E '^ app/(backend|frontend)/src'   # empty = docs only
+```
+
+**Health, checked 2026-09-04:** service `active`, **`NRestarts=0`**; `/logbook/api/health` **200**;
+all eight private routes **401** without a session; the owner's **seven other sites all 200**; disk
+57% used (21 G free), memory 312 MB of 1971 in use. **The daily off-box backup is alive** — timer
+active, last run **2026-09-04 03:22 UTC, exit 0**, next 2026-09-05 03:23 UTC.
+
+⚠ **One number this session could NOT read: the live flight count.** It needs either a session
+cookie or `journalctl`, and `rami` has neither without sudo. It was **1298** on 2026-08-02 and only
+goes up as flights are entered in the app. **Do not "fix" it to 1296** — see rule §0.8.
 
 ⚠ **THE BLOCK YOU ARE READING WAS WRONG FOR THREE WEEKS — read this before trusting any status
 here.** It said Tasks 19/20/21 were "BUILT, TESTED, PUSHED — AND NOT DEPLOYED" and that production
@@ -27,8 +47,7 @@ was on the 2026-08-02 build. **They had been deployed on 2026-08-14**; the sessi
 recorded only the frontend half (Task 22) and left this brief describing a world that no longer
 existed. A session on 2026-09-03 was told to deploy them and found there was nothing to deploy. That
 is a **rule §0.1 failure** — the repo is the single source of truth, and for three weeks it lied.
-**Verify status against the box, never against this file alone.** The commands are in "Where the
-deploy actually stands"; the cheapest three:
+**Verify status against the box, never against this file alone.** The cheapest three commands:
 
 ```bash
 ssh rami@ayoub.fi 'strings -a /opt/logbook/logbook-server | grep -m1 vcs.revision'   # which commit is live
@@ -36,7 +55,18 @@ curl -s https://ayoub.fi/logbook/ | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js'  
 git log --oneline <that-revision>..HEAD -- app/backend app/frontend                  # what is actually behind
 ```
 
-**What is live**, all of it verified from off-box on 2026-09-03 — full detail on the task board:
+Two probes that make this cheap, both learned the hard way (2026-09-03 decision log):
+
+- **A 401 is not a missing route.** Under default deny nearly everything answers 401 without a
+  session, which is indistinguishable from a route that does not exist — until you ask an obviously
+  fake path (`/logbook/api/definitely-not-a-route-xyz`), which returns **404**. So a **401 proves the
+  route exists**, and the whole route table reads without logging in.
+- **`vcs.revision` answers "what is running"; md5 cannot.** Go stamps the commit into every binary.
+  Two builds of the same source are the **same size with different hashes** — they differ only in
+  that stamp and a build ID — so a hash mismatch proves nothing. Read the stamp, and read
+  `vcs.modified` too: it says whether the live build was clean or came from a dirty tree.
+
+**What is live**, full detail on the task board:
 
 - **19 — the fleet page** at `/logbook/fleet`, reached from the Aircraft tab. Adds and corrects an
   aeroplane; `api.updateAircraft` finally has a caller. No delete, guarded on both sides.
@@ -44,44 +74,51 @@ git log --oneline <that-revision>..HEAD -- app/backend app/frontend             
 - **21 — the PIC name is picked, not spelled.** A `pilots` roster, a picker on the form, and
   `POST`/`PUT /flights` refusing a `pic_name` that is not on the roster exactly. `GET /pilots`
   answers **401** unauthenticated and `POST` **403**, so the route exists and default deny covers it.
-- **23 — the aircraft picker's options ran together** (2026-08-18). Task 21 split a shared CSS
-  selector at the wrong word, so the dropdown became a grid and its options lost their layout:
-  `OH-CTLC172287 flights · 2026-08-14`, in two columns. Found by the owner **on a phone, from a
-  screenshot** — the seventh time real use has beaten a green suite here, and the risk this very
-  block had named. Guarded by a new `styles.test.ts`; the owner ruled the option down to **the
-  registration alone**.
+- **23 — the aircraft picker's options ran together** (2026-08-18, deployed 2026-09-03). Task 21
+  split a shared CSS selector at the wrong word, so the dropdown became a grid and its options lost
+  their layout: `OH-CTLC172287 flights · 2026-08-14`, in two columns. Found by the owner **on a
+  phone, from a screenshot** — the seventh time real use has beaten a green suite here, and the risk
+  this very block had named. Guarded by a new `styles.test.ts`; the owner ruled the option down to
+  **the registration alone**.
 
-**Start here, in this order:**
+**Start here — there are only two open items, and both need the owner:**
 
-1. ⛔ **THE APACHE HALF OF TASK 22 IS STILL NOT APPLIED — this is the one real outstanding item.**
-   Verified live 2026-09-03: `/logbook/assets/*` is still served
+1. ⛔ **THE APACHE HALF OF TASK 22 IS STILL NOT APPLIED.** This is the one real piece of outstanding
+   work. Verified live again 2026-09-04: `/logbook/assets/*` is still served
    `Cache-Control: public, max-age=31536000, immutable` **with an `ETag`**, which is exactly the rule
    the owner's *"make sure NOTHING is cached at all"* ruling abolished. The frontend half has been
-   live since 2026-08-14 (no service worker), so the ruling is **half-honoured**. It is not urgent —
-   Vite content-hashes every asset filename and `index.html` is already `no-store`, so a deploy still
-   reaches the phone — but the repo says one thing and the box does another. `install-apache.sh` is
-   written and staged; it needs **`sudo`**, which needs the owner at a terminal.
+   live since 2026-08-14 (no service worker), so the ruling is **half-honoured**. It is **not
+   urgent** — Vite content-hashes every asset filename and `index.html` is already `no-store`, so a
+   deploy still reaches the phone, which is exactly why this hid for three weeks — but the repo says
+   one thing and the box does another. `deploy/install-apache.sh` is written and staged on the box;
+   it needs **`sudo`**, so it needs the owner at a terminal.
 2. ⚠ **Confirm the owner rotated the `rami` sudo password** — still the project's largest exposure,
-   still outstanding from 2026-08-02. No longer on the critical path for a frontend deploy, but it
-   gates item 1 and every future backend deploy.
-3. **Go is installed, but NOT on a non-interactive shell's `PATH`.** It lives at
-   **`/home/havoc/.local/go/bin/go`** (go1.26.5, `GOPATH=/home/havoc/go`) and nothing in `.bashrc` or
-   `.profile` exports it, so in a tool-run shell `go version` fails and `command -v go` finds
-   nothing. **Prefix backend work with:**
-   ```bash
-   export PATH=$PATH:/home/havoc/.local/go/bin
-   ```
-   Then everything works normally — verified 2026-09-04: `make check` gives **86.8%** overall with
-   100% on every `[core]` package, and `go build` produces a clean binary. **Backend deploys from
-   this machine are perfectly possible.** An earlier version of this very line said the opposite and
-   was wrong; see the 2026-09-04 decision-log entry for how that mistake was made.
-   ⚠ Still true, still a trap: **`app/backend/dist/` holds a stale, DIRTY build** from `3921821`
-   (`vcs.modified=true`). Never ship what is sitting there — rebuild.
-   A frontend-only deploy needs neither Go nor sudo: `/var/www/logbook` is owned by `rami`, so it is
-   `npm ci && npm run check && npm run build && rsync -a --delete`.
+   outstanding since 2026-08-02. It gates item 1 and every future backend deploy.
 
-4. **Then open it on the phone — almost none of this has ever been seen in a browser.** See the
-   warning below; it is the largest remaining risk and it is not a small one.
+**Then, and this is the largest remaining risk:** open the app on the phone. See the warning below.
+
+### How to work on this machine
+
+- **Go is installed but NOT on a non-interactive shell's `PATH`.** It is at
+  **`/home/havoc/.local/go/bin/go`** (go1.26.5, `GOPATH=/home/havoc/go`); nothing in `.bashrc` or
+  `.profile` exports it, so a tool-run shell reports no `go` at all. **Prefix backend work with:**
+  ```bash
+  export PATH=$PATH:/home/havoc/.local/go/bin
+  ```
+  Then `make check` runs normally — **86.8%** overall, 100% on every `[core]` package, verified
+  2026-09-04. **Backend deploys from this machine are perfectly possible.** An earlier version of
+  this line claimed the opposite and was wrong; the 2026-09-04 decision-log entry records how, and
+  the lesson (*silence is not a finding*) is worth more than the fact.
+- ⚠ **`app/backend/dist/` holds a stale, DIRTY build** from `3921821` (`vcs.modified=true`). Never
+  ship what is sitting there — rebuild.
+- **A frontend-only deploy needs neither Go nor sudo.** `/var/www/logbook` is owned by `rami`:
+  `npm ci && npm run check && npm run build`, tar the live directory for rollback, then
+  `rsync -a --delete`. ⚠ Check `--delete` against the live listing first — `dist/` must produce all
+  five entries the web root holds, including **`sw.js`**, the kill switch that retires service
+  workers still installed on devices. No test catches its deletion, because the file is correct in
+  the repo. Full procedure and rollback in `docs/deploy.md`.
+- **`sudo` needs a password**, so nothing requiring root can be done from a session. That is correct
+  and should stay.
 
 ⚠ **THIS WARNING HAS NOW BEEN PROVED RIGHT ONCE, AND STILL STANDS.** Almost nothing from 2026-08-03
 has been looked at in a real browser. The one part that was — the owner opened the aircraft picker
@@ -907,6 +944,18 @@ be believed by a session with no way to check.
 keep the half that was true — `app/backend/dist/` holds a **stale, dirty** build from `3921821`
 (`vcs.modified=true`) that must never be shipped. Nothing about yesterday's deploy changes: it was
 frontend-only, and remains correct and verified.
+
+**State at handoff (end of 2026-09-04).** Re-verified from off-box after the correction: backend
+live from `6aed062` clean, frontend `index-D3Tqt5-U.js`, service active with **`NRestarts=0`**,
+health 200, all eight private routes 401, the owner's seven other sites 200, disk 57% used, memory
+312 MB of 1971. **The daily off-box backup is alive** — timer active, last run 2026-09-04 03:22 UTC
+**exit 0**, next 2026-09-05 03:23 UTC. `origin/master` at `b153507`, working tree clean, nothing
+unpushed; the two commits ahead of the deployed bundle are **documentation only**. The one number
+that could not be read is the **live flight count** — it needs a session cookie or `journalctl`, and
+`rami` has neither without sudo.
+
+**Open work is down to two items, and neither can be done from a session**: the Apache half of Task
+22 (needs `sudo`) and confirming the sudo-password rotation. Everything else on the board is live.
 
 ### 2026-09-03 — Told to deploy, and the deploy was already done
 
