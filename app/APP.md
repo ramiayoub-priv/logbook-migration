@@ -64,11 +64,21 @@ git log --oneline <that-revision>..HEAD -- app/backend app/frontend             
 2. ⚠ **Confirm the owner rotated the `rami` sudo password** — still the project's largest exposure,
    still outstanding from 2026-08-02. No longer on the critical path for a frontend deploy, but it
    gates item 1 and every future backend deploy.
-3. ⛔ **THERE IS NO GO TOOLCHAIN ON THE CURRENT DEV MACHINE.** `go` is not installed and not on any
-   path — `node` is (v22). **A backend deploy from this machine is impossible until Go is installed**;
-   `app/backend/dist/` holds only a **stale, dirty** build from `3921821` (`vcs.modified=true`) that
-   must not be shipped. A frontend-only deploy needs no Go and no sudo: `/var/www/logbook` is owned
-   by `rami`, so it is `npm ci && npm run check && npm run build && rsync -a --delete`.
+3. **Go is installed, but NOT on a non-interactive shell's `PATH`.** It lives at
+   **`/home/havoc/.local/go/bin/go`** (go1.26.5, `GOPATH=/home/havoc/go`) and nothing in `.bashrc` or
+   `.profile` exports it, so in a tool-run shell `go version` fails and `command -v go` finds
+   nothing. **Prefix backend work with:**
+   ```bash
+   export PATH=$PATH:/home/havoc/.local/go/bin
+   ```
+   Then everything works normally — verified 2026-09-04: `make check` gives **86.8%** overall with
+   100% on every `[core]` package, and `go build` produces a clean binary. **Backend deploys from
+   this machine are perfectly possible.** An earlier version of this very line said the opposite and
+   was wrong; see the 2026-09-04 decision-log entry for how that mistake was made.
+   ⚠ Still true, still a trap: **`app/backend/dist/` holds a stale, DIRTY build** from `3921821`
+   (`vcs.modified=true`). Never ship what is sitting there — rebuild.
+   A frontend-only deploy needs neither Go nor sudo: `/var/www/logbook` is owned by `rami`, so it is
+   `npm ci && npm run check && npm run build && rsync -a --delete`.
 
 4. **Then open it on the phone — almost none of this has ever been seen in a browser.** See the
    warning below; it is the largest remaining risk and it is not a small one.
@@ -850,6 +860,54 @@ day · landings night.
 
 ## 5. Decision Log
 
+### 2026-09-04 — "There is no Go toolchain" was false, and the owner caught it
+
+**Yesterday's entry told the next session that a backend deploy from this machine was impossible.
+That was wrong**, and the owner said so plainly: *"Then how have we built this app and done all
+previous deploys. What you are saying makes no sense at all."* He was right — the whole backend, six
+deploys and every coverage figure in this file were produced on this machine.
+
+**Go is installed at `/home/havoc/.local/go/bin/go`** — go1.26.5, `GOPATH=/home/havoc/go`, a 795 MB
+module cache sitting right there. It is simply **not on a non-interactive shell's `PATH`**: nothing
+in `.bashrc` or `.profile` exports it, so a tool-run shell sees no `go` at all while the owner's
+interactive terminal has it. Export it and everything works:
+
+```bash
+export PATH=$PATH:/home/havoc/.local/go/bin
+make check          # 86.8% overall, 100% on every [core] package -- verified 2026-09-04
+```
+
+**How the wrong conclusion got made, because the reasoning error is more reusable than the fact.**
+The probe was:
+
+```bash
+ls /usr/local/go/bin/ 2>/dev/null; ls ~/go/bin 2>/dev/null; which -a go 2>/dev/null; \
+  find / -maxdepth 4 -name go -type f -perm -u+x 2>/dev/null
+```
+
+It printed **nothing at all**, and that was read as "Go is absent". Three faults, each on its own
+enough:
+
+1. **`-maxdepth 4` cannot reach `/home/havoc/.local/go/bin/go`**, which is at depth **6**. The search
+   was structurally incapable of finding the thing it concluded was missing.
+2. **`2>/dev/null` on every clause** meant a wrong path and a nonexistent path looked identical.
+   Re-running with errors visible was what cracked it open in one command.
+3. **Empty output was treated as evidence.** It is not. A probe that returns nothing has two
+   readings — *the thing is absent*, or *the probe was bad* — and the second was never considered.
+   `~/go` existed and held 795 MB of module cache, which was visible in that same output and
+   contradicts "no Go here"; it was not noticed.
+
+**The rule that follows: silence is not a finding.** Before writing "X does not exist" into this
+file, the probe has to be shown capable of finding X — run it against something known present, or
+drop the error suppression and read what it actually says. This one cost nothing because the backend
+needed no deploy, but it was written into the **cold-start brief**, where its whole purpose was to
+be believed by a session with no way to check.
+
+**Also corrected:** the two places that carried the claim now describe the `PATH` gap instead, and
+keep the half that was true — `app/backend/dist/` holds a **stale, dirty** build from `3921821`
+(`vcs.modified=true`) that must never be shipped. Nothing about yesterday's deploy changes: it was
+frontend-only, and remains correct and verified.
+
 ### 2026-09-03 — Told to deploy, and the deploy was already done
 
 **The owner said "you can deploy". There was nothing to deploy but one CSS fix**, and finding that
@@ -902,10 +960,12 @@ frontend deploy does not touch it).
 **Two constraints on this machine, written down because they are invisible and will cost the next
 session an hour:**
 
-1. **There is no Go toolchain here.** `go` is not installed and not on any path; `node` is. A
-   **backend deploy from this machine is currently impossible**, and the only prebuilt binaries in
-   `app/backend/dist/` are the stale dirty ones described above. This did not bite today only
-   because the backend needed nothing.
+1. **`go` is not on a non-interactive shell's `PATH`** — it is at `/home/havoc/.local/go/bin/go`,
+   and exporting that makes everything work. ⚠ **This was first written down as "there is no Go
+   toolchain here" and "a backend deploy from this machine is currently impossible", both false**;
+   see the 2026-09-04 entry. The half that was true and is worth keeping: the only prebuilt binaries
+   in `app/backend/dist/` are the **stale dirty** ones described above, and they must never be
+   shipped.
 2. **`sudo` needs a password**, so nothing requiring root can be done from a session. That is
    correct and should stay — but it means the Apache half of Task 22 cannot be finished without the
    owner at a terminal.
