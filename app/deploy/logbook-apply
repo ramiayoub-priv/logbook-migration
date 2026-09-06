@@ -52,6 +52,35 @@ audit() { logger -t logbook-apply -- "$*" || true; }
 
 audit "started by ${SUDO_USER:-unknown} from ${SSH_CONNECTION:-local}"
 
+# THE SERVICE MUST NEVER BE LEFT STOPPED. Learned the hard way on 2026-09-06:
+# step 4 hit a permission error, `set -e` did exactly what it was told, and the
+# script exited between "stop" and "start" with the pilot's logbook offline and
+# nothing armed to bring it back. The automatic rollback below only covers a
+# binary that starts UNHEALTHY -- it is not reached at all when the script dies
+# before the start.
+#
+# So the invariant is enforced here instead of at each error site: from the
+# moment the service is stopped until it is confirmed running, ANY exit path --
+# set -e, a failed command, a signal -- comes through this trap.
+STOPPED=0
+on_exit() {
+    rc=$?
+    trap - EXIT
+    if [ "$STOPPED" -eq 1 ]; then
+        echo
+        echo "!! THIS SCRIPT IS EXITING (rc=$rc) WITH THE SERVICE STOPPED."
+        echo "!! Starting it again -- an offline legal record is the worst outcome here."
+        audit "EMERGENCY: exiting rc=$rc with the service stopped; restarting"
+        systemctl start logbook || true
+        sleep 3
+        back=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "$HEALTH" 2>/dev/null || echo 000)
+        echo "!! service is now: $(systemctl is-active logbook), health HTTP $back"
+        [ "$back" = "200" ] || echo "!! IT DID NOT COME BACK -- THIS NEEDS A HUMAN NOW"
+    fi
+    exit $rc
+}
+trap on_exit EXIT
+
 say "0. check what was staged, before trusting any of it"
 # A truncated rsync leaves a file that is executable, plausible and wrong. The
 # deployer writes SHA256SUMS last, so its presence also proves the upload
@@ -71,30 +100,56 @@ echo "   staged binary: $(stat -c '%s bytes, %U:%G' "$STAGE/logbook-server")"
 echo "   built from:    $(strings -a "$STAGE/logbook-server" | grep -m1 'vcs.revision' || echo 'no stamp')"
 echo "   dirty tree?    $(strings -a "$STAGE/logbook-server" | grep -m1 'vcs.modified' || echo 'unknown')"
 
-say "1. stop the service"
-systemctl stop logbook
+say "1. verify the historical rows against the frozen CSVs (READ-ONLY, writes nothing)"
+# MOVED AHEAD OF THE STOP on 2026-09-06. This check is read-only -- SQLite in
+# WAL mode serves a reader while the service writes -- so stopping the service
+# to run it bought nothing and cost everything: when it failed, it failed with
+# the record already offline. Now a refusal here disturbs nothing at all.
+#
+# The CSVs are COPIED to a directory the service user can actually read. They
+# are staged in /home/rami/logbook-deploy, which is mode 0700: `logbook` cannot
+# traverse it, and the first real run of this script died on exactly that. The
+# copy is 0700/0600 and owned by logbook, so the flight history does not become
+# readable to every account on a shared box -- and it is removed afterwards.
+VERIFYDIR=/var/lib/logbook/csv-verify
+if [ -d "$STAGE/csv" ]; then
+    rm -rf "$VERIFYDIR"
+    install -d -o logbook -g logbook -m 0700 "$VERIFYDIR"
+    cp "$STAGE"/csv/*.csv "$VERIFYDIR"/
+    chown logbook:logbook "$VERIFYDIR"/*.csv
+    chmod 0600 "$VERIFYDIR"/*.csv
+    if ! sudo -u logbook "$OPT/logbookctl" verify -db "$DB" -csv "$VERIFYDIR" 2>&1 | grep -vE '^  book'; then
+        # A mismatch does NOT mean "re-import". It means the 1296 transcribed
+        # rows no longer agree with the frozen books, which is a defect for a
+        # human to rule on (CLAUDE.md 0.2). Refuse the deploy -- but the
+        # service keeps running: taking the logbook offline over a read-only
+        # check would be answering a data question with an outage.
+        echo "   !! DRIFT CHECK FAILED -- refusing to deploy. The service is untouched and still running."
+        audit "REFUSED: verify failed against the frozen CSVs"
+        rm -rf "$VERIFYDIR"
+        exit 1
+    fi
+    rm -rf "$VERIFYDIR"
+    echo "   nine checksums match; the 1296 historical rows are unchanged"
+else
+    echo "   !! no $STAGE/csv -- the drift check was SKIPPED. Stage the CSVs."
+fi
 
-say "2. back up the database first, always (CLAUDE.md 0.2)"
+say "2. stop the service"
+systemctl stop logbook
+STOPPED=1
+
+say "3. back up the database first, always (CLAUDE.md 0.2)"
 install -d -o logbook -g logbook -m 0750 /var/lib/logbook/backups
 cp -a "$DB" "/var/lib/logbook/backups/logbook.$STAMP.db"
 chown logbook:logbook "/var/lib/logbook/backups/logbook.$STAMP.db"
 ls -l "/var/lib/logbook/backups/logbook.$STAMP.db"
 
-say "3. new binaries, keeping the old server for rollback"
+say "4. new binaries, keeping the old server for rollback"
 cp -a "$OPT/logbook-server" "$OPT/logbook-server.prev"
 install -o root -g root -m 0755 "$STAGE/logbook-server" "$OPT/logbook-server"
 if [ -f "$STAGE/logbookctl" ]; then
     install -o root -g root -m 0755 "$STAGE/logbookctl" "$OPT/logbookctl"
-fi
-
-say "4. verify the historical rows against the frozen CSVs (READ-ONLY, writes nothing)"
-# A mismatch does NOT mean "re-import". It means the 1296 transcribed rows no
-# longer agree with the frozen books, which is a defect to investigate before
-# the service writes again (CLAUDE.md 0.2). The service is still stopped here.
-if [ -d "$STAGE/csv" ]; then
-    sudo -u logbook "$OPT/logbookctl" verify -db "$DB" -csv "$STAGE/csv" 2>&1 | grep -vE '^  book'
-else
-    echo "   !! no $STAGE/csv -- the drift check was SKIPPED. Stage the CSVs."
 fi
 
 say "5. start, and prove it came up"
@@ -117,11 +172,13 @@ if [ "$code" != "200" ]; then
     systemctl start logbook
     sleep 3
     back=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "$HEALTH" 2>/dev/null || echo 000)
+    STOPPED=0   # handled deliberately here; the trap must not start it twice
     echo "   rolled back to logbook-server.prev; health now HTTP $back"
     echo "   database backup from before this attempt: /var/lib/logbook/backups/logbook.$STAMP.db"
     [ "$back" = "200" ] || echo "   !! THE ROLLBACK IS ALSO UNHEALTHY -- this needs a human NOW"
     exit 1
 fi
+STOPPED=0   # up and answering: the emergency trap stands down
 systemctl --no-pager --full status logbook | head -8
 
 say "6. checks"

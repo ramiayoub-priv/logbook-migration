@@ -78,8 +78,11 @@ cp "$REPO/app/backend/dist/logbookctl" "$TMP/logbookctl"
 mkdir -p "$TMP/csv"
 cp "$REPO"/logbook_1_final.csv "$REPO"/logbook_2_final.csv "$REPO"/logbook_3.csv "$TMP/csv/"
 cp "$REPO/app/deploy/logbook-apply" "$TMP/logbook-apply"
-( cd "$TMP" && sha256sum logbook-server logbookctl > SHA256SUMS )
-echo "   $(cd "$TMP" && cat SHA256SUMS)"
+# The CSVs are checksummed too: logbook-apply hands them to `logbookctl verify`
+# as the drift check on the 1296 frozen historical rows, and a half-copied CSV
+# would fail that check for a reason that has nothing to do with the database.
+( cd "$TMP" && sha256sum logbook-server logbookctl csv/*.csv > SHA256SUMS )
+echo "   $(cd "$TMP" && head -2 SHA256SUMS)"
 echo "   stamp: $(strings -a "$TMP/logbook-server" | grep -m1 'vcs.revision' || echo none)"
 rsync -a "$TMP"/ "$HOST:$STAGE/"
 
