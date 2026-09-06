@@ -41,7 +41,7 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-STAGE=/home/rami/logbook-deploy
+STAGE=/home/deploy-logbook/logbook-deploy
 DB=/var/lib/logbook/logbook.db
 OPT=/opt/logbook
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)
@@ -106,9 +106,10 @@ say "1. verify the historical rows against the frozen CSVs (READ-ONLY, writes no
 # to run it bought nothing and cost everything: when it failed, it failed with
 # the record already offline. Now a refusal here disturbs nothing at all.
 #
-# The CSVs are COPIED to a directory the service user can actually read. They
-# are staged in /home/rami/logbook-deploy, which is mode 0700: `logbook` cannot
-# traverse it, and the first real run of this script died on exactly that. The
+# The CSVs are COPIED to a directory the service user can actually read. The
+# staging directory is mode 0700 and owned by the deploy account: `logbook`
+# cannot traverse it, and the first real run of this script died on exactly
+# that. The
 # copy is 0700/0600 and owned by logbook, so the flight history does not become
 # readable to every account on a shared box -- and it is removed afterwards.
 VERIFYDIR=/var/lib/logbook/csv-verify

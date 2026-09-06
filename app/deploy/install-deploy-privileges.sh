@@ -21,6 +21,18 @@ say() { printf '\n== %s\n' "$*"; }
 [ "$(id -u)" -eq 0 ] || { echo "run as root: sudo $0" >&2; exit 1; }
 id -u rami >/dev/null 2>&1 || { echo "no user 'rami' on this box -- refusing" >&2; exit 1; }
 
+# ⛔ SUPERSEDED BY install-deploy-user.sh (2026-09-06). This script grants the
+# NOPASSWD right to `rami`, and the owner has since ruled that rami must be
+# back to password-for-everything, with the deploy running as its own
+# unprivileged account. Both scripts write the same sudoers file, so re-running
+# this one AFTER the switch would silently hand the right back to a
+# sudo-group account. Refuse instead.
+if id -u deploy-logbook >/dev/null 2>&1; then
+    echo "!! deploy-logbook exists -- this script is superseded and would re-grant rami." >&2
+    echo "!! Use install-deploy-user.sh instead." >&2
+    exit 1
+fi
+
 say "1. install the apply script, root-owned"
 # Root ownership is load-bearing: the sudoers rule below names this path, so if
 # rami could write to it the grant would be unrestricted root.

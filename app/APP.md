@@ -113,6 +113,40 @@ the owner ran the recovery by hand. Fixed in **`3e5a61a`**: the read-only drift 
 **before** the stop, the CSVs are copied somewhere the service user can actually read, and an EXIT
 trap covers every path between the stop and a confirmed-healthy start.
 
+⛔ **THE ONE OPEN TASK: Task 26 — move the deploy off the owner's account.** Built, staged on the
+box, **not yet run**. Owner ruling 2026-09-06: *"we need sudo to require password for rami... create
+a deploy-logbook user for that task specifically."* Right: `rami` is in the `sudo` group, so an SSH
+key that deploys unattended is also a key into an account that can become root. **Two commands, in
+this order, and the order is the safety property.**
+
+```bash
+# PHASE 1 -- creates deploy-logbook and proves it. rami's right is UNCHANGED,
+# so nothing can lock anyone out yet.
+sudo /home/rami/logbook-deploy/install-deploy-user.sh
+```
+Then, from the dev machine, prove the new account actually deploys: **`app/deploy/deploy.sh`**
+(it now connects as `deploy-logbook@ayoub.fi` with `~/.ssh/logbook-deploy`).
+```bash
+# PHASE 2 -- only after that worked end to end. Removes rami's NOPASSWD line.
+sudo /home/rami/logbook-deploy/install-deploy-user.sh --revoke-rami
+```
+
+**Nothing here can lock the owner out.** `rami`'s **`sudo` group membership is never touched** — it
+keeps `(ALL : ALL) ALL` with a password throughout. The only thing revoked is one `NOPASSWD` line.
+Phase 2 **refuses to run** unless `deploy-logbook` already has both the grant and an
+`authorized_keys`, and it asserts afterwards that `rami` still has full password sudo — bailing loudly
+if it does not. Every sudoers write is `visudo -cf`-validated before installation and the whole tree
+re-validated after, with the file removed again on failure.
+
+**The key**: `~/.ssh/logbook-deploy` on the dev machine, no passphrase (deploys are unattended),
+**machine-local — it does NOT transfer to another machine or a fresh clone** (rule §0.1). The public
+half **is** committed at `app/deploy/deploy-logbook.pub`, which is what the installer authorises. On a
+new dev machine: generate a fresh keypair, replace that `.pub`, re-run phase 1.
+
+⚠ `install-deploy-privileges.sh` (phase E) is **superseded** and now **refuses to run** once
+`deploy-logbook` exists — both scripts write the same sudoers file, so re-running the old one after
+the switch would silently hand the unattended right back to a sudo-group account.
+
 ✅ **The fixed `logbook-apply` is installed** (`/opt/logbook/logbook-apply`, root:root, 10314 bytes,
 2026-09-06 20:18). `deploy.sh` is safe to use. **NOTHING IS OUTSTANDING.**
 
@@ -955,6 +989,7 @@ day · landings night.
 | 20 | **Stale sessions never die** — the Devices list is a graveyard | **done, and DEPLOYED 2026-08-14** (recorded only on 2026-09-03; this row said "not yet deployed" for three weeks while it was live) — `SessionLifetime` 90d → **14d** per the owner's ruling, and the window is now **computed from `last_used_at` against the constant instead of read back from the stored `expires_at`**. That second half is what reaches the rows that already exist: the owner's thirteen were each stamped with a date up to three months out, and a fix that only applied to new sessions would have left every one of them on the page. `LookupSession`, `PurgeExpiredSessions` and the Devices listing all ask the same question, so the sweep, the request path and the page cannot disagree. **No schema change.** Four new tests, three watched red on the old code and the fourth red the moment the constant moved; backend **87.2%**, core 100%. |
 | 21 | **The PIC name becomes a picked object** | **done, and DEPLOYED 2026-08-14** (recorded only on 2026-09-03; verified live — `GET /pilots` answers **401** unauthenticated and `POST /pilots` **403**, so the route exists and default deny covers it) — a `pilots` roster: the distinct `pic_name` values already on flights (counted, dated) UNION names added in the app and not yet flown with, behind a filterable picker on the form. `GET`/`POST /pilots`, **no PUT and no DELETE** (a roster entry is only a spelling — a wrong name is corrected on the flight). **`SELF` cannot join `self`**: refused by a `UNIQUE … COLLATE NOCASE` index *and* by a check against the names already on flights, and the picker will not even offer to add a case variant. **The guarantee is at the write, not just in the form** — `POST`/`PUT /flights` refuse a `pic_name` that is not on the roster exactly, which can never block an edit because the roster is derived from the flights. Blank stays legal (one paper row has it). **Owner ruling: NO student field** ("no student field as it should be"). Historical values are read and never rewritten (§0.8) — `Sinervä`/`Sinerva` and `Stude` are all still offered exactly as written. Backend **86.8%**, core 100%; **124 frontend tests**. |
 | 23 | **The aircraft picker's options ran together** | **done, and DEPLOYED 2026-09-03 20:33 UTC** (bundle `index-D3Tqt5-U.js`, css `index-8vIbKNLy.css`, both fetched back over HTTPS and md5-matched to the repo build) — the owner's phone screenshot showed the dropdown reading **`OH-CTLC172287 flights · 2026-08-14`** and laid out in **two columns**. Both came from one malformed selector list in `styles.css`: folding the pilot picker in (Task 21) split `.aircraftpicker .options button` at the wrong word, leaving `.aircraftpicker .options,` `.pilotpicker .options button { display: grid; … }`. So the aircraft **list** became the three-column grid and its **options** got no layout, no gap, nothing — on six rules, one of which set `display: none` on the whole list below 22rem. Fixed by pairing every selector properly. In the same change, **owner ruling: "It's enough to just show the registration"** — the type and the `N flights · date` tail are gone from the option; the type still **filters**. New **`src/styles.test.ts`** asserts the selector shape (three tests, all watched red), plus an exact-equality test on the option's text. **128 frontend tests.** Frontend-only. |
+| 26 | **The deploy gets its own account** | **BUILT AND STAGED 2026-09-06, TWO COMMANDS OUTSTANDING** — owner: *"we need sudo to require password for rami... create a deploy-logbook user for that task specifically and sudoless for that scope."* Task 25 parked the `NOPASSWD` right on `rami` because `rami` was already there; but `rami` is in the `sudo` group, so the unattended deploy key doubled as a key into an account that can become root. `install-deploy-user.sh` creates **`deploy-logbook`**: password login disabled, **in no privileged group** (asserted, not assumed), key-only SSH with a dedicated passphrase-less ed25519 key, its own `0700` staging directory, and membership of a new `logbookdeploy` group that also holds `rami` so both can `rsync --delete` into `/var/www/logbook` (rami keeps ownership; directories get `g+s` so new files inherit the group). It holds **exactly one** right: `logbook-apply`, no arguments. **Two phases on purpose** — phase 1 creates and proves while rami keeps its right, phase 2 revokes rami only after a real deploy has run as the new account, and refuses if the replacement is not usable. `rami`'s `sudo` group membership is never touched. The old phase-E installer now refuses to run once `deploy-logbook` exists, so it cannot silently re-grant. |
 | 25 | **A deploy must not need root** | **INSTALLED AND WORKING 2026-09-06 — and its first real run caused an outage, since fixed in `3e5a61a` but NOT YET ON THE BOX.** The grant is live and correctly scoped (`sudo -n -l` shows one `NOPASSWD` entry for `/opt/logbook/logbook-apply ""`; general `sudo -n true` still exits 1). It shipped Task 24 with no password. ⚠ **The first run left the service stopped** — the drift check ran *after* `systemctl stop` and failed on an unreadable CSV, so `set -e` exited with the record offline; see the decision log. Fixed: verify moved ahead of the stop, CSVs copied to a `logbook`-owned `0700` directory, and an **EXIT trap** that restarts the service on any path between the stop and a confirmed-healthy start. Re-rehearsed on four paths including the two that had no coverage. ✅ **Fixed script installed 2026-09-06 20:18.** The install run also exposed two defects in the *installer* — a verification step that ran a real deploy, and a false "passwordless sudo for EVERYTHING" alarm caused by a warm credential cache. Both fixed by reading the policy (`sudo -l -U`) instead of exercising it. — owner: *"we should find some solution for that, deploy should not need root"*. `app/deploy/deploy.sh` now runs the entire deploy **from the dev machine with no password**: clean-tree guard, `make check` + `npm run check`, build both halves, stage with a `SHA256SUMS`, `ssh … sudo -n /opt/logbook/logbook-apply`, then the frontend, then off-box verification. The only privileged step is `logbook-apply`, root-owned, named by a **one-user one-command no-arguments** rule in `/etc/sudoers.d/logbook-deploy`. It grants **nothing new** — `rami` is in the `sudo` group already — it removes the prompt from one audited operation, and the installer **asserts** that general `sudo -n` still fails afterwards. Polkit was ruled out on evidence: Ubuntu 20.04 ships **polkit 0.105**, `.pkla` only, which cannot scope manage-units to a single unit and would have handed rami restart rights over all seven other sites. `logbook-apply` refuses a missing/mismatched `SHA256SUMS` (a truncated rsync leaves a plausible, wrong binary) or a symlinked artefact, all **before** stopping the service, and **rolls back automatically** to `logbook-server.prev` if the new binary fails its health check — because unattended means nobody is reading the output. **Rehearsed against a fake tree with stubbed `systemctl`/`curl` before it was ever run as root**: all four refusals exit 1 with nothing installed, plus the happy path and the rollback. `update.sh` is now a shim that execs `logbook-apply`, so there is one implementation. ⛔ **Needs the owner once**: `sudo install-deploy-privileges.sh`. |
 | 24 | **The flight-table PDF dropped the airborne times** | ✅ **DONE AND DEPLOYED 2026-09-06** (binary `a5bc939`, bundle `index-CQ6-aHZf.js`, verified off-box) — — owner: *"There is a bug in the export (save as pdf) it only exports block times! not to and landing"*. Right: `tableColumns` in `internal/pdfbook/table.go` carried `OFF` and `ON` and nothing else, so **Task 12's Takeoff/Landing/Air went to the screen on 2026-08-02 and never to the document**. The export whose own description promised "everything the application knows about it" was throwing away two of the four times it knows — on **36 of the 1313 rows**, including **every one of the 17 entered through the app**, which is why the owner met it the first time they exported their own flying. Now **TAKEOFF, LANDING and AIR**, grouped *after* the block pair exactly as the on-screen table groups them and for the reason `Table.tsx` already gives — four times in one format, and the aircraft's logbook is filled from only one pair — with `OFF`/`ON` renamed **OFF BLOCK**/**ON BLOCK** now that they have neighbours to be confused with. `pdfmodel.AirTime` is pure, derived at render, **never stored** (§0.5), and mirrors `format.airMinutes` exactly: blank — never `0:00` — when either instant is missing or the interval is negative. Column widths **measured, not guessed** (`fpdf.GetStringWidth` over all 1296 rows at the real fonts: 166.3 mm of content, table now **279 mm of 285 mm printable**) and guarded by a new internal test watched red at 301 mm. **The EASA export is deliberately unchanged** — the form has no cell for an airborne time and its DEPARTURE/ARRIVAL TIME columns are block times; that document is what an authority reads. `make check` **86.8%**, `internal/pdfmodel` **100%**, 128 frontend tests. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
@@ -962,6 +997,47 @@ day · landings night.
 ---
 
 ## 5. Decision Log
+
+### 2026-09-06 — The deploy key should not also be a key into a root-capable account
+
+The owner, reading the grant back: *"ok please don't wreck my user or I might get locked out of the
+box. Actually we need sudo to require password for rami. What we will do is, create a deploy-logbook
+user for that task specifically and sudoless for that scope."*
+
+**They were right, and it is the flaw in Task 25.** That task argued the grant was safe because it
+gave `rami` nothing the account did not already have — true, and beside the point. `rami` is in the
+`sudo` group, so the passphrase-less SSH key that makes deploys unattended is also a key into an
+account that can become root with a password. The right shape is an account that can do the deploy
+**and nothing else**, which is what the owner asked for.
+
+**One correction was needed first.** The message said *"since you have the sudoless access, you can
+create it"* — I cannot. The grant is one command with no arguments: it stops the service, installs a
+staged binary and starts it again. It cannot create a user or write to `/etc/sudoers.d`. Nor should
+the deploy grant be used as a route to root even where one might be found: it is only a boundary if
+nobody treats it as a door, and that includes me. So this needs the owner at a terminal, twice.
+
+**Two phases, because the ordering is the safety property.** Phase 1 creates `deploy-logbook`, its
+key, its staging directory and its grant **while `rami` keeps everything**, so a mistake costs
+nothing. The new account then has to complete a real deploy. Only then does phase 2 remove `rami`'s
+one `NOPASSWD` line, and it **refuses** to do so unless the replacement already has both the grant and
+an `authorized_keys`. Afterwards it asserts that `rami` still has `(ALL : ALL) ALL` and bails loudly
+if not — because "don't wreck my user" is a requirement, not a hope.
+
+**`rami`'s `sudo` group membership is never touched by any of this.** The lockout risk people
+imagine here comes from a malformed sudoers file, and every write is `visudo -cf`-validated before
+installation, with the whole tree re-validated after and the file removed again on failure.
+
+**The awkward part is the web root.** `/var/www/logbook` is owned by `rami`, and the new account has
+to `rsync --delete` into it. Rather than transferring ownership, both accounts join a new
+`logbookdeploy` group, the tree is `chgrp`-ed to it and made group-writable, and directories get
+`g+s` so new files inherit the group instead of drifting out of reach. `rami` keeps ownership and
+loses nothing.
+
+**The key is machine-local and that is a rule §0.1 problem, stated rather than hidden.**
+`~/.ssh/logbook-deploy` has no passphrase — an unattended deploy cannot type one — and a private key
+must never be in the repo. So a fresh clone on another machine **cannot deploy**: it generates its
+own keypair, replaces the committed `deploy-logbook.pub`, and re-runs phase 1. The public half is
+committed precisely so the repo records which key is authorised.
 
 ### 2026-09-06 — A verification step that deploys, and an alarm that was measuring its own cache
 

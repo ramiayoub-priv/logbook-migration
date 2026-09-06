@@ -15,8 +15,14 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
-HOST=${LOGBOOK_HOST:-rami@ayoub.fi}
-STAGE=${LOGBOOK_STAGE:-/home/rami/logbook-deploy}
+# The deploy runs as its OWN account, not as the owner's. `rami` is in the sudo
+# group; a key that can deploy unattended must not also be a key into an
+# account that can become root. deploy-logbook is in no privileged group and
+# holds exactly one NOPASSWD right: logbook-apply, with no arguments.
+HOST=${LOGBOOK_HOST:-deploy-logbook@ayoub.fi}
+STAGE=${LOGBOOK_STAGE:-/home/deploy-logbook/logbook-deploy}
+KEY=${LOGBOOK_KEY:-$HOME/.ssh/logbook-deploy}
+SSH="ssh -i $KEY -o IdentitiesOnly=yes -o BatchMode=yes"
 WEB=${LOGBOOK_WEB:-/var/www/logbook}
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)
 SKIP_CHECKS=0
@@ -84,12 +90,12 @@ cp "$REPO/app/deploy/logbook-apply" "$TMP/logbook-apply"
 ( cd "$TMP" && sha256sum logbook-server logbookctl csv/*.csv > SHA256SUMS )
 echo "   $(cd "$TMP" && head -2 SHA256SUMS)"
 echo "   stamp: $(strings -a "$TMP/logbook-server" | grep -m1 'vcs.revision' || echo none)"
-rsync -a "$TMP"/ "$HOST:$STAGE/"
+rsync -a -e "$SSH" "$TMP"/ "$HOST:$STAGE/"
 
 say "5. frontend rollback tar BEFORE anything is deleted"
 # rsync --delete leaves nothing behind and needs no sudo to undo -- but only if
 # the tar was taken first.
-ssh "$HOST" "tar czf /home/rami/logbook-frontend.$STAMP.tar.gz -C $WEB ." \
+$SSH "$HOST" "tar czf /home/deploy-logbook/logbook-frontend.$STAMP.tar.gz -C $WEB ." \
     && echo "   /home/rami/logbook-frontend.$STAMP.tar.gz"
 
 say "6. the frontend build must be complete before --delete is allowed near it"
@@ -102,15 +108,15 @@ done
 echo "   index.html, sw.js, manifest.webmanifest, assets/, icons/ all present"
 
 say "7. BINARY FIRST -- the one privileged step, unattended"
-ssh "$HOST" 'sudo -n /opt/logbook/logbook-apply'
+$SSH "$HOST" 'sudo -n /opt/logbook/logbook-apply'
 
 say "8. then the frontend"
-rsync -a --delete "$REPO/app/frontend/dist/" "$HOST:$WEB/"
+rsync -a --delete -e "$SSH" "$REPO/app/frontend/dist/" "$HOST:$WEB/"
 echo "   done"
 
 say "9. verify from off-box -- ask the box, never this script"
-echo "   live binary: $(ssh "$HOST" 'strings -a /opt/logbook/logbook-server | grep -m1 -E "vcs\.revision"')"
-echo "   dirty?       $(ssh "$HOST" 'strings -a /opt/logbook/logbook-server | grep -m1 -E "vcs\.modified"')"
+echo "   live binary: $($SSH "$HOST" 'strings -a /opt/logbook/logbook-server | grep -m1 -E "vcs\.revision"')"
+echo "   dirty?       $($SSH "$HOST" 'strings -a /opt/logbook/logbook-server | grep -m1 -E "vcs\.modified"')"
 echo "   expected:    $HEAD_SHA"
 echo "   live bundle: $(curl -s https://ayoub.fi/logbook/ | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' | head -1)"
 echo "   repo bundle: $(basename "$(ls "$REPO"/app/frontend/dist/assets/index-*.js | head -1)")"
@@ -123,6 +129,6 @@ for p in / /blog/ /countdown/ /englishhouse/ /games/ /pdp/ /simpleclock/; do
 done
 echo
 echo
-echo "Frontend rollback: ssh $HOST 'tar xzf /home/rami/logbook-frontend.$STAMP.tar.gz -C $WEB'"
+echo "Frontend rollback: $SSH $HOST 'tar xzf /home/deploy-logbook/logbook-frontend.$STAMP.tar.gz -C $WEB'"
 echo "Backend rollback:  ssh $HOST 'sudo cp /opt/logbook/logbook-server.prev /opt/logbook/logbook-server && sudo systemctl restart logbook'"
 echo "                   (that one still asks for a password -- rollback is deliberately attended)"
