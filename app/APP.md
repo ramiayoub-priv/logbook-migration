@@ -84,8 +84,10 @@ Two probes that make this cheap, both learned the hard way (2026-09-03 decision 
   this very block had named. Guarded by a new `styles.test.ts`; the owner ruled the option down to
   **the registration alone**.
 
-**Start here — there are three open items. Two of them are ONE terminal session (see below), and
-after that a deploy never needs the owner again.**
+**START HERE. As of 2026-09-06 there is EXACTLY ONE open task — Task 26, below — and it needs the
+owner at a terminal twice. Everything else on this page is finished and verified live.** The
+numbered items 1 and 2 further down are kept for their history; item 1 is **closed** and item 2 is a
+standing security question, not a blocker.
 
 **✅ THE ONE SITTING HAPPENED, 2026-09-06.** The owner ran both installers from a phone. Verified
 from off-box immediately afterwards:
@@ -190,7 +192,11 @@ rami's long-standing sudo-group membership and is **not** passwordless.
    deploy still reaches the phone, which is exactly why this hid for three weeks — but the repo says
    one thing and the box does another. `deploy/install-apache.sh` is written and staged on the box;
    it needs **`sudo`**, so it needs the owner at a terminal.
-2. ⚠ **Confirm the owner rotated the `rami` sudo password** — still the project's largest exposure,
+2. ⚠ **Standing, not blocking — confirm the owner rotated the `rami` sudo password.** It no longer
+   gates anything: the Apache work is done and deploys will run as `deploy-logbook` once Task 26 is
+   applied. Kept because it was never confirmed.
+
+   ~~⚠ **Confirm the owner rotated the `rami` sudo password**~~ — still the project's largest exposure,
    outstanding since 2026-08-02. It gates item 1 and every future backend deploy.
 
 **Then, and this is the largest remaining risk:** open the app on the phone. See the warning below.
