@@ -1,0 +1,144 @@
+#!/bin/bash
+# The privileged half of a backend deploy, and the ONLY command `rami` may run
+# as root without a password.
+#
+# WHY THIS FILE EXISTS. Until 2026-09-06 a backend deploy meant `sudo
+# /home/rami/logbook-deploy/update.sh` -- an interactive root password, typed by
+# the owner, for every deploy. That made shipping a one-line fix a scheduling
+# problem: Task 24 sat built-and-pushed because nobody was at a terminal. The
+# owner ruled it out: "deploy should not need root".
+#
+# WHAT CHANGED, HONESTLY. `rami` is in the `sudo` group and always has been, so
+# this grants the account NO privilege it did not already hold -- it removes a
+# password prompt from one fixed, audited operation. What it does do is make
+# that operation the ONLY unattended one: this script's path is the whole of the
+# sudoers rule, the script is root-owned and not writable by rami, and it takes
+# NO ARGUMENTS, so the grant cannot be pointed at anything else.
+#
+# WHY NOT POLKIT. Ubuntu 20.04 ships polkit 0.105, which reads .pkla files and
+# not JavaScript rules. A .pkla cannot scope org.freedesktop.systemd1.manage-
+# units to ONE unit, so the "tidy" option would have handed rami restart rights
+# over every service on a box that also runs seven other sites (rule 0.3).
+# Checked on the box before it was ruled out, not assumed.
+#
+# SAFETY. The database is copied before anything starts (rule 0.2), the previous
+# binary is kept for rollback, the staged files are checksum-verified before
+# they are trusted, and a binary that does not come up healthy is ROLLED BACK
+# AUTOMATICALLY -- because the deploy is now unattended, and an unattended
+# deploy that leaves the record offline is worse than one that refuses.
+set -euo pipefail
+
+# NO ARGUMENTS, EVER. The sudoers rule already pins this with `""`, which is
+# sudo's syntax for "this command, with no arguments". This check is the second
+# lock: if the sudoers line is ever loosened by hand, the script still refuses
+# to be steered.
+if [ $# -ne 0 ]; then
+    echo "logbook-apply: takes no arguments (got $#) -- refusing" >&2
+    exit 64
+fi
+if [ "$(id -u)" -ne 0 ]; then
+    echo "logbook-apply: must run as root; use: sudo -n /opt/logbook/logbook-apply" >&2
+    exit 1
+fi
+
+STAGE=/home/rami/logbook-deploy
+DB=/var/lib/logbook/logbook.db
+OPT=/opt/logbook
+STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+HEALTH=http://127.0.0.1:9002/logbook/api/health
+
+say() { printf '\n== %s\n' "$*"; }
+audit() { logger -t logbook-apply -- "$*" || true; }
+
+audit "started by ${SUDO_USER:-unknown} from ${SSH_CONNECTION:-local}"
+
+say "0. check what was staged, before trusting any of it"
+# A truncated rsync leaves a file that is executable, plausible and wrong. The
+# deployer writes SHA256SUMS last, so its presence also proves the upload
+# finished -- and sha256sum -c fails loudly if any named file is short.
+[ -d "$STAGE" ] || { echo "   !! no staging directory $STAGE"; exit 1; }
+[ -f "$STAGE/SHA256SUMS" ] || { echo "   !! $STAGE/SHA256SUMS is missing -- upload incomplete, or deploy.sh was not used"; exit 1; }
+[ -f "$STAGE/logbook-server" ] || { echo "   !! no staged binary"; exit 1; }
+# Refuse a symlink: the staging directory is writable by rami and a link would
+# make this script install a file from somewhere it never checked.
+for f in logbook-server logbookctl; do
+    [ -L "$STAGE/$f" ] && { echo "   !! $STAGE/$f is a symlink -- refusing"; exit 1; }
+done
+( cd "$STAGE" && sha256sum -c --quiet SHA256SUMS ) || { echo "   !! checksums do NOT match -- refusing to install"; audit "REFUSED: checksum mismatch"; exit 1; }
+echo "   checksums OK"
+"$STAGE/logbook-server" -h >/dev/null 2>&1 || true   # -h exits non-zero by design; this only proves it runs
+echo "   staged binary: $(stat -c '%s bytes, %U:%G' "$STAGE/logbook-server")"
+echo "   built from:    $(strings -a "$STAGE/logbook-server" | grep -m1 'vcs.revision' || echo 'no stamp')"
+echo "   dirty tree?    $(strings -a "$STAGE/logbook-server" | grep -m1 'vcs.modified' || echo 'unknown')"
+
+say "1. stop the service"
+systemctl stop logbook
+
+say "2. back up the database first, always (CLAUDE.md 0.2)"
+install -d -o logbook -g logbook -m 0750 /var/lib/logbook/backups
+cp -a "$DB" "/var/lib/logbook/backups/logbook.$STAMP.db"
+chown logbook:logbook "/var/lib/logbook/backups/logbook.$STAMP.db"
+ls -l "/var/lib/logbook/backups/logbook.$STAMP.db"
+
+say "3. new binaries, keeping the old server for rollback"
+cp -a "$OPT/logbook-server" "$OPT/logbook-server.prev"
+install -o root -g root -m 0755 "$STAGE/logbook-server" "$OPT/logbook-server"
+if [ -f "$STAGE/logbookctl" ]; then
+    install -o root -g root -m 0755 "$STAGE/logbookctl" "$OPT/logbookctl"
+fi
+
+say "4. verify the historical rows against the frozen CSVs (READ-ONLY, writes nothing)"
+# A mismatch does NOT mean "re-import". It means the 1296 transcribed rows no
+# longer agree with the frozen books, which is a defect to investigate before
+# the service writes again (CLAUDE.md 0.2). The service is still stopped here.
+if [ -d "$STAGE/csv" ]; then
+    sudo -u logbook "$OPT/logbookctl" verify -db "$DB" -csv "$STAGE/csv" 2>&1 | grep -vE '^  book'
+else
+    echo "   !! no $STAGE/csv -- the drift check was SKIPPED. Stage the CSVs."
+fi
+
+say "5. start, and prove it came up"
+systemctl start logbook
+code=000
+for _ in $(seq 1 15); do
+    code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "$HEALTH" 2>/dev/null || echo 000)
+    [ "$code" = "200" ] && break
+    sleep 1
+done
+
+if [ "$code" != "200" ]; then
+    say "!! HEALTH CHECK FAILED (HTTP $code) -- ROLLING BACK"
+    # An unattended deploy has nobody watching, so the failure path cannot be
+    # "leave it broken and print a hint". The previous binary is known good:
+    # it was serving traffic sixty seconds ago.
+    audit "ROLLBACK: health $code after installing $(basename "$STAGE")/logbook-server"
+    systemctl stop logbook
+    cp -a "$OPT/logbook-server.prev" "$OPT/logbook-server"
+    systemctl start logbook
+    sleep 3
+    back=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "$HEALTH" 2>/dev/null || echo 000)
+    echo "   rolled back to logbook-server.prev; health now HTTP $back"
+    echo "   database backup from before this attempt: /var/lib/logbook/backups/logbook.$STAMP.db"
+    [ "$back" = "200" ] || echo "   !! THE ROLLBACK IS ALSO UNHEALTHY -- this needs a human NOW"
+    exit 1
+fi
+systemctl --no-pager --full status logbook | head -8
+
+say "6. checks"
+printf '   local  health:  %s\n' "$code"
+curl -sS -o /dev/null -w "   public health:  %{http_code}\n" https://ayoub.fi/logbook/api/health
+curl -sS -o /dev/null -w "   no session ->   %{http_code}  (expect 401)\n" https://ayoub.fi/logbook/api/flights
+curl -sS -o /dev/null -w "   aircraft   ->   %{http_code}  (expect 401)\n" https://ayoub.fi/logbook/api/aircraft
+printf '   other sites: '
+for p in / /blog/ /countdown/ /englishhouse/ /games/ /pdp/ /simpleclock/; do
+    printf '%s=%s ' "$p" "$(curl -sS -o /dev/null -w '%{http_code}' "https://ayoub.fi$p")"
+done
+echo
+free -m | head -2
+
+audit "completed: $(strings -a "$OPT/logbook-server" | grep -m1 'vcs.revision' || echo unstamped)"
+echo
+echo "The startup line above reports the LIVE flight count: 1296 + every flight"
+echo "entered in the app since. It only goes up, and a session that 'fixes' it is wrong."
+echo "DB backup: /var/lib/logbook/backups/logbook.$STAMP.db"
+echo "Rollback:  sudo cp $OPT/logbook-server.prev $OPT/logbook-server && sudo systemctl restart logbook"

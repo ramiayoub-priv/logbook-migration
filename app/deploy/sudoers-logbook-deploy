@@ -1,0 +1,22 @@
+# Installed by install-deploy-privileges.sh to /etc/sudoers.d/logbook-deploy,
+# mode 0440, owner root:root. Do not edit in place -- edit it here, in the repo,
+# and re-run the installer (rule 0.1).
+#
+# This is the whole of the unattended-root grant on this box.
+#
+#   * ONE user (rami), ONE command, by ABSOLUTE PATH.
+#   * The trailing "" is sudo's syntax for "with no arguments". Without it,
+#     NOPASSWD on a path permits ANY arguments, and a script that took a file
+#     path would then be a way to install arbitrary files as root. logbook-apply
+#     also refuses arguments itself; this is the outer of the two locks.
+#   * /opt/logbook/logbook-apply is root-owned and mode 0755, so `rami` cannot
+#     rewrite the thing the grant points at. That is what makes the scope real
+#     rather than decorative -- a NOPASSWD rule aimed at a user-writable script
+#     is just passwordless root with extra steps.
+#
+# It grants rami NO privilege the account did not already have: rami is in the
+# `sudo` group. What it removes is the interactive password from one fixed,
+# journald-audited operation, so a deploy no longer needs a human at a terminal.
+#
+# Revert: rm /etc/sudoers.d/logbook-deploy   (takes effect immediately)
+rami ALL=(root) NOPASSWD: /opt/logbook/logbook-apply ""

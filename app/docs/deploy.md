@@ -188,6 +188,83 @@ WantedBy=multi-user.target
 the other sites. 192 MB is generous — expected steady state is ~25 MB, with a transient spike during
 PDF generation of the full 1295-flight logbook. **Measure the real peak and record it here.**
 
+## Deploying without root (2026-09-06)
+
+**Owner ruling: *"deploy should not need root"*.** Until this change a backend deploy meant `sudo
+/home/rami/logbook-deploy/update.sh` — an interactive root password, typed by a human, every time.
+That turned shipping a one-line fix into a scheduling problem: Task 24 sat built-and-pushed with
+nobody at a terminal.
+
+**The whole deploy now runs from the dev machine and prompts for nothing:**
+
+```bash
+app/deploy/deploy.sh          # clean tree -> make check + npm run check -> build -> stage -> apply -> frontend -> verify
+```
+
+### What was actually granted
+
+| | |
+|---|---|
+| File | `/etc/sudoers.d/logbook-deploy`, mode `0440`, `root:root` |
+| Rule | `rami ALL=(root) NOPASSWD: /opt/logbook/logbook-apply ""` |
+| Scope | one user, one command, **by absolute path, with no arguments** |
+| Revert | `rm /etc/sudoers.d/logbook-deploy` — immediate |
+
+Three things make that scope real rather than decorative:
+
+1. **The trailing `""`** is sudo's syntax for *"this command, with no arguments"*. Without it,
+   `NOPASSWD` on a path permits **any** arguments — and a script that accepted a file path would then
+   be a way to install arbitrary files as root. `logbook-apply` also refuses arguments itself.
+2. **`/opt/logbook/logbook-apply` is root-owned, mode `0755`.** `rami` cannot rewrite the thing the
+   grant points at. A `NOPASSWD` rule aimed at a user-writable script is just passwordless root with
+   extra steps.
+3. **It grants nothing new.** `rami` is in the `sudo` group and always has been, so the account could
+   already reach root — with a password. What was removed is the prompt on one fixed operation, and
+   `install-deploy-privileges.sh` **asserts** that general `sudo -n` still fails afterwards.
+
+### Why not polkit
+
+Ubuntu 20.04 ships **polkit 0.105**, which reads `.pkla` files and *not* JavaScript rules. A `.pkla`
+cannot scope `org.freedesktop.systemd1.manage-units` to **one** unit, so the tidy-looking option would
+have handed `rami` restart rights over every service on a box that also runs seven other sites
+(rule §0.3). Checked on the box — `pkaction --version` — before it was ruled out.
+
+### What `logbook-apply` refuses to do
+
+It is unattended, so it cannot assume anyone is reading the output.
+
+- **No `SHA256SUMS` in the staging directory → refuse.** `deploy.sh` writes it last, so its absence
+  means a half-finished upload. A truncated rsync leaves a binary that is executable, plausible and
+  wrong.
+- **Checksum mismatch → refuse**, before the service is stopped.
+- **A symlinked artefact → refuse.** The staging directory is writable by `rami`; a link would make
+  the script install a file it never checked.
+- **The new binary fails its health check → automatic rollback** to `logbook-server.prev`, then exit
+  non-zero. If the rollback is *also* unhealthy it says so in capitals. An unattended deploy that
+  leaves the record offline is worse than one that refuses.
+
+Every run is tagged into the journal: `journalctl -t logbook-apply`.
+
+**Rehearsed before it was ever run as root** — against a fake tree with stubbed `systemctl`/`curl`,
+all six paths: the four refusals (each exit 1, nothing installed, service never stopped), the happy
+path, and the rollback. Same discipline as `install-backup.sh`, and for the same reason: the first
+draft of a deploy script is not the one you point at a legal record.
+
+### One-time install
+
+```bash
+rsync -a app/deploy/ rami@ayoub.fi:/home/rami/logbook-deploy/
+ssh -t rami@ayoub.fi 'sudo /home/rami/logbook-deploy/install-deploy-privileges.sh'
+```
+
+It validates the sudoers candidate with `visudo -cf` **before** installing it, re-validates the whole
+tree after, and **removes its own file** if that second check fails — a box whose `sudo` is broken
+cannot be repaired without `sudo`. Keep the session open and confirm ordinary `sudo` still works from
+a second connection before closing it (rule §0.3).
+
+`update.sh` is superseded and now just execs `/opt/logbook/logbook-apply`, so there is one
+implementation and the two paths cannot drift.
+
 ## Rollback
 
 The previous binary is kept as `/opt/logbook/logbook-server.prev`. Rollback is a copy plus

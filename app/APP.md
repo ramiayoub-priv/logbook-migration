@@ -84,7 +84,17 @@ Two probes that make this cheap, both learned the hard way (2026-09-03 decision 
   this very block had named. Guarded by a new `styles.test.ts`; the owner ruled the option down to
   **the registration alone**.
 
-**Start here — there are three open items, and all three need the owner:**
+**Start here — there are three open items. Two of them are ONE terminal session (see below), and
+after that a deploy never needs the owner again.**
+
+**THE ONE SITTING**, owner ruling 2026-09-06 (*"yes paste it here fully so i can run it"*) — both
+root items in one go, staged and waiting on the box:
+
+```bash
+ssh -t rami@ayoub.fi 'sudo /home/rami/logbook-deploy/install-deploy-privileges.sh && sudo /home/rami/logbook-deploy/install-apache.sh'
+```
+
+Then, from the dev machine, with **no password at all**: `app/deploy/deploy.sh`. That ships Task 24.
 
 0. 🆕 **DEPLOY TASK 24 — the flight-table PDF carries the airborne times again.** Built, tested and
    pushed on **2026-09-06**, **not deployed**. The owner found it: *"There is a bug in the export
@@ -903,12 +913,75 @@ day · landings night.
 | 20 | **Stale sessions never die** — the Devices list is a graveyard | **done, and DEPLOYED 2026-08-14** (recorded only on 2026-09-03; this row said "not yet deployed" for three weeks while it was live) — `SessionLifetime` 90d → **14d** per the owner's ruling, and the window is now **computed from `last_used_at` against the constant instead of read back from the stored `expires_at`**. That second half is what reaches the rows that already exist: the owner's thirteen were each stamped with a date up to three months out, and a fix that only applied to new sessions would have left every one of them on the page. `LookupSession`, `PurgeExpiredSessions` and the Devices listing all ask the same question, so the sweep, the request path and the page cannot disagree. **No schema change.** Four new tests, three watched red on the old code and the fourth red the moment the constant moved; backend **87.2%**, core 100%. |
 | 21 | **The PIC name becomes a picked object** | **done, and DEPLOYED 2026-08-14** (recorded only on 2026-09-03; verified live — `GET /pilots` answers **401** unauthenticated and `POST /pilots` **403**, so the route exists and default deny covers it) — a `pilots` roster: the distinct `pic_name` values already on flights (counted, dated) UNION names added in the app and not yet flown with, behind a filterable picker on the form. `GET`/`POST /pilots`, **no PUT and no DELETE** (a roster entry is only a spelling — a wrong name is corrected on the flight). **`SELF` cannot join `self`**: refused by a `UNIQUE … COLLATE NOCASE` index *and* by a check against the names already on flights, and the picker will not even offer to add a case variant. **The guarantee is at the write, not just in the form** — `POST`/`PUT /flights` refuse a `pic_name` that is not on the roster exactly, which can never block an edit because the roster is derived from the flights. Blank stays legal (one paper row has it). **Owner ruling: NO student field** ("no student field as it should be"). Historical values are read and never rewritten (§0.8) — `Sinervä`/`Sinerva` and `Stude` are all still offered exactly as written. Backend **86.8%**, core 100%; **124 frontend tests**. |
 | 23 | **The aircraft picker's options ran together** | **done, and DEPLOYED 2026-09-03 20:33 UTC** (bundle `index-D3Tqt5-U.js`, css `index-8vIbKNLy.css`, both fetched back over HTTPS and md5-matched to the repo build) — the owner's phone screenshot showed the dropdown reading **`OH-CTLC172287 flights · 2026-08-14`** and laid out in **two columns**. Both came from one malformed selector list in `styles.css`: folding the pilot picker in (Task 21) split `.aircraftpicker .options button` at the wrong word, leaving `.aircraftpicker .options,` `.pilotpicker .options button { display: grid; … }`. So the aircraft **list** became the three-column grid and its **options** got no layout, no gap, nothing — on six rules, one of which set `display: none` on the whole list below 22rem. Fixed by pairing every selector properly. In the same change, **owner ruling: "It's enough to just show the registration"** — the type and the `N flights · date` tail are gone from the option; the type still **filters**. New **`src/styles.test.ts`** asserts the selector shape (three tests, all watched red), plus an exact-equality test on the option's text. **128 frontend tests.** Frontend-only. |
+| 25 | **A deploy must not need root** | **built and rehearsed 2026-09-06, ONE ROOT COMMAND OUTSTANDING** — owner: *"we should find some solution for that, deploy should not need root"*. `app/deploy/deploy.sh` now runs the entire deploy **from the dev machine with no password**: clean-tree guard, `make check` + `npm run check`, build both halves, stage with a `SHA256SUMS`, `ssh … sudo -n /opt/logbook/logbook-apply`, then the frontend, then off-box verification. The only privileged step is `logbook-apply`, root-owned, named by a **one-user one-command no-arguments** rule in `/etc/sudoers.d/logbook-deploy`. It grants **nothing new** — `rami` is in the `sudo` group already — it removes the prompt from one audited operation, and the installer **asserts** that general `sudo -n` still fails afterwards. Polkit was ruled out on evidence: Ubuntu 20.04 ships **polkit 0.105**, `.pkla` only, which cannot scope manage-units to a single unit and would have handed rami restart rights over all seven other sites. `logbook-apply` refuses a missing/mismatched `SHA256SUMS` (a truncated rsync leaves a plausible, wrong binary) or a symlinked artefact, all **before** stopping the service, and **rolls back automatically** to `logbook-server.prev` if the new binary fails its health check — because unattended means nobody is reading the output. **Rehearsed against a fake tree with stubbed `systemctl`/`curl` before it was ever run as root**: all four refusals exit 1 with nothing installed, plus the happy path and the rollback. `update.sh` is now a shim that execs `logbook-apply`, so there is one implementation. ⛔ **Needs the owner once**: `sudo install-deploy-privileges.sh`. |
 | 24 | **The flight-table PDF dropped the airborne times** | **built and pushed 2026-09-06, NOT DEPLOYED** — owner: *"There is a bug in the export (save as pdf) it only exports block times! not to and landing"*. Right: `tableColumns` in `internal/pdfbook/table.go` carried `OFF` and `ON` and nothing else, so **Task 12's Takeoff/Landing/Air went to the screen on 2026-08-02 and never to the document**. The export whose own description promised "everything the application knows about it" was throwing away two of the four times it knows — on **36 of the 1313 rows**, including **every one of the 17 entered through the app**, which is why the owner met it the first time they exported their own flying. Now **TAKEOFF, LANDING and AIR**, grouped *after* the block pair exactly as the on-screen table groups them and for the reason `Table.tsx` already gives — four times in one format, and the aircraft's logbook is filled from only one pair — with `OFF`/`ON` renamed **OFF BLOCK**/**ON BLOCK** now that they have neighbours to be confused with. `pdfmodel.AirTime` is pure, derived at render, **never stored** (§0.5), and mirrors `format.airMinutes` exactly: blank — never `0:00` — when either instant is missing or the interval is negative. Column widths **measured, not guessed** (`fpdf.GetStringWidth` over all 1296 rows at the real fonts: 166.3 mm of content, table now **279 mm of 285 mm printable**) and guarded by a new internal test watched red at 301 mm. **The EASA export is deliberately unchanged** — the form has no cell for an airborne time and its DEPARTURE/ARRIVAL TIME columns are block times; that document is what an authority reads. `make check` **86.8%**, `internal/pdfmodel` **100%**, 128 frontend tests. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-09-06 — "Deploy should not need root", and what that actually costs
+
+Asked immediately after Task 24 was pushed and could not be shipped: *"we should find some solution
+for that, deploy should not need root."*
+
+**The honest reframing came first.** `rami` is in the `sudo` group and always has been. So nothing
+here could *grant* the account power it lacked — the ask was to remove an **interactive password**
+from the deploy path, so that shipping does not require a human at a terminal. Every option below is
+a way of spending privilege `rami` already holds; the question is only how narrowly, and how
+auditably.
+
+**Polkit was ruled out on evidence, not taste.** It is the textbook answer — let `rami` restart one
+unit — and it does not work here: the box runs **Ubuntu 20.04 with polkit 0.105**, which reads
+`.pkla` files and not JavaScript rules, and a `.pkla` cannot scope
+`org.freedesktop.systemd1.manage-units` to a single unit. The tidy option would have handed `rami`
+restart rights over **every service on a box that also runs seven other sites** (rule §0.3). Checked
+with `pkaction --version` on the box before it was ruled out.
+
+**A systemd `.path` drop-box was the other candidate** and was offered: rsync a binary plus a request
+file naming its sha256, let a root unit notice and apply it, and the deploy contains no `sudo` at all.
+The owner chose the scoped sudoers rule instead, and it is the better trade — the drop-box moves the
+exit code into the journal, so a failed deploy looks exactly like a successful one from the terminal
+that started it.
+
+**What was built.**
+
+- **`/etc/sudoers.d/logbook-deploy`** — `rami ALL=(root) NOPASSWD: /opt/logbook/logbook-apply ""`.
+  The trailing `""` is sudo's syntax for *no arguments*; without it `NOPASSWD` on a path allows any
+  arguments, and a script taking a file path would become a way to install arbitrary files as root.
+  The target is **root-owned 0755**, so `rami` cannot rewrite what the grant points at — a `NOPASSWD`
+  rule aimed at a user-writable script is passwordless root with extra steps.
+- **`logbook-apply`** — the privileged half, and the only unattended-root command on the box. It
+  refuses a missing or mismatched `SHA256SUMS`, and a symlinked artefact, **before** it stops the
+  service. `deploy.sh` writes the checksums last, so their absence *is* the signal that an upload was
+  truncated — and a truncated rsync leaves a binary that is executable, plausible and wrong.
+- **Automatic rollback.** If the new binary does not answer its health check within fifteen seconds,
+  `logbook-server.prev` goes back and the script exits non-zero; if the rollback is also unhealthy it
+  says so in capitals. This is new, and it exists *because* the deploy is now unattended: nobody is
+  reading the output, so "leave it broken and print a hint" stopped being an acceptable failure path.
+- **`deploy.sh`** on the dev machine does everything else as an ordinary user — clean-tree guard
+  (`app/backend/dist/` once held a DIRTY build that must never ship, and the `vcs.modified` stamp is
+  permanent), `make check` + `npm run check`, both builds, the frontend rollback tar **before** the
+  `--delete` rsync, a check that `dist/` really contains `sw.js` and `icons/`, **binary before
+  frontend**, then off-box verification against the `vcs.revision` stamp.
+- **`update.sh` is now a four-line shim** that execs `logbook-apply`. One implementation; the two
+  paths cannot drift.
+
+**It was rehearsed before it will ever run as root.** A fake tree with stubbed `systemctl`, `curl`
+and `logger`, and the real script with only its paths rewritten: all four refusals exit **1** with
+nothing installed and the service never stopped, plus the happy path (binary installed, `.prev` kept,
+database copied first) and the rollback. The rehearsal also caught a fault in the *harness* — reading
+`$?` after a pipe into `tail`, which reported every refusal as exit 0. That is precisely the failure
+this whole design is trying to avoid, so it was worth measuring properly rather than eyeballing the
+message.
+
+**Also cleared:** `app/backend/dist/logbook-server`, the stale dirty 2026-08-01 artefact that three
+APP.md revisions have warned must never be shipped. `deploy.sh` builds `dist/server` and stages it
+under the deployed name, so the landmine had no remaining purpose.
+
+**Outstanding: one root command**, which the owner asked for verbatim and which also carries the
+Apache half of Task 22 in the same sitting.
 
 ### 2026-09-06 — The screen got the airborne times five weeks ago; the document never did
 
