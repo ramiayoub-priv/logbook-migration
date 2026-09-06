@@ -256,3 +256,42 @@ func inflateStreams(b []byte) [][]byte {
 		out = append(out, dec)
 	}
 }
+
+// The flight table is the document that carries "everything the application
+// knows" about a row, and takeoff and landing are two of the things it knows:
+// 36 rows in the live logbook record them, including every one of the 17
+// entered through the app. Printing only OFF and ON drops them silently --
+// the reader cannot tell a flight that never had airborne times recorded from
+// one whose times the export threw away.
+func TestTableCarriesTakeoffAndLandingTimes(t *testing.T) {
+	f := seaFlight(t)
+	f.TakeoffUTC = f.OffBlockUTC.Add(7 * time.Minute) // 15:20, seven after off-block
+	f.LandingUTC = f.OnBlockUTC.Add(-6 * time.Minute) // 16:28, six before on-block
+
+	b, err := pdfbook.Table([]csvbook.Flight{f}, stats.Range{}, testOpts)
+	if err != nil {
+		t.Fatalf("Table: %v", err)
+	}
+	// "1:08" is the derived airborne time, 15:20 to 16:28. It is distinct from
+	// this flight's 1:21 of block time, so finding it proves the AIR column
+	// carries the derived figure rather than repeating TOTAL.
+	for _, want := range []string{"TAKEOFF", "LANDING", "AIR", "15:20", "16:28", "1:08"} {
+		if !containsText(t, b, want) {
+			t.Errorf("the flight table does not carry %q", want)
+		}
+	}
+}
+
+// A row with no airborne times recorded -- 1277 of the 1313 -- must leave the
+// two cells empty rather than print a zero instant. "00:00" in a legal record
+// reads as a measured midnight, not as an absence.
+func TestTableLeavesAirborneTimesBlankWhenTheyWereNeverRecorded(t *testing.T) {
+	f := seaFlight(t) // no TakeoffUTC, no LandingUTC
+	b, err := pdfbook.Table([]csvbook.Flight{f}, stats.Range{}, testOpts)
+	if err != nil {
+		t.Fatalf("Table: %v", err)
+	}
+	if containsText(t, b, "00:00") {
+		t.Error("an unrecorded takeoff or landing was printed as 00:00")
+	}
+}

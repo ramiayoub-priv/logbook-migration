@@ -84,9 +84,9 @@ func EASARowOf(f csvbook.Flight) EASARow {
 	return EASARow{
 		Date:     shortDate(f.Date),
 		DepPlace: f.DepPlace,
-		OffBlock: clock(f.OffBlockUTC),
+		OffBlock: Clock(f.OffBlockUTC),
 		ArrPlace: f.ArrPlace,
-		OnBlock:  clock(f.OnBlockUTC),
+		OnBlock:  Clock(f.OnBlockUTC),
 		Type:     f.AircraftType,
 		Reg:      f.AircraftReg,
 		PICName:  f.PICName,
@@ -229,9 +229,15 @@ func shortDate(date string) string {
 	return t.Format("02/01/06")
 }
 
-// clock renders an instant as HH:MM UTC, blank if there is none. The paper
+// Clock renders an instant as HH:MM UTC, blank if there is none. The paper
 // column is headed "(UTC)".
-func clock(t time.Time) string {
+//
+// Exported because the flight table needs it for the takeoff and landing
+// times, which have no cell on the EASA form and so no field on EASARow.
+// Blank-for-absent is the whole point: 1277 of the 1313 rows have no airborne
+// times recorded, and "00:00" would read as a measured midnight rather than
+// as an absence.
+func Clock(t time.Time) string {
 	if t.IsZero() {
 		return ""
 	}
@@ -329,4 +335,30 @@ func StatisticsLines(s stats.Summary) []StatisticsLine {
 		{Group: "LANDINGS", Label: "Landings seaplane", Value: count(s.LandingsSea)},
 		{Group: "LANDINGS", Label: "Landings landplane", Value: count(s.LandingsLand)},
 	}
+}
+
+// AirTime renders the airborne time -- wheels up to wheels down -- as H:MM,
+// blank whenever it cannot be known.
+//
+// It is derived here, at render, from the two instants, and never stored
+// (rule 0.5). Both instants carry their own date because timeutil.BlockPair
+// rolls a landing past midnight forward a day, so a flight that lands on the
+// next date needs no special case: plain subtraction is right.
+//
+// Blank covers three cases and they are all the same answer. Most rows -- 19
+// of the 1296 transcribed flights record an airborne pair at all -- simply
+// never had the times written down, and 0:00 there would be a claim that the
+// aeroplane never left the ground. A negative interval cannot arise from
+// stored data, and if it ever did it would be a fault to surface rather than
+// a figure to print. This mirrors airMinutes() in the frontend exactly; the
+// two documents must not disagree about the same flight.
+func AirTime(f csvbook.Flight) string {
+	if f.TakeoffUTC.IsZero() || f.LandingUTC.IsZero() {
+		return ""
+	}
+	minutes := int(f.LandingUTC.Sub(f.TakeoffUTC).Round(time.Minute) / time.Minute)
+	if minutes <= 0 {
+		return ""
+	}
+	return hhmm.Format(minutes)
 }

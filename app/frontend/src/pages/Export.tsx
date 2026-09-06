@@ -33,9 +33,10 @@ export function ExportPage() {
       <div className="card">
         <h2>Flight table</h2>
         <p className="muted small">
-          Every flight in the selected range with everything the application knows about it,
-          including where each row came from in the paper books and whether its landing split
-          was read or inferred.
+          Every flight in the selected range with everything the application knows about it:
+          the block times and the takeoff/landing pair with the airborne time derived from it,
+          where each row came from in the paper books, and whether its landing split was read
+          or inferred. The same columns as the table on screen.
         </p>
         <a href={api.exportURL('table', range)}>Download the flight table (PDF)</a>
       </div>

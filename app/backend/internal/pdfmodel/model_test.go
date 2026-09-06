@@ -388,3 +388,56 @@ func TestDescribeRange(t *testing.T) {
 		}
 	}
 }
+
+// Clock is exported for the flight table's takeoff and landing cells, so its
+// two behaviours are asserted directly rather than only through EASARowOf.
+// The blank is the one that matters: an instant nobody recorded must not
+// print as a time somebody measured.
+func TestClockRendersUTCAndBlanksAnAbsentInstant(t *testing.T) {
+	if got := pdfmodel.Clock(time.Time{}); got != "" {
+		t.Errorf("Clock(zero) = %q, want the empty string", got)
+	}
+	at := time.Date(2026, 9, 3, 14, 36, 0, 0, time.UTC)
+	if got := pdfmodel.Clock(at); got != "14:36" {
+		t.Errorf("Clock(%s) = %q, want 14:36", at, got)
+	}
+	// A non-UTC instant is converted, never printed as its local wall clock:
+	// rule 0.4 says every displayed instant is UTC.
+	helsinki := time.FixedZone("EEST", 3*3600)
+	if got := pdfmodel.Clock(at.In(helsinki)); got != "14:36" {
+		t.Errorf("Clock(same instant in +03) = %q, want 14:36", got)
+	}
+}
+
+// AirTime is wheels-up to wheels-down. It is derived at render time and never
+// stored (rule 0.5), and it must be blank rather than 0:00 whenever it cannot
+// be known -- a zero would say the aeroplane never left the ground.
+func TestAirTimeIsDerivedAndBlankWhenItCannotBeKnown(t *testing.T) {
+	at := func(h, m int) time.Time { return time.Date(2026, 9, 3, h, m, 0, 0, time.UTC) }
+
+	for _, tc := range []struct {
+		name             string
+		takeoff, landing time.Time
+		want             string
+	}{
+		{"neither recorded", time.Time{}, time.Time{}, ""},
+		{"takeoff only", at(14, 36), time.Time{}, ""},
+		{"landing only", time.Time{}, at(15, 28), ""},
+		{"a normal flight", at(14, 36), at(15, 28), "0:52"},
+		{"a long flight", at(6, 0), at(9, 5), "3:05"},
+		// The pair is built by timeutil.BlockPair, which rolls the landing
+		// forward a day, so the instants carry their own dates and midnight
+		// needs no special case here.
+		{"across midnight", at(23, 50), at(23, 50).Add(40 * time.Minute), "0:40"},
+		// Cannot arise from stored data. If it ever does, a negative air time
+		// is not a figure to print -- same ruling as the on-screen table.
+		{"landing before takeoff", at(15, 28), at(14, 36), ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := csvbook.Flight{TakeoffUTC: tc.takeoff, LandingUTC: tc.landing}
+			if got := pdfmodel.AirTime(f); got != tc.want {
+				t.Errorf("AirTime = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}

@@ -16,17 +16,20 @@ Rules live in the repo root **`CLAUDE.md` §0** — read those first, they are n
 
 *Assume you remember nothing. This block is the whole brief.*
 
-**THE BOX IS LEVEL WITH THE REPO, AND NOTHING IS WAITING TO SHIP.** Re-verified from off-box on
-**2026-09-04**:
+⚠ **AS OF 2026-09-06 THERE IS WORK WAITING TO SHIP: Task 24, the flight-table PDF.** It touches
+**both halves** — `app/backend/internal/pdfbook` + `internal/pdfmodel` and one copy string in
+`app/frontend/src/pages/Export.tsx` — so it needs a **backend deploy**, which is the thing gated by
+open item 2 below. Everything described in the table below was true and verified on **2026-09-04**;
+it is still what is *live*, but the repo is now ahead of it in code, not only in documentation.
 
 | | live | built from | checked |
 |---|---|---|---|
 | backend | `/opt/logbook/logbook-server` | **`6aed062`**, `vcs.modified=false` | route table + `vcs.revision` |
 | frontend | **`index-D3Tqt5-U.js`** + `index-8vIbKNLy.css` | `ab32cee` | fetched back over HTTPS, **md5-matched** |
 
-`origin/master` is at **`b153507`**. It is ahead of the deployed bundle by two commits, and
-**both are documentation only** — no file under `app/backend/` or `app/frontend/src/` has changed
-since the deploy. Confirm that before concluding anything is outstanding:
+`origin/master` was at **`b153507`** when this was written, ahead of the deployed bundle by two
+commits that were **documentation only**. **That is no longer true**: Task 24 (2026-09-06) changes
+real code in both halves. Run the probe rather than trusting either sentence:
 
 ```bash
 git log --oneline ab32cee..HEAD --stat | grep -E '^ app/(backend|frontend)/src'   # empty = docs only
@@ -81,7 +84,16 @@ Two probes that make this cheap, both learned the hard way (2026-09-03 decision 
   this very block had named. Guarded by a new `styles.test.ts`; the owner ruled the option down to
   **the registration alone**.
 
-**Start here — there are only two open items, and both need the owner:**
+**Start here — there are three open items, and all three need the owner:**
+
+0. 🆕 **DEPLOY TASK 24 — the flight-table PDF carries the airborne times again.** Built, tested and
+   pushed on **2026-09-06**, **not deployed**. The owner found it: *"There is a bug in the export
+   (save as pdf) it only exports block times! not to and landing"*. Task 12 put Takeoff, Landing and
+   Air on the **screen** on 2026-08-02 and never touched the **document**, so for five weeks the app
+   knew four times per flight and the PDF it produced printed two. Backend + frontend, so it needs
+   `sudo` on the box for the service restart — gated by item 2. `make check` **86.8%**, core
+   **100%**; **128 frontend tests**. Nothing about the record itself changed: no figure, no schema,
+   no stored value.
 
 1. ⛔ **THE APACHE HALF OF TASK 22 IS STILL NOT APPLIED.** This is the one real piece of outstanding
    work. Verified live again 2026-09-04: `/logbook/assets/*` is still served
@@ -891,11 +903,74 @@ day · landings night.
 | 20 | **Stale sessions never die** — the Devices list is a graveyard | **done, and DEPLOYED 2026-08-14** (recorded only on 2026-09-03; this row said "not yet deployed" for three weeks while it was live) — `SessionLifetime` 90d → **14d** per the owner's ruling, and the window is now **computed from `last_used_at` against the constant instead of read back from the stored `expires_at`**. That second half is what reaches the rows that already exist: the owner's thirteen were each stamped with a date up to three months out, and a fix that only applied to new sessions would have left every one of them on the page. `LookupSession`, `PurgeExpiredSessions` and the Devices listing all ask the same question, so the sweep, the request path and the page cannot disagree. **No schema change.** Four new tests, three watched red on the old code and the fourth red the moment the constant moved; backend **87.2%**, core 100%. |
 | 21 | **The PIC name becomes a picked object** | **done, and DEPLOYED 2026-08-14** (recorded only on 2026-09-03; verified live — `GET /pilots` answers **401** unauthenticated and `POST /pilots` **403**, so the route exists and default deny covers it) — a `pilots` roster: the distinct `pic_name` values already on flights (counted, dated) UNION names added in the app and not yet flown with, behind a filterable picker on the form. `GET`/`POST /pilots`, **no PUT and no DELETE** (a roster entry is only a spelling — a wrong name is corrected on the flight). **`SELF` cannot join `self`**: refused by a `UNIQUE … COLLATE NOCASE` index *and* by a check against the names already on flights, and the picker will not even offer to add a case variant. **The guarantee is at the write, not just in the form** — `POST`/`PUT /flights` refuse a `pic_name` that is not on the roster exactly, which can never block an edit because the roster is derived from the flights. Blank stays legal (one paper row has it). **Owner ruling: NO student field** ("no student field as it should be"). Historical values are read and never rewritten (§0.8) — `Sinervä`/`Sinerva` and `Stude` are all still offered exactly as written. Backend **86.8%**, core 100%; **124 frontend tests**. |
 | 23 | **The aircraft picker's options ran together** | **done, and DEPLOYED 2026-09-03 20:33 UTC** (bundle `index-D3Tqt5-U.js`, css `index-8vIbKNLy.css`, both fetched back over HTTPS and md5-matched to the repo build) — the owner's phone screenshot showed the dropdown reading **`OH-CTLC172287 flights · 2026-08-14`** and laid out in **two columns**. Both came from one malformed selector list in `styles.css`: folding the pilot picker in (Task 21) split `.aircraftpicker .options button` at the wrong word, leaving `.aircraftpicker .options,` `.pilotpicker .options button { display: grid; … }`. So the aircraft **list** became the three-column grid and its **options** got no layout, no gap, nothing — on six rules, one of which set `display: none` on the whole list below 22rem. Fixed by pairing every selector properly. In the same change, **owner ruling: "It's enough to just show the registration"** — the type and the `N flights · date` tail are gone from the option; the type still **filters**. New **`src/styles.test.ts`** asserts the selector shape (three tests, all watched red), plus an exact-equality test on the option's text. **128 frontend tests.** Frontend-only. |
+| 24 | **The flight-table PDF dropped the airborne times** | **built and pushed 2026-09-06, NOT DEPLOYED** — owner: *"There is a bug in the export (save as pdf) it only exports block times! not to and landing"*. Right: `tableColumns` in `internal/pdfbook/table.go` carried `OFF` and `ON` and nothing else, so **Task 12's Takeoff/Landing/Air went to the screen on 2026-08-02 and never to the document**. The export whose own description promised "everything the application knows about it" was throwing away two of the four times it knows — on **36 of the 1313 rows**, including **every one of the 17 entered through the app**, which is why the owner met it the first time they exported their own flying. Now **TAKEOFF, LANDING and AIR**, grouped *after* the block pair exactly as the on-screen table groups them and for the reason `Table.tsx` already gives — four times in one format, and the aircraft's logbook is filled from only one pair — with `OFF`/`ON` renamed **OFF BLOCK**/**ON BLOCK** now that they have neighbours to be confused with. `pdfmodel.AirTime` is pure, derived at render, **never stored** (§0.5), and mirrors `format.airMinutes` exactly: blank — never `0:00` — when either instant is missing or the interval is negative. Column widths **measured, not guessed** (`fpdf.GetStringWidth` over all 1296 rows at the real fonts: 166.3 mm of content, table now **279 mm of 285 mm printable**) and guarded by a new internal test watched red at 301 mm. **The EASA export is deliberately unchanged** — the form has no cell for an airborne time and its DEPARTURE/ARRIVAL TIME columns are block times; that document is what an authority reads. `make check` **86.8%**, `internal/pdfmodel` **100%**, 128 frontend tests. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-09-06 — The screen got the airborne times five weeks ago; the document never did
+
+The owner, in full: *"There is a bug in the export (save as pdf) it only exports block times!"* and,
+a moment later, *"not to and landing"*.
+
+**They were right, and the gap was five weeks old.** Task 12 (2026-08-02) added **Takeoff, Landing
+and Air** to the flights table on screen, and `pages/Table.tsx` carries a careful comment about how
+those columns are laid out and why. `internal/pdfbook/table.go` was never opened. Its `tableColumns`
+still read `{"OFF"}, {"ON"}` — so the application knew four times per flight, showed four on the
+phone, and printed two in the PDF whose own description on the Export page promised *"everything the
+application knows about it"*.
+
+**Who it hit.** 36 rows of the live 1313 record an airborne pair: 19 transcribed from Book 3, and
+**all 17 entered through the app**. Every flight the owner has logged themselves carries a takeoff
+and a landing, which is precisely why they met this the first time they exported their own flying
+rather than the paper history. The 1277 rows with no pair were unaffected and still print blank.
+
+**What was built.** `TAKEOFF`, `LANDING` and `AIR`, plus `pdfmodel.AirTime`.
+
+- **The airborne group sits after the block group, not interleaved with it.** Chronological order —
+  OFF BLOCK, TAKEOFF, LANDING, ON BLOCK — was written first and then reversed, because `Table.tsx`
+  had already ruled on exactly this question: *"it sits after the block group rather than
+  interleaved, so the two pairs cannot be misread for one another at a glance — off/on block and
+  takeoff/landing are four times in the same format, and the aircraft's logbook is filled from only
+  one of the pairs."* The document must not disagree with the screen about a layout whose whole
+  purpose is to stop a misreading. `OFF`/`ON` became **OFF BLOCK**/**ON BLOCK** in the same move.
+- **`AIR` came along uninvited, and that was a decision.** The ask named takeoff and landing. The
+  screen shows a third, derived column beside them, and a PDF of the same table that omits it is the
+  same defect one column over. `AirTime` is pure, computed at render, **never stored** (§0.5), and
+  mirrors `format.airMinutes` clause for clause — blank on a missing instant, blank on a negative
+  interval, never `0:00`, because a zero claims the aeroplane never left the ground. The two
+  implementations must never disagree about the same flight.
+- **The EASA export was deliberately left alone.** The form has no cell for an airborne time and its
+  DEPARTURE/ARRIVAL TIME columns are block times. That is the document an authority reads; adding
+  columns to it to satisfy a complaint about a different document would be the wrong kind of helpful.
+
+**The widths were measured, not guessed.** Three new columns had to fit a page already 261 mm wide
+inside 285 mm of printable A4 landscape, and `fpdf` does not complain when a row runs off the paper —
+it draws cells the printer silently cuts. So a throwaway program measured the widest real value in
+every column with `GetStringWidth`, at the exact fonts the renderer uses, across all 1296 flights:
+**166.3 mm of actual content** against 285 mm printable, i.e. 118.7 mm of slack that had never been
+counted. Every column was resized from that measurement; the table is now **279 mm**, and
+`TestTableColumnsFitBetweenTheMargins` guards it — **watched red at 301 mm** before being trusted,
+because a guard nobody has seen fail proves nothing (§0.6).
+
+**Tests, all red first.** `TestTableCarriesTakeoffAndLandingTimes` failed on all four of `TAKEOFF`,
+`LANDING`, `15:20`, `16:28`; the `AIR` assertion asserts `1:08` specifically, which is the derived
+15:20→16:28 figure and **not** the flight's 1:21 of block time, so the column cannot pass by echoing
+`TOTAL`. `TestAirTimeIsDerivedAndBlankWhenItCannotBeKnown` covers the seven cases including a
+midnight crossing and a landing before its takeoff — **and its own midnight case was wrong on the
+first draft** (`+40 min` asserted as `0:30`), caught by reading it back before writing the function
+it was meant to constrain. `make check`: **86.8%** overall, `internal/pdfmodel` **100%**.
+
+**A thing the fix made visible, surfaced and not touched (§0.2).** With `AIR` printed next to
+`TOTAL`, row `b3:412` (seq 1225, 08/09/2025) now openly shows `TOTAL 0:38` against a block time of
+0:45 — its total is its **air** time. A sweep of all three CSVs says this is the **only** row in the
+whole record where `Block_Time != Total_Time`, which matches `CLAUDE.md` §1 exactly: *"block time on
+478 of Book 3's 479 rows"*. Nothing to fix; the export simply stopped hiding it.
+
+**Not deployed.** It changes the backend, so it needs `sudo` on the box — the same gate as open
+item 2. Verified only against the frozen CSVs on this machine, never against production.
 
 ### 2026-09-04 — "There is no Go toolchain" was false, and the owner caught it
 
