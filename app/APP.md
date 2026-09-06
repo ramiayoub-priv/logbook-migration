@@ -113,18 +113,27 @@ the owner ran the recovery by hand. Fixed in **`3e5a61a`**: the read-only drift 
 **before** the stop, the CSVs are copied somewhere the service user can actually read, and an EXIT
 trap covers every path between the stop and a confirmed-healthy start.
 
-⛔ **ONE COMMAND OUTSTANDING — the fixed `logbook-apply` is not on the box yet.** `/opt/logbook/`
-still holds the version that caused the outage. It is root-owned by design (that is what makes the
-sudoers grant safe), so installing a new one needs the owner once:
+✅ **The fixed `logbook-apply` is installed** (`/opt/logbook/logbook-apply`, root:root, 10314 bytes,
+2026-09-06 20:18). `deploy.sh` is safe to use. **NOTHING IS OUTSTANDING.**
 
-```bash
-sudo /home/rami/logbook-deploy/install-deploy-privileges.sh
-```
+⚠ **That install run exposed two defects in `install-deploy-privileges.sh` itself, both now fixed**
+(see the decision-log entry *"A verification step that deploys"*). The grant was never wrong:
 
-Idempotent — it re-installs the script and reports the sudoers rule as already up to date. **Until
-that is run, do not use `deploy.sh`**: the box would run the old apply script and could repeat the
-outage. `rsync -a app/deploy/ rami@ayoub.fi:/home/rami/logbook-deploy/` first so the box has the
-fixed copy to install.
+- Its step 6 "proof" **ran a real deploy** — it stopped, reinstalled and restarted production to
+  check a permission. Harmless in the event (same binary, seconds of downtime, `NRestarts=0`
+  afterwards) and completely unacceptable in kind.
+- Its step 7 then reported **"rami has passwordless sudo for EVERYTHING"**, which was a **false
+  alarm**: the owner had just typed their password to run the script, so rami's sudo credential cache
+  was warm and `sudo -n true` succeeded on the timestamp, not on the policy.
+
+Both are answered by **reading the policy rather than exercising it** — `sudo -l -U rami` runs as
+root, needs no password, consults no cache and changes nothing. The parser was checked against the
+box's actual output (sudo prints the no-argument restriction escaped, as `\"\"`, which a guessed
+check would have failed on) and against a deliberately bad policy to prove it can refuse.
+
+**The grant on the box is correct**, confirmed from that run's own output: exactly one `NOPASSWD`
+entry, `(root) NOPASSWD: /opt/logbook/logbook-apply \"\"`. The `(ALL : ALL) ALL` line above it is
+rami's long-standing sudo-group membership and is **not** passwordless.
 
 0. 🆕 **DEPLOY TASK 24 — the flight-table PDF carries the airborne times again.** Built, tested and
    pushed on **2026-09-06**, **not deployed**. The owner found it: *"There is a bug in the export
@@ -946,13 +955,44 @@ day · landings night.
 | 20 | **Stale sessions never die** — the Devices list is a graveyard | **done, and DEPLOYED 2026-08-14** (recorded only on 2026-09-03; this row said "not yet deployed" for three weeks while it was live) — `SessionLifetime` 90d → **14d** per the owner's ruling, and the window is now **computed from `last_used_at` against the constant instead of read back from the stored `expires_at`**. That second half is what reaches the rows that already exist: the owner's thirteen were each stamped with a date up to three months out, and a fix that only applied to new sessions would have left every one of them on the page. `LookupSession`, `PurgeExpiredSessions` and the Devices listing all ask the same question, so the sweep, the request path and the page cannot disagree. **No schema change.** Four new tests, three watched red on the old code and the fourth red the moment the constant moved; backend **87.2%**, core 100%. |
 | 21 | **The PIC name becomes a picked object** | **done, and DEPLOYED 2026-08-14** (recorded only on 2026-09-03; verified live — `GET /pilots` answers **401** unauthenticated and `POST /pilots` **403**, so the route exists and default deny covers it) — a `pilots` roster: the distinct `pic_name` values already on flights (counted, dated) UNION names added in the app and not yet flown with, behind a filterable picker on the form. `GET`/`POST /pilots`, **no PUT and no DELETE** (a roster entry is only a spelling — a wrong name is corrected on the flight). **`SELF` cannot join `self`**: refused by a `UNIQUE … COLLATE NOCASE` index *and* by a check against the names already on flights, and the picker will not even offer to add a case variant. **The guarantee is at the write, not just in the form** — `POST`/`PUT /flights` refuse a `pic_name` that is not on the roster exactly, which can never block an edit because the roster is derived from the flights. Blank stays legal (one paper row has it). **Owner ruling: NO student field** ("no student field as it should be"). Historical values are read and never rewritten (§0.8) — `Sinervä`/`Sinerva` and `Stude` are all still offered exactly as written. Backend **86.8%**, core 100%; **124 frontend tests**. |
 | 23 | **The aircraft picker's options ran together** | **done, and DEPLOYED 2026-09-03 20:33 UTC** (bundle `index-D3Tqt5-U.js`, css `index-8vIbKNLy.css`, both fetched back over HTTPS and md5-matched to the repo build) — the owner's phone screenshot showed the dropdown reading **`OH-CTLC172287 flights · 2026-08-14`** and laid out in **two columns**. Both came from one malformed selector list in `styles.css`: folding the pilot picker in (Task 21) split `.aircraftpicker .options button` at the wrong word, leaving `.aircraftpicker .options,` `.pilotpicker .options button { display: grid; … }`. So the aircraft **list** became the three-column grid and its **options** got no layout, no gap, nothing — on six rules, one of which set `display: none` on the whole list below 22rem. Fixed by pairing every selector properly. In the same change, **owner ruling: "It's enough to just show the registration"** — the type and the `N flights · date` tail are gone from the option; the type still **filters**. New **`src/styles.test.ts`** asserts the selector shape (three tests, all watched red), plus an exact-equality test on the option's text. **128 frontend tests.** Frontend-only. |
-| 25 | **A deploy must not need root** | **INSTALLED AND WORKING 2026-09-06 — and its first real run caused an outage, since fixed in `3e5a61a` but NOT YET ON THE BOX.** The grant is live and correctly scoped (`sudo -n -l` shows one `NOPASSWD` entry for `/opt/logbook/logbook-apply ""`; general `sudo -n true` still exits 1). It shipped Task 24 with no password. ⚠ **The first run left the service stopped** — the drift check ran *after* `systemctl stop` and failed on an unreadable CSV, so `set -e` exited with the record offline; see the decision log. Fixed: verify moved ahead of the stop, CSVs copied to a `logbook`-owned `0700` directory, and an **EXIT trap** that restarts the service on any path between the stop and a confirmed-healthy start. Re-rehearsed on four paths including the two that had no coverage. ⛔ **Needs `sudo install-deploy-privileges.sh` once more to put the fixed script on the box.** — owner: *"we should find some solution for that, deploy should not need root"*. `app/deploy/deploy.sh` now runs the entire deploy **from the dev machine with no password**: clean-tree guard, `make check` + `npm run check`, build both halves, stage with a `SHA256SUMS`, `ssh … sudo -n /opt/logbook/logbook-apply`, then the frontend, then off-box verification. The only privileged step is `logbook-apply`, root-owned, named by a **one-user one-command no-arguments** rule in `/etc/sudoers.d/logbook-deploy`. It grants **nothing new** — `rami` is in the `sudo` group already — it removes the prompt from one audited operation, and the installer **asserts** that general `sudo -n` still fails afterwards. Polkit was ruled out on evidence: Ubuntu 20.04 ships **polkit 0.105**, `.pkla` only, which cannot scope manage-units to a single unit and would have handed rami restart rights over all seven other sites. `logbook-apply` refuses a missing/mismatched `SHA256SUMS` (a truncated rsync leaves a plausible, wrong binary) or a symlinked artefact, all **before** stopping the service, and **rolls back automatically** to `logbook-server.prev` if the new binary fails its health check — because unattended means nobody is reading the output. **Rehearsed against a fake tree with stubbed `systemctl`/`curl` before it was ever run as root**: all four refusals exit 1 with nothing installed, plus the happy path and the rollback. `update.sh` is now a shim that execs `logbook-apply`, so there is one implementation. ⛔ **Needs the owner once**: `sudo install-deploy-privileges.sh`. |
+| 25 | **A deploy must not need root** | **INSTALLED AND WORKING 2026-09-06 — and its first real run caused an outage, since fixed in `3e5a61a` but NOT YET ON THE BOX.** The grant is live and correctly scoped (`sudo -n -l` shows one `NOPASSWD` entry for `/opt/logbook/logbook-apply ""`; general `sudo -n true` still exits 1). It shipped Task 24 with no password. ⚠ **The first run left the service stopped** — the drift check ran *after* `systemctl stop` and failed on an unreadable CSV, so `set -e` exited with the record offline; see the decision log. Fixed: verify moved ahead of the stop, CSVs copied to a `logbook`-owned `0700` directory, and an **EXIT trap** that restarts the service on any path between the stop and a confirmed-healthy start. Re-rehearsed on four paths including the two that had no coverage. ✅ **Fixed script installed 2026-09-06 20:18.** The install run also exposed two defects in the *installer* — a verification step that ran a real deploy, and a false "passwordless sudo for EVERYTHING" alarm caused by a warm credential cache. Both fixed by reading the policy (`sudo -l -U`) instead of exercising it. — owner: *"we should find some solution for that, deploy should not need root"*. `app/deploy/deploy.sh` now runs the entire deploy **from the dev machine with no password**: clean-tree guard, `make check` + `npm run check`, build both halves, stage with a `SHA256SUMS`, `ssh … sudo -n /opt/logbook/logbook-apply`, then the frontend, then off-box verification. The only privileged step is `logbook-apply`, root-owned, named by a **one-user one-command no-arguments** rule in `/etc/sudoers.d/logbook-deploy`. It grants **nothing new** — `rami` is in the `sudo` group already — it removes the prompt from one audited operation, and the installer **asserts** that general `sudo -n` still fails afterwards. Polkit was ruled out on evidence: Ubuntu 20.04 ships **polkit 0.105**, `.pkla` only, which cannot scope manage-units to a single unit and would have handed rami restart rights over all seven other sites. `logbook-apply` refuses a missing/mismatched `SHA256SUMS` (a truncated rsync leaves a plausible, wrong binary) or a symlinked artefact, all **before** stopping the service, and **rolls back automatically** to `logbook-server.prev` if the new binary fails its health check — because unattended means nobody is reading the output. **Rehearsed against a fake tree with stubbed `systemctl`/`curl` before it was ever run as root**: all four refusals exit 1 with nothing installed, plus the happy path and the rollback. `update.sh` is now a shim that execs `logbook-apply`, so there is one implementation. ⛔ **Needs the owner once**: `sudo install-deploy-privileges.sh`. |
 | 24 | **The flight-table PDF dropped the airborne times** | ✅ **DONE AND DEPLOYED 2026-09-06** (binary `a5bc939`, bundle `index-CQ6-aHZf.js`, verified off-box) — — owner: *"There is a bug in the export (save as pdf) it only exports block times! not to and landing"*. Right: `tableColumns` in `internal/pdfbook/table.go` carried `OFF` and `ON` and nothing else, so **Task 12's Takeoff/Landing/Air went to the screen on 2026-08-02 and never to the document**. The export whose own description promised "everything the application knows about it" was throwing away two of the four times it knows — on **36 of the 1313 rows**, including **every one of the 17 entered through the app**, which is why the owner met it the first time they exported their own flying. Now **TAKEOFF, LANDING and AIR**, grouped *after* the block pair exactly as the on-screen table groups them and for the reason `Table.tsx` already gives — four times in one format, and the aircraft's logbook is filled from only one pair — with `OFF`/`ON` renamed **OFF BLOCK**/**ON BLOCK** now that they have neighbours to be confused with. `pdfmodel.AirTime` is pure, derived at render, **never stored** (§0.5), and mirrors `format.airMinutes` exactly: blank — never `0:00` — when either instant is missing or the interval is negative. Column widths **measured, not guessed** (`fpdf.GetStringWidth` over all 1296 rows at the real fonts: 166.3 mm of content, table now **279 mm of 285 mm printable**) and guarded by a new internal test watched red at 301 mm. **The EASA export is deliberately unchanged** — the form has no cell for an airborne time and its DEPARTURE/ARRIVAL TIME columns are block times; that document is what an authority reads. `make check` **86.8%**, `internal/pdfmodel` **100%**, 128 frontend tests. |
 | 10 | **Edit / delete a flight** | **done** 2026-08-02 — owner ruled: app-entered flights only, real delete with an audit copy, double confirmation. `PUT`/`DELETE`/`GET /flights/{seq}`, `store.UpdateFlight`/`DeleteFlight`, the append-only `flight_audit` table, and the shared `FlightForm` behind both the new and edit pages. **83 frontend tests, backend 88.3%**, and driven live against a scratch server: edit, refusal on a paper row, delete, totals following, audit rows written. |
 
 ---
 
 ## 5. Decision Log
+
+### 2026-09-06 — A verification step that deploys, and an alarm that was measuring its own cache
+
+Installing the fixed `logbook-apply` worked — and the installer's own last two checks were both
+wrong, in opposite directions.
+
+**Step 6 ran a real deploy.** It proved "sudo really does let rami in" by *running the command*:
+`sudo -u rami sudo -n /opt/logbook/logbook-apply`. That is a full production deploy — stop the
+service, reinstall the binary, start it again — executed from inside a script whose entire job was to
+check a permission. It was harmless in the event (the staged binary was the one already live, so the
+cost was seconds of downtime; `NRestarts=0` and health 200 afterwards), and it is exactly the class of
+thing that must never be harmless-by-luck on a legal record. **A verification step with a side effect
+is not a verification step.**
+
+**Step 7 then raised a false alarm**, printing *"rami has passwordless sudo for EVERYTHING"*. It ran
+`sudo -u rami sudo -n true` and read success as a widened grant. But the owner had just typed their
+password to launch the installer, so rami's sudo **credential cache was warm** — the check was
+measuring the timestamp file, not the policy. The grant was correct all along: one `NOPASSWD` entry,
+for `logbook-apply`, with the no-argument restriction.
+
+Two failures, one root cause: **both checks exercised the mechanism instead of reading it.** The fix
+is `sudo -l -U rami`, which runs as root, needs no password, consults no cache, executes nothing, and
+answers exactly the question being asked. The checks now assert three things about the printed policy
+— exactly one `NOPASSWD` entry, that it names `logbook-apply`, and that it carries the no-argument
+restriction — plus a separate one that no entry grants `NOPASSWD: ALL`.
+
+**The parser was tested against the box's real output before being trusted**, which caught a bug that
+would have produced a confident false failure: sudo prints the restriction **escaped**, as `\"\"`,
+so a check for `""` finds nothing. It was also run against a deliberately bad policy
+(`NOPASSWD: ALL`) to prove it can refuse — a check nobody has seen refuse proves nothing, which is
+the third time that sentence has earned its place in this log today.
 
 ### 2026-09-06 — The deploy took the logbook offline, and the guard was in the wrong place
 

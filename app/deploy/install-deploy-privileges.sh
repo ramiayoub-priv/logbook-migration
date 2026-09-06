@@ -58,38 +58,76 @@ if ! visudo -c; then
     exit 1
 fi
 
-say "5. prove the grant is exactly what was intended"
-sudo -n -l -U rami 2>&1 | sed 's/^/   /'
+say "5. prove the grant is right -- BY READING IT, NEVER BY RUNNING IT"
+# ⛔ THIS STEP MUST NOT EXECUTE logbook-apply. The first version did, as a
+# "does sudo really let rami in?" proof -- and on 2026-09-06 that ran a REAL
+# DEPLOY of the production logbook: it stopped the service, reinstalled the
+# binary and started it again, from inside a script whose entire job was to
+# check a permission. A verification step with a side effect on a legal record
+# is not a verification step.
+#
+# The second fault was in the check that followed it. `sudo -u rami sudo -n
+# true` was meant to prove passwordless root had NOT widened, and it reported
+# that it HAD -- a false alarm, because the owner had just typed their password
+# to run this very script, so rami's sudo credential cache was warm. It was
+# testing the timestamp, not the grant.
+#
+# Both are answered by reading the policy instead of exercising it. `sudo -l -U`
+# runs as root, needs no password, consults no cache, and changes nothing.
+LIST=$(sudo -l -U rami 2>/dev/null || true)
+printf '%s\n' "$LIST" | sed 's/^/   /'
 echo
-echo "   Expect exactly one NOPASSWD entry, for /opt/logbook/logbook-apply with no arguments."
-echo "   Anything broader than that is a defect -- remove $SUDOERS and say so."
 
-say "6. prove it actually works, as rami, without a password"
-# The real proof is not that the rule parses; it is that the deploy path runs.
-# logbook-apply refuses with exit 1 when nothing is staged, and that refusal is
-# a SUCCESS here: it means sudo let rami in without asking for a password.
-if sudo -u rami sudo -n /opt/logbook/logbook-apply >/dev/null 2>&1; then
-    echo "   rami ran it with no password (and it had something staged)"
-else
-    rc=$?
-    if [ "$rc" -eq 1 ]; then
-        echo "   rami ran it with no password; it refused because nothing is staged -- correct"
-    else
-        echo "   !! rami could NOT run it without a password (exit $rc) -- the grant is not working"
-        exit 1
-    fi
+NOPASS_TOTAL=$(printf '%s\n' "$LIST" | grep -c 'NOPASSWD' || true)
+NOPASS_OURS=$(printf '%s\n' "$LIST" | grep 'NOPASSWD' | grep -c 'logbook-apply' || true)
+# sudo prints the restriction escaped -- \"\" , not "" -- so the backslashes
+# come out before the test. Checked against the box's real output, because
+# guessing at this would have produced a confident false failure.
+NOARG=$(printf '%s\n' "$LIST" | grep 'NOPASSWD' | tr -d '\\' | grep -c '""' || true)
+
+fail=0
+if [ "$NOPASS_TOTAL" -ne 1 ]; then
+    echo "   !! $NOPASS_TOTAL NOPASSWD entries -- expected exactly 1. Something else grants"
+    echo "   !! passwordless sudo. Find it in /etc/sudoers.d/ before trusting this box."
+    fail=1
 fi
-
-say "7. prove the grant did NOT widen"
-# rami is in the sudo group and can still reach root WITH a password -- that was
-# always true and is not what this change is about. What must NOT be true is
-# passwordless root in general.
-if sudo -u rami sudo -n true 2>/dev/null; then
-    echo "   !! rami has passwordless sudo for EVERYTHING -- that is not what this installs."
-    echo "   !! Look for another file in /etc/sudoers.d/ granting ALL, and remove this one."
+if [ "$NOPASS_OURS" -ne 1 ]; then
+    echo "   !! the NOPASSWD entry is not for logbook-apply -- refusing to call this installed"
+    fail=1
+fi
+if [ "$NOARG" -ne 1 ]; then
+    echo "   !! the NOPASSWD entry does not carry the no-argument restriction ("")."
+    echo "   !! Without it, NOPASSWD on a path permits ANY arguments."
+    fail=1
+fi
+if [ "$fail" -eq 1 ]; then
+    echo "   !! Revert with: rm $SUDOERS"
     exit 1
 fi
-echo "   passwordless sudo is limited to logbook-apply; general sudo still asks for a password"
+echo "   exactly one NOPASSWD entry, for logbook-apply, restricted to no arguments"
+
+say "6. prove rami may run it -- again without running it"
+# `sudo -l -U <user> <command>` answers "is this permitted?" and prints the
+# command. It does not execute it.
+if sudo -l -U rami /opt/logbook/logbook-apply >/dev/null 2>&1; then
+    echo "   permitted: rami may run /opt/logbook/logbook-apply"
+else
+    echo "   !! rami is NOT permitted to run /opt/logbook/logbook-apply -- the grant is not working"
+    exit 1
+fi
+
+say "7. ordinary sudo must still ask for a password"
+# Checked by reading the policy, for the reason in step 6: any execution-based
+# check here is contaminated by the credential cache of the sudo that started
+# this script. `(ALL : ALL) ALL` with no NOPASSWD is the sudo-group membership
+# rami has always had, and it is correct for it to be there.
+if printf '%s\n' "$LIST" | grep -qE 'NOPASSWD.*\bALL\b *$'; then
+    echo "   !! rami has passwordless sudo for ALL commands -- that is not what this installs."
+    echo "   !! Remove $SUDOERS and investigate."
+    exit 1
+fi
+echo "   general sudo still requires a password (the (ALL : ALL) ALL line above is"
+echo "   rami's long-standing sudo-group membership, and it is NOT passwordless)"
 
 echo
 echo "Done. Deploys from the dev machine now need no password:"
